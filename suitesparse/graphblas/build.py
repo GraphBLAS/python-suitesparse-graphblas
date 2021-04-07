@@ -7,7 +7,7 @@ is_win = sys.platform.startswith("win")
 ffibuilder = FFI()
 
 ffibuilder.set_source(
-    "suitesparse.graphblas",
+    "suitesparse.graphblas._graphblas",
     r"""#include "GraphBLAS.h" """,
     libraries=["graphblas"],
     include_dirs=[os.path.join(sys.prefix, "include")],
