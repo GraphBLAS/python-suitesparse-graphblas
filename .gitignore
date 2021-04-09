@@ -130,3 +130,6 @@ dmypy.json
 
 # emacs
 *~
+
+# Vim
+*.sw?
