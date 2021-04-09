@@ -3,21 +3,23 @@ import sys
 from cffi import FFI
 
 is_win = sys.platform.startswith("win")
+thisdir = os.path.dirname(__file__)
 
 ffibuilder = FFI()
 
+with open(os.path.join(thisdir, "source.c")) as f:
+    source = f.read()
+
 ffibuilder.set_source(
     "suitesparse.graphblas._graphblas",
-    r"""#include "GraphBLAS.h" """,
+    source,
     libraries=["graphblas"],
     include_dirs=[os.path.join(sys.prefix, "include")],
 )
 
-thisdir = os.path.dirname(__file__)
-
-header = "suitesparse_graphblas_4.0.3.h"
+header = "suitesparse_graphblas.h"
 if is_win:
-    header = "suitesparse_graphblas_no_complex_4.0.3.h"
+    header = "suitesparse_graphblas_no_complex.h"
 gb_cdef = open(os.path.join(thisdir, header))
 
 ffibuilder.cdef(gb_cdef.read())
