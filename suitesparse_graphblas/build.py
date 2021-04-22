@@ -11,7 +11,7 @@ with open(os.path.join(thisdir, "source.c")) as f:
     source = f.read()
 
 ffibuilder.set_source(
-    "suitesparse.graphblas._graphblas",
+    "suitesparse_graphblas._graphblas",
     source,
     libraries=["graphblas"],
     include_dirs=[os.path.join(sys.prefix, "include")],
