@@ -4,3 +4,5 @@ include LICENSE
 include suitesparse_graphblas/*.pxd
 include suitesparse_graphblas/*.pyx
 include suitesparse_graphblas/*.h
+include versioneer.py
+include suitesparse_graphblas/_version.py

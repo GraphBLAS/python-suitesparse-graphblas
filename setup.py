@@ -46,7 +46,8 @@ if sys.platform == "win32":
 
 setup(
     name='suitesparse-graphblas',
-    version='4.0.3',
+    version=versioneer.get_version(),
+    cmdclass=versioneer.get_cmdclass(),
     description='SuiteSparse:GraphBLAS Python bindings.',
     long_description=long_description,
     long_description_content_type="text/markdown",
