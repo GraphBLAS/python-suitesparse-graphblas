@@ -380,9 +380,7 @@ def get_groups(ast):
     seen.update(vals)
     groups["GrB typedef"] = sorted(vals, key=sort_key)
 
-    missing_typedefs = {
-        x for x in lines if "typedef" in x and "GB" in x and "(" not in x
-    } - seen
+    missing_typedefs = {x for x in lines if "typedef" in x and "GB" in x and "(" not in x} - seen
     assert not missing_typedefs
     assert all(x.endswith(";") for x in seen)  # sanity check
 
@@ -393,20 +391,14 @@ def get_groups(ast):
     vals = {x for x in enums if "} GrB" in x}
     for val in vals:
         seen.update(val.splitlines())
-    groups["GrB typedef enums"] = sorted(
-        vals, key=lambda x: sort_key(x.rsplit("}", 1)[-1])
-    )
+    groups["GrB typedef enums"] = sorted(vals, key=lambda x: sort_key(x.rsplit("}", 1)[-1]))
 
     vals = {x for x in enums if "} GxB" in x}
     for val in vals:
         seen.update(val.splitlines())
-    groups["GxB typedef enums"] = sorted(
-        vals, key=lambda x: sort_key(x.rsplit("}", 1)[-1])
-    )
+    groups["GxB typedef enums"] = sorted(vals, key=lambda x: sort_key(x.rsplit("}", 1)[-1]))
 
-    missing_enums = (
-        set(enums) - set(groups["GrB typedef enums"]) - set(groups["GxB typedef enums"])
-    )
+    missing_enums = set(enums) - set(groups["GrB typedef enums"]) - set(groups["GxB typedef enums"])
     assert not missing_enums
 
     vals = {x for x in lines if "typedef" in x and "GxB" in x} - seen
@@ -757,9 +749,7 @@ def main():
 
     # Run it through the preprocessor
     print(f"Step 2: run preprocessor to create {processed_h}")
-    include = os.path.join(
-        os.path.dirname(pycparser.__file__), "utils", "fake_libc_include"
-    )
+    include = os.path.join(os.path.dirname(pycparser.__file__), "utils", "fake_libc_include")
     command = (
         f"gcc -nostdinc -E -I{include} {graphblas_h} "
         f"| sed 's/ complex / _Complex /g' > {processed_h}"
@@ -804,15 +794,12 @@ def main():
     unknown_defines = defines - DEFINES - CHAR_DEFINES - IGNORE_DEFINES
     if unknown_defines:
         raise ValueError(
-            f"Unknown #define values found in {graphblas_h}: "
-            + ", ".join(sorted(unknown_defines))
+            f"Unknown #define values found in {graphblas_h}: " + ", ".join(sorted(unknown_defines))
         )
     print("Success!", "\N{ROCKET}")
     if args.show_skipped:
         print()
-        print(
-            f"Showing lines from {processed_h} that were skipped when creating {final_h}:"
-        )
+        print(f"Showing lines from {processed_h} that were skipped when creating {final_h}:")
         print("-" * 80)
         for line in sorted(groups["not seen"], key=sort_key):
             print(line)
