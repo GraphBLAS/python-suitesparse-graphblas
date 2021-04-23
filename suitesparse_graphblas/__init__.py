@@ -29,9 +29,7 @@ def initialize(*, blocking=False, memory_manager="numpy"):
     GraphBLAS has been initialized.
     """
     if is_initialized():
-        raise RuntimeError(
-            "suitesparse-python is already initialized!  Unable to initialize again."
-        )
+        raise RuntimeError("GraphBLAS is already initialized!  Unable to initialize again.")
     blocking = lib.GrB_BLOCKING if blocking else lib.GrB_NONBLOCKING
     memory_manager = memory_manager.lower()
     if memory_manager == "numpy":
