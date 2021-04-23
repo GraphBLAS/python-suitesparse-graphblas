@@ -66,4 +66,5 @@ setup(
     license="Apache License 2.0",
     package_data=package_data,
     include_package_data=True,
+    zip_safe=False,
 )
