@@ -42,7 +42,7 @@ if use_cython:
 with open("README.md") as f:
     long_description = f.read()
 
-package_data = {"suitesparse_graphblas": ["*.pyx", "*.pxd", "*.h"]}
+package_data = {"suitesparse_graphblas": ["*.pyx", "*.pxd", "*.c", "*.h"]}
 if sys.platform == "win32":
     package_data["suitesparse_graphblas"].append("*.dll")
 
