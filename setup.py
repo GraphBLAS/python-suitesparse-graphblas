@@ -1,5 +1,6 @@
 from setuptools import setup, find_packages, Extension
 from glob import glob
+
 try:
     from Cython.Build import cythonize
     from Cython.Compiler.Options import get_directive_defaults
@@ -10,6 +11,7 @@ except ImportError:
 import numpy as np
 import os
 import sys
+import versioneer
 
 define_macros = [("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")]
 
@@ -45,15 +47,15 @@ if sys.platform == "win32":
     package_data["suitesparse_graphblas"].append("*.dll")
 
 setup(
-    name='suitesparse-graphblas',
+    name="suitesparse-graphblas",
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
-    description='SuiteSparse:GraphBLAS Python bindings.',
+    description="SuiteSparse:GraphBLAS Python bindings.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     packages=find_packages(),
-    author='Michel Pelletier, James Kitchen, Erik Welch',
-    author_email="jim22k@gmail.com,erik.n.welch@gmail.com",
+    author="Michel Pelletier, James Kitchen, Erik Welch",
+    author_email="michel@graphegon.com,jim22k@gmail.com,erik.n.welch@gmail.com",
     url="https://github.com/GraphBLAS/python-suitesparse-graphblas",
     ext_modules=ext_modules,
     cffi_modules=["suitesparse_graphblas/build.py:ffibuilder"],
