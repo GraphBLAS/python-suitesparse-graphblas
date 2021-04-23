@@ -5,8 +5,7 @@ from ._version import get_versions
 
 def is_initialized():
     """Is GraphBLAS initialized via GrB_init or GxB_init?"""
-    fmt = ffi.new("GxB_Format_Value*")
-    return lib.GxB_Global_Option_get(lib.GxB_FORMAT, fmt) != lib.GrB_PANIC
+    return lib.GxB_Global_Option_get(lib.GxB_MODE, ffi.new("GrB_Mode*")) != lib.GrB_PANIC
 
 
 def initialize(*, blocking=False, memory_manager="numpy"):
