@@ -2,7 +2,11 @@ from ._graphblas import ffi, lib  # noqa
 from . import utils
 from ._version import get_versions
 
-is_initialized = False
+
+def is_initialized():
+    """Is GraphBLAS initialized via GrB_init or GxB_init?"""
+    fmt = ffi.new("GxB_Format_Value*")
+    return lib.GxB_Global_Option_get(lib.GxB_FORMAT, fmt) != lib.GrB_PANIC
 
 
 def initialize(*, blocking=False, memory_manager="numpy"):
@@ -25,8 +29,7 @@ def initialize(*, blocking=False, memory_manager="numpy"):
     The global variable `suitesparse_graphblas.is_initialized` indicates whether
     GraphBLAS has been initialized.
     """
-    global is_initialized
-    if is_initialized:
+    if is_initialized():
         raise RuntimeError(
             "suitesparse-python is already initialized!  Unable to initialize again."
         )
@@ -38,7 +41,6 @@ def initialize(*, blocking=False, memory_manager="numpy"):
         lib.GrB_init(blocking)
     else:
         raise ValueError(f'memory_manager argument must be "numpy" or "c"; got: {memory_manager!r}')
-    is_initialized = True
 
 
 __version__ = get_versions()["version"]
