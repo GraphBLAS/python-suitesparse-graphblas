@@ -13,6 +13,7 @@ import os
 import sys
 import versioneer
 
+is_win = sys.platform.startswith("win")
 define_macros = [("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")]
 
 if use_cython:
@@ -50,7 +51,7 @@ with open("README.md") as f:
     long_description = f.read()
 
 package_data = {"suitesparse_graphblas": ["*.pyx", "*.pxd", "*.c", "*.h"]}
-if sys.platform == "win32":
+if is_win:
     package_data["suitesparse_graphblas"].append("*.dll")
 
 setup(

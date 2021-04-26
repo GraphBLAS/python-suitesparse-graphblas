@@ -31,11 +31,6 @@ jobs:
         activate-environment: suitesparse-graphblas
     - name: Build
       run: |
-        conda info
-        conda config --show-sources
-        conda config --show
-        conda list
-        conda env list
         python setup.py build_ext --inplace
         python setup.py develop
     - name: Test
@@ -47,3 +42,12 @@ jobs:
       run: |
         black *py suitesparse_graphblas --check --diff
         flake8 *py suitesparse_graphblas
+    - name: Create headers check
+        # These shouldn't change, so make copies to compare to
+        cp suitesparse_graphblas/suitesparse_graphblas.h .
+        cp suitesparse_graphblas/suitesparse_graphblas_no_complex.h .
+        cp suitesparse_graphblas/source.h .
+        python suitesparse_graphblas/create_headers.py
+        diff suitesparse_graphblas/suitesparse_graphblas.h suitesparse_graphblas.h
+        diff suitesparse_graphblas/suitesparse_graphblas_no_complex.h suitesparse_graphblas_no_complex.h
+        diff suitesparse_graphblas/source.h source.h

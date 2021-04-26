@@ -11,14 +11,17 @@ with open(os.path.join(thisdir, "source.c")) as f:
     source = f.read()
 
 include_dirs = [os.path.join(sys.prefix, "include")]
-if sys.platform == "win32":
+library_dirs = [os.path.join(sys.prefix, "lib")]
+if is_win:
     include_dirs.append(os.path.join(sys.prefix, "Library", "include"))
+    library_dirs.append(os.path.join(sys.prefix, "Library", "lib"))
 
 ffibuilder.set_source(
     "suitesparse_graphblas._graphblas",
     source,
     libraries=["graphblas"],
     include_dirs=include_dirs,
+    library_dirs=library_dirs,
 )
 
 header = "suitesparse_graphblas.h"
