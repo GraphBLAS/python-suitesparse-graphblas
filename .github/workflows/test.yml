@@ -1,4 +1,4 @@
-name: python-suitesparse-graphblas
+name: Test
 
 on:
   push:
@@ -36,7 +36,7 @@ jobs:
         CYTHON_COVERAGE: true
       run: |
         coverage run --branch -m pytest
-        coverage run -a suitesparse_graphblas/tests/test_initialize.py
+        coverage run -a --branch suitesparse_graphblas/tests/test_initialize.py
     - name: Lint
       run: |
         black *py suitesparse_graphblas --check --diff
@@ -47,7 +47,7 @@ jobs:
         cp suitesparse_graphblas/suitesparse_graphblas.h .
         cp suitesparse_graphblas/suitesparse_graphblas_no_complex.h .
         cp suitesparse_graphblas/source.c .
-        coverage run -a suitesparse_graphblas/create_headers.py
+        coverage run -a --branch suitesparse_graphblas/create_headers.py
         diff suitesparse_graphblas/suitesparse_graphblas.h suitesparse_graphblas.h
         diff suitesparse_graphblas/suitesparse_graphblas_no_complex.h suitesparse_graphblas_no_complex.h
         diff suitesparse_graphblas/source.c source.c
