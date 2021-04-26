@@ -25,6 +25,13 @@ if use_cython:
         define_macros.append(("CYTHON_TRACE_NOGIL", "1"))
 else:
     suffix = ".c"
+    # Make sure all required .c files are here
+    pyx_files = glob("suitesparse_graphblas/**.pyx", recursive=True)
+    c_files = glob("suitesparse_graphblas/**.c", recursive=True)
+    missing = {x[:-4] for x in pyx_files} - {x[:-2] for x in c_files}
+    if missing:
+        missing_c = sorted(x + ".c" for x in missing)
+        raise RuntimeError("Cython required when missing C files: " + ", ".join(missing_c))
 
 include_dirs = [np.get_include(), os.path.join(sys.prefix, "include")]
 ext_modules = [

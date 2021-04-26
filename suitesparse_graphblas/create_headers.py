@@ -32,7 +32,7 @@ from pycparser import c_ast, c_generator, parse_file
 
 
 def sort_key(string):
-    """ e.g., sort 'INT8' before 'INT16'"""
+    """e.g., sort 'INT8' before 'INT16'"""
     return string.replace("8", "08")
 
 
