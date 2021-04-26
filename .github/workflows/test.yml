@@ -43,6 +43,7 @@ jobs:
         black *py suitesparse_graphblas --check --diff
         flake8 *py suitesparse_graphblas
     - name: Create headers check
+      run: |
         # These shouldn't change, so make copies to compare to
         cp suitesparse_graphblas/suitesparse_graphblas.h .
         cp suitesparse_graphblas/suitesparse_graphblas_no_complex.h .
