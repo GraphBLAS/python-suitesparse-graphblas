@@ -21,11 +21,14 @@ jobs:
       with:
         auto-update-conda: true
         python-version: ${{ matrix.python-version }}
+        environment-file: continuous_integration/environment.yml
         channels: conda-forge
+        activate-environment: suitesparse-graphblas
+    - name: Build
       run: |
         conda info
+        conda config --show
         conda list
-        conda install -c conda-forge cffi cython numpy graphblas=4.0.3 pytest coverage black flake8  # TODO: environment.yml
         python setup.py build_ext --inplace
         python setup.py develop
     - name: Test

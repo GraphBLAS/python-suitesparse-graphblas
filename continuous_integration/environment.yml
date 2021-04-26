@@ -1,0 +1,13 @@
+name: suitesparse-graphblas
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - graphblas=4.0.3
+  - cffi
+  - cython
+  - numpy
+  - pytest
+  - coverage
+  - black
+  - flake8
