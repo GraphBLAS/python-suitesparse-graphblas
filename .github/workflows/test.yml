@@ -42,6 +42,7 @@ jobs:
         black *py suitesparse_graphblas --check --diff
         flake8 *py suitesparse_graphblas
     - name: create_headers.py check
+      if: (! contains(matrix.os, 'windows'))
       run: |
         # These shouldn't change, so make copies to compare to
         cp suitesparse_graphblas/suitesparse_graphblas.h .
