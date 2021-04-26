@@ -14,10 +14,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ["windows-latest"]
-        python-version: [3.9]
-        # os: ["ubuntu-latest", "macos-latest", "windows-latest"]
-        # python-version: [3.7, 3.8, 3.9]
+        os: ["ubuntu-latest", "macos-latest", "windows-latest"]
+        python-version: [3.7, 3.8, 3.9]
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -38,17 +36,18 @@ jobs:
         CYTHON_COVERAGE: true
       run: |
         coverage run --branch -m pytest
+        coverage run -a suitesparse_graphblas/tests/test_initialize.py
     - name: Lint
       run: |
         black *py suitesparse_graphblas --check --diff
         flake8 *py suitesparse_graphblas
-    - name: Create headers check
+    - name: create_headers.py check
       run: |
         # These shouldn't change, so make copies to compare to
         cp suitesparse_graphblas/suitesparse_graphblas.h .
         cp suitesparse_graphblas/suitesparse_graphblas_no_complex.h .
-        cp suitesparse_graphblas/source.h .
-        python suitesparse_graphblas/create_headers.py
+        cp suitesparse_graphblas/source.c .
+        coverage run -a suitesparse_graphblas/create_headers.py
         diff suitesparse_graphblas/suitesparse_graphblas.h suitesparse_graphblas.h
         diff suitesparse_graphblas/suitesparse_graphblas_no_complex.h suitesparse_graphblas_no_complex.h
-        diff suitesparse_graphblas/source.h source.h
+        diff suitesparse_graphblas/source.c source.c
