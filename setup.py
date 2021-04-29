@@ -13,6 +13,7 @@ import os
 import sys
 import versioneer
 
+is_win = sys.platform.startswith("win")
 define_macros = [("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")]
 
 if use_cython:
@@ -25,6 +26,13 @@ if use_cython:
         define_macros.append(("CYTHON_TRACE_NOGIL", "1"))
 else:
     suffix = ".c"
+    # Make sure all required .c files are here
+    pyx_files = glob("suitesparse_graphblas/**.pyx", recursive=True)
+    c_files = glob("suitesparse_graphblas/**.c", recursive=True)
+    missing = {x[:-4] for x in pyx_files} - {x[:-2] for x in c_files}
+    if missing:
+        missing_c = sorted(x + ".c" for x in missing)
+        raise RuntimeError("Cython required when missing C files: " + ", ".join(missing_c))
 
 include_dirs = [np.get_include(), os.path.join(sys.prefix, "include")]
 ext_modules = [
@@ -43,7 +51,7 @@ with open("README.md") as f:
     long_description = f.read()
 
 package_data = {"suitesparse_graphblas": ["*.pyx", "*.pxd", "*.c", "*.h"]}
-if sys.platform == "win32":
+if is_win:
     package_data["suitesparse_graphblas"].append("*.dll")
 
 setup(

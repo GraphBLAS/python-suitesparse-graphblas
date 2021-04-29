@@ -1,13 +1,16 @@
-name: python-suitesparse-graphblas
+name: Test
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
   pull_request:
 
 jobs:
   test:
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash -l {0}
     strategy:
       fail-fast: false
       matrix:
@@ -21,12 +24,11 @@ jobs:
       with:
         auto-update-conda: true
         python-version: ${{ matrix.python-version }}
+        environment-file: continuous_integration/environment.yml
         channels: conda-forge
+        activate-environment: suitesparse-graphblas
     - name: Build
       run: |
-        conda info
-        conda list
-        conda install -c conda-forge cffi cython numpy graphblas pytest coverage black flake8  # TODO: environment.yml
         python setup.py build_ext --inplace
         python setup.py develop
     - name: Test
@@ -34,7 +36,19 @@ jobs:
         CYTHON_COVERAGE: true
       run: |
         coverage run --branch -m pytest
+        coverage run -a --branch suitesparse_graphblas/tests/test_initialize.py
     - name: Lint
       run: |
         black *py suitesparse_graphblas --check --diff
         flake8 *py suitesparse_graphblas
+    - name: create_headers.py check
+      if: (! contains(matrix.os, 'windows'))
+      run: |
+        # These shouldn't change, so make copies to compare to
+        cp suitesparse_graphblas/suitesparse_graphblas.h .
+        cp suitesparse_graphblas/suitesparse_graphblas_no_complex.h .
+        cp suitesparse_graphblas/source.c .
+        coverage run -a --branch suitesparse_graphblas/create_headers.py
+        diff suitesparse_graphblas/suitesparse_graphblas.h suitesparse_graphblas.h
+        diff suitesparse_graphblas/suitesparse_graphblas_no_complex.h suitesparse_graphblas_no_complex.h
+        diff suitesparse_graphblas/source.c source.c

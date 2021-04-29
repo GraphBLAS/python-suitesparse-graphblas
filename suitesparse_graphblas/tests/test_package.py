@@ -1,4 +1,4 @@
-from suitesparse_graphblas import lib, ffi
+from suitesparse_graphblas import lib, ffi  # noqa
 
 
 def test_matrix_existence():
