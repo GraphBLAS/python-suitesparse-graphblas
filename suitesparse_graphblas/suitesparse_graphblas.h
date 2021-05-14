@@ -104,6 +104,9 @@ typedef enum
   GxB_GLOBAL_NTHREADS = 5,
   GxB_GLOBAL_CHUNK = 7,
   GxB_BURBLE = 99,
+  GxB_PRINTF = 101,
+  GxB_FLUSH = 102,
+  GxB_MEMORY_POOL = 103,
   GxB_SPARSITY_STATUS = 33,
   GxB_SPARSITY_CONTROL = 32,
   GxB_GLOBAL_GPU_CONTROL = 21,
@@ -2844,32 +2847,35 @@ extern GrB_Info GxB_Matrix_assign_FC32(GrB_Matrix C, const GrB_Matrix Mask, cons
 extern GrB_Info GxB_Matrix_assign_FC64(GrB_Matrix C, const GrB_Matrix Mask, const GrB_BinaryOp accum, GxB_FC64_t x, const GrB_Index *I, GrB_Index ni, const GrB_Index *J, GrB_Index nj, const GrB_Descriptor desc);
 extern GrB_Info GxB_Matrix_build_FC32(GrB_Matrix C, const GrB_Index *I, const GrB_Index *J, const GxB_FC32_t *X, GrB_Index nvals, const GrB_BinaryOp dup);
 extern GrB_Info GxB_Matrix_build_FC64(GrB_Matrix C, const GrB_Index *I, const GrB_Index *J, const GxB_FC64_t *X, GrB_Index nvals, const GrB_BinaryOp dup);
-extern GrB_Info GxB_Matrix_export_BitmapC(GrB_Matrix *A, GrB_Type *type, GrB_Index *nrows, GrB_Index *ncols, int8_t **Ab, void **Ax, GrB_Index *Ab_size, GrB_Index *Ax_size, GrB_Index *nvals, const GrB_Descriptor desc);
-extern GrB_Info GxB_Matrix_export_BitmapR(GrB_Matrix *A, GrB_Type *type, GrB_Index *nrows, GrB_Index *ncols, int8_t **Ab, void **Ax, GrB_Index *Ab_size, GrB_Index *Ax_size, GrB_Index *nvals, const GrB_Descriptor desc);
-extern GrB_Info GxB_Matrix_export_CSC(GrB_Matrix *A, GrB_Type *type, GrB_Index *nrows, GrB_Index *ncols, GrB_Index **Ap, GrB_Index **Ai, void **Ax, GrB_Index *Ap_size, GrB_Index *Ai_size, GrB_Index *Ax_size, bool *jumbled, const GrB_Descriptor desc);
-extern GrB_Info GxB_Matrix_export_CSR(GrB_Matrix *A, GrB_Type *type, GrB_Index *nrows, GrB_Index *ncols, GrB_Index **Ap, GrB_Index **Aj, void **Ax, GrB_Index *Ap_size, GrB_Index *Aj_size, GrB_Index *Ax_size, bool *jumbled, const GrB_Descriptor desc);
-extern GrB_Info GxB_Matrix_export_FullC(GrB_Matrix *A, GrB_Type *type, GrB_Index *nrows, GrB_Index *ncols, void **Ax, GrB_Index *Ax_size, const GrB_Descriptor desc);
-extern GrB_Info GxB_Matrix_export_FullR(GrB_Matrix *A, GrB_Type *type, GrB_Index *nrows, GrB_Index *ncols, void **Ax, GrB_Index *Ax_size, const GrB_Descriptor desc);
-extern GrB_Info GxB_Matrix_export_HyperCSC(GrB_Matrix *A, GrB_Type *type, GrB_Index *nrows, GrB_Index *ncols, GrB_Index **Ap, GrB_Index **Ah, GrB_Index **Ai, void **Ax, GrB_Index *Ap_size, GrB_Index *Ah_size, GrB_Index *Ai_size, GrB_Index *Ax_size, GrB_Index *nvec, bool *jumbled, const GrB_Descriptor desc);
-extern GrB_Info GxB_Matrix_export_HyperCSR(GrB_Matrix *A, GrB_Type *type, GrB_Index *nrows, GrB_Index *ncols, GrB_Index **Ap, GrB_Index **Ah, GrB_Index **Aj, void **Ax, GrB_Index *Ap_size, GrB_Index *Ah_size, GrB_Index *Aj_size, GrB_Index *Ax_size, GrB_Index *nvec, bool *jumbled, const GrB_Descriptor desc);
+extern GrB_Info GxB_Matrix_concat(GrB_Matrix C, const GrB_Matrix *Tiles, const GrB_Index m, const GrB_Index n, const GrB_Descriptor desc);
+extern GrB_Info GxB_Matrix_diag(GrB_Matrix C, const GrB_Vector v, int64_t k, const GrB_Descriptor desc);
+extern GrB_Info GxB_Matrix_export_BitmapC(GrB_Matrix *A, GrB_Type *type, GrB_Index *nrows, GrB_Index *ncols, int8_t **Ab, void **Ax, GrB_Index *Ab_size, GrB_Index *Ax_size, bool *is_uniform, GrB_Index *nvals, const GrB_Descriptor desc);
+extern GrB_Info GxB_Matrix_export_BitmapR(GrB_Matrix *A, GrB_Type *type, GrB_Index *nrows, GrB_Index *ncols, int8_t **Ab, void **Ax, GrB_Index *Ab_size, GrB_Index *Ax_size, bool *is_uniform, GrB_Index *nvals, const GrB_Descriptor desc);
+extern GrB_Info GxB_Matrix_export_CSC(GrB_Matrix *A, GrB_Type *type, GrB_Index *nrows, GrB_Index *ncols, GrB_Index **Ap, GrB_Index **Ai, void **Ax, GrB_Index *Ap_size, GrB_Index *Ai_size, GrB_Index *Ax_size, bool *is_uniform, bool *jumbled, const GrB_Descriptor desc);
+extern GrB_Info GxB_Matrix_export_CSR(GrB_Matrix *A, GrB_Type *type, GrB_Index *nrows, GrB_Index *ncols, GrB_Index **Ap, GrB_Index **Aj, void **Ax, GrB_Index *Ap_size, GrB_Index *Aj_size, GrB_Index *Ax_size, bool *is_uniform, bool *jumbled, const GrB_Descriptor desc);
+extern GrB_Info GxB_Matrix_export_FullC(GrB_Matrix *A, GrB_Type *type, GrB_Index *nrows, GrB_Index *ncols, void **Ax, GrB_Index *Ax_size, bool *is_uniform, const GrB_Descriptor desc);
+extern GrB_Info GxB_Matrix_export_FullR(GrB_Matrix *A, GrB_Type *type, GrB_Index *nrows, GrB_Index *ncols, void **Ax, GrB_Index *Ax_size, bool *is_uniform, const GrB_Descriptor desc);
+extern GrB_Info GxB_Matrix_export_HyperCSC(GrB_Matrix *A, GrB_Type *type, GrB_Index *nrows, GrB_Index *ncols, GrB_Index **Ap, GrB_Index **Ah, GrB_Index **Ai, void **Ax, GrB_Index *Ap_size, GrB_Index *Ah_size, GrB_Index *Ai_size, GrB_Index *Ax_size, bool *is_uniform, GrB_Index *nvec, bool *jumbled, const GrB_Descriptor desc);
+extern GrB_Info GxB_Matrix_export_HyperCSR(GrB_Matrix *A, GrB_Type *type, GrB_Index *nrows, GrB_Index *ncols, GrB_Index **Ap, GrB_Index **Ah, GrB_Index **Aj, void **Ax, GrB_Index *Ap_size, GrB_Index *Ah_size, GrB_Index *Aj_size, GrB_Index *Ax_size, bool *is_uniform, GrB_Index *nvec, bool *jumbled, const GrB_Descriptor desc);
 extern GrB_Info GxB_Matrix_extractElement_FC32(GxB_FC32_t *x, const GrB_Matrix A, GrB_Index i, GrB_Index j);
 extern GrB_Info GxB_Matrix_extractElement_FC64(GxB_FC64_t *x, const GrB_Matrix A, GrB_Index i, GrB_Index j);
 extern GrB_Info GxB_Matrix_extractTuples_FC32(GrB_Index *I, GrB_Index *J, GxB_FC32_t *X, GrB_Index *nvals, const GrB_Matrix A);
 extern GrB_Info GxB_Matrix_extractTuples_FC64(GrB_Index *I, GrB_Index *J, GxB_FC64_t *X, GrB_Index *nvals, const GrB_Matrix A);
 extern GrB_Info GxB_Matrix_fprint(GrB_Matrix A, const char *name, GxB_Print_Level pr, FILE *f);
-extern GrB_Info GxB_Matrix_import_BitmapC(GrB_Matrix *A, GrB_Type type, GrB_Index nrows, GrB_Index ncols, int8_t **Ab, void **Ax, GrB_Index Ab_size, GrB_Index Ax_size, GrB_Index nvals, const GrB_Descriptor desc);
-extern GrB_Info GxB_Matrix_import_BitmapR(GrB_Matrix *A, GrB_Type type, GrB_Index nrows, GrB_Index ncols, int8_t **Ab, void **Ax, GrB_Index Ab_size, GrB_Index Ax_size, GrB_Index nvals, const GrB_Descriptor desc);
-extern GrB_Info GxB_Matrix_import_CSC(GrB_Matrix *A, GrB_Type type, GrB_Index nrows, GrB_Index ncols, GrB_Index **Ap, GrB_Index **Ai, void **Ax, GrB_Index Ap_size, GrB_Index Ai_size, GrB_Index Ax_size, bool jumbled, const GrB_Descriptor desc);
-extern GrB_Info GxB_Matrix_import_CSR(GrB_Matrix *A, GrB_Type type, GrB_Index nrows, GrB_Index ncols, GrB_Index **Ap, GrB_Index **Aj, void **Ax, GrB_Index Ap_size, GrB_Index Aj_size, GrB_Index Ax_size, bool jumbled, const GrB_Descriptor desc);
-extern GrB_Info GxB_Matrix_import_FullC(GrB_Matrix *A, GrB_Type type, GrB_Index nrows, GrB_Index ncols, void **Ax, GrB_Index Ax_size, const GrB_Descriptor desc);
-extern GrB_Info GxB_Matrix_import_FullR(GrB_Matrix *A, GrB_Type type, GrB_Index nrows, GrB_Index ncols, void **Ax, GrB_Index Ax_size, const GrB_Descriptor desc);
-extern GrB_Info GxB_Matrix_import_HyperCSC(GrB_Matrix *A, GrB_Type type, GrB_Index nrows, GrB_Index ncols, GrB_Index **Ap, GrB_Index **Ah, GrB_Index **Ai, void **Ax, GrB_Index Ap_size, GrB_Index Ah_size, GrB_Index Ai_size, GrB_Index Ax_size, GrB_Index nvec, bool jumbled, const GrB_Descriptor desc);
-extern GrB_Info GxB_Matrix_import_HyperCSR(GrB_Matrix *A, GrB_Type type, GrB_Index nrows, GrB_Index ncols, GrB_Index **Ap, GrB_Index **Ah, GrB_Index **Aj, void **Ax, GrB_Index Ap_size, GrB_Index Ah_size, GrB_Index Aj_size, GrB_Index Ax_size, GrB_Index nvec, bool jumbled, const GrB_Descriptor desc);
+extern GrB_Info GxB_Matrix_import_BitmapC(GrB_Matrix *A, GrB_Type type, GrB_Index nrows, GrB_Index ncols, int8_t **Ab, void **Ax, GrB_Index Ab_size, GrB_Index Ax_size, bool is_uniform, GrB_Index nvals, const GrB_Descriptor desc);
+extern GrB_Info GxB_Matrix_import_BitmapR(GrB_Matrix *A, GrB_Type type, GrB_Index nrows, GrB_Index ncols, int8_t **Ab, void **Ax, GrB_Index Ab_size, GrB_Index Ax_size, bool is_uniform, GrB_Index nvals, const GrB_Descriptor desc);
+extern GrB_Info GxB_Matrix_import_CSC(GrB_Matrix *A, GrB_Type type, GrB_Index nrows, GrB_Index ncols, GrB_Index **Ap, GrB_Index **Ai, void **Ax, GrB_Index Ap_size, GrB_Index Ai_size, GrB_Index Ax_size, bool is_uniform, bool jumbled, const GrB_Descriptor desc);
+extern GrB_Info GxB_Matrix_import_CSR(GrB_Matrix *A, GrB_Type type, GrB_Index nrows, GrB_Index ncols, GrB_Index **Ap, GrB_Index **Aj, void **Ax, GrB_Index Ap_size, GrB_Index Aj_size, GrB_Index Ax_size, bool is_uniform, bool jumbled, const GrB_Descriptor desc);
+extern GrB_Info GxB_Matrix_import_FullC(GrB_Matrix *A, GrB_Type type, GrB_Index nrows, GrB_Index ncols, void **Ax, GrB_Index Ax_size, bool is_uniform, const GrB_Descriptor desc);
+extern GrB_Info GxB_Matrix_import_FullR(GrB_Matrix *A, GrB_Type type, GrB_Index nrows, GrB_Index ncols, void **Ax, GrB_Index Ax_size, bool is_uniform, const GrB_Descriptor desc);
+extern GrB_Info GxB_Matrix_import_HyperCSC(GrB_Matrix *A, GrB_Type type, GrB_Index nrows, GrB_Index ncols, GrB_Index **Ap, GrB_Index **Ah, GrB_Index **Ai, void **Ax, GrB_Index Ap_size, GrB_Index Ah_size, GrB_Index Ai_size, GrB_Index Ax_size, bool is_uniform, GrB_Index nvec, bool jumbled, const GrB_Descriptor desc);
+extern GrB_Info GxB_Matrix_import_HyperCSR(GrB_Matrix *A, GrB_Type type, GrB_Index nrows, GrB_Index ncols, GrB_Index **Ap, GrB_Index **Ah, GrB_Index **Aj, void **Ax, GrB_Index Ap_size, GrB_Index Ah_size, GrB_Index Aj_size, GrB_Index Ax_size, bool is_uniform, GrB_Index nvec, bool jumbled, const GrB_Descriptor desc);
 extern GrB_Info GxB_Matrix_reduce_FC32(GxB_FC32_t *c, const GrB_BinaryOp accum, const GrB_Monoid monoid, const GrB_Matrix A, const GrB_Descriptor desc);
 extern GrB_Info GxB_Matrix_reduce_FC64(GxB_FC64_t *c, const GrB_BinaryOp accum, const GrB_Monoid monoid, const GrB_Matrix A, const GrB_Descriptor desc);
 extern GrB_Info GxB_Matrix_select(GrB_Matrix C, const GrB_Matrix Mask, const GrB_BinaryOp accum, const GxB_SelectOp op, const GrB_Matrix A, const GxB_Scalar Thunk, const GrB_Descriptor desc);
 extern GrB_Info GxB_Matrix_setElement_FC32(GrB_Matrix C, GxB_FC32_t x, GrB_Index i, GrB_Index j);
 extern GrB_Info GxB_Matrix_setElement_FC64(GrB_Matrix C, GxB_FC64_t x, GrB_Index i, GrB_Index j);
+extern GrB_Info GxB_Matrix_split(GrB_Matrix *Tiles, const GrB_Index m, const GrB_Index n, const GrB_Index *Tile_nrows, const GrB_Index *Tile_ncols, const GrB_Matrix A, const GrB_Descriptor desc);
 extern GrB_Info GxB_Matrix_subassign(GrB_Matrix C, const GrB_Matrix Mask, const GrB_BinaryOp accum, const GrB_Matrix A, const GrB_Index *I, GrB_Index ni, const GrB_Index *J, GrB_Index nj, const GrB_Descriptor desc);
 extern GrB_Info GxB_Matrix_subassign_BOOL(GrB_Matrix C, const GrB_Matrix Mask, const GrB_BinaryOp accum, bool x, const GrB_Index *I, GrB_Index ni, const GrB_Index *J, GrB_Index nj, const GrB_Descriptor desc);
 extern GrB_Info GxB_Matrix_subassign_FC32(GrB_Matrix C, const GrB_Matrix Mask, const GrB_BinaryOp accum, GxB_FC32_t x, const GrB_Index *I, GrB_Index ni, const GrB_Index *J, GrB_Index nj, const GrB_Descriptor desc);
@@ -2887,6 +2893,7 @@ extern GrB_Info GxB_Matrix_subassign_UINT32(GrB_Matrix C, const GrB_Matrix Mask,
 extern GrB_Info GxB_Matrix_subassign_UINT64(GrB_Matrix C, const GrB_Matrix Mask, const GrB_BinaryOp accum, uint64_t x, const GrB_Index *I, GrB_Index ni, const GrB_Index *J, GrB_Index nj, const GrB_Descriptor desc);
 extern GrB_Info GxB_Matrix_type(GrB_Type *type, const GrB_Matrix A);
 extern GrB_Info GxB_Row_subassign(GrB_Matrix C, const GrB_Vector mask, const GrB_BinaryOp accum, const GrB_Vector u, GrB_Index i, const GrB_Index *J, GrB_Index nj, const GrB_Descriptor desc);
+extern GrB_Info GxB_Vector_diag(GrB_Vector v, const GrB_Matrix A, int64_t k, const GrB_Descriptor desc);
 
 /* monoid */
 extern GrB_Info GxB_Monoid_fprint(GrB_Monoid monoid, const char *name, GxB_Print_Level pr, FILE *f);
@@ -2985,17 +2992,17 @@ extern GrB_Info GxB_Vector_assign_FC32(GrB_Vector w, const GrB_Vector mask, cons
 extern GrB_Info GxB_Vector_assign_FC64(GrB_Vector w, const GrB_Vector mask, const GrB_BinaryOp accum, GxB_FC64_t x, const GrB_Index *I, GrB_Index ni, const GrB_Descriptor desc);
 extern GrB_Info GxB_Vector_build_FC32(GrB_Vector w, const GrB_Index *I, const GxB_FC32_t *X, GrB_Index nvals, const GrB_BinaryOp dup);
 extern GrB_Info GxB_Vector_build_FC64(GrB_Vector w, const GrB_Index *I, const GxB_FC64_t *X, GrB_Index nvals, const GrB_BinaryOp dup);
-extern GrB_Info GxB_Vector_export_Bitmap(GrB_Vector *v, GrB_Type *type, GrB_Index *n, int8_t **vb, void **vx, GrB_Index *vb_size, GrB_Index *vx_size, GrB_Index *nvals, const GrB_Descriptor desc);
-extern GrB_Info GxB_Vector_export_CSC(GrB_Vector *v, GrB_Type *type, GrB_Index *n, GrB_Index **vi, void **vx, GrB_Index *vi_size, GrB_Index *vx_size, GrB_Index *nvals, bool *jumbled, const GrB_Descriptor desc);
-extern GrB_Info GxB_Vector_export_Full(GrB_Vector *v, GrB_Type *type, GrB_Index *n, void **vx, GrB_Index *vx_size, const GrB_Descriptor desc);
+extern GrB_Info GxB_Vector_export_Bitmap(GrB_Vector *v, GrB_Type *type, GrB_Index *n, int8_t **vb, void **vx, GrB_Index *vb_size, GrB_Index *vx_size, bool *is_uniform, GrB_Index *nvals, const GrB_Descriptor desc);
+extern GrB_Info GxB_Vector_export_CSC(GrB_Vector *v, GrB_Type *type, GrB_Index *n, GrB_Index **vi, void **vx, GrB_Index *vi_size, GrB_Index *vx_size, bool *is_uniform, GrB_Index *nvals, bool *jumbled, const GrB_Descriptor desc);
+extern GrB_Info GxB_Vector_export_Full(GrB_Vector *v, GrB_Type *type, GrB_Index *n, void **vx, GrB_Index *vx_size, bool *is_uniform, const GrB_Descriptor desc);
 extern GrB_Info GxB_Vector_extractElement_FC32(GxB_FC32_t *x, const GrB_Vector v, GrB_Index i);
 extern GrB_Info GxB_Vector_extractElement_FC64(GxB_FC64_t *x, const GrB_Vector v, GrB_Index i);
 extern GrB_Info GxB_Vector_extractTuples_FC32(GrB_Index *I, GxB_FC32_t *X, GrB_Index *nvals, const GrB_Vector v);
 extern GrB_Info GxB_Vector_extractTuples_FC64(GrB_Index *I, GxB_FC64_t *X, GrB_Index *nvals, const GrB_Vector v);
 extern GrB_Info GxB_Vector_fprint(GrB_Vector v, const char *name, GxB_Print_Level pr, FILE *f);
-extern GrB_Info GxB_Vector_import_Bitmap(GrB_Vector *v, GrB_Type type, GrB_Index n, int8_t **vb, void **vx, GrB_Index vb_size, GrB_Index vx_size, GrB_Index nvals, const GrB_Descriptor desc);
-extern GrB_Info GxB_Vector_import_CSC(GrB_Vector *v, GrB_Type type, GrB_Index n, GrB_Index **vi, void **vx, GrB_Index vi_size, GrB_Index vx_size, GrB_Index nvals, bool jumbled, const GrB_Descriptor desc);
-extern GrB_Info GxB_Vector_import_Full(GrB_Vector *v, GrB_Type type, GrB_Index n, void **vx, GrB_Index vx_size, const GrB_Descriptor desc);
+extern GrB_Info GxB_Vector_import_Bitmap(GrB_Vector *v, GrB_Type type, GrB_Index n, int8_t **vb, void **vx, GrB_Index vb_size, GrB_Index vx_size, bool is_uniform, GrB_Index nvals, const GrB_Descriptor desc);
+extern GrB_Info GxB_Vector_import_CSC(GrB_Vector *v, GrB_Type type, GrB_Index n, GrB_Index **vi, void **vx, GrB_Index vi_size, GrB_Index vx_size, bool is_uniform, GrB_Index nvals, bool jumbled, const GrB_Descriptor desc);
+extern GrB_Info GxB_Vector_import_Full(GrB_Vector *v, GrB_Type type, GrB_Index n, void **vx, GrB_Index vx_size, bool is_uniform, const GrB_Descriptor desc);
 extern GrB_Info GxB_Vector_reduce_FC32(GxB_FC32_t *c, const GrB_BinaryOp accum, const GrB_Monoid monoid, const GrB_Vector u, const GrB_Descriptor desc);
 extern GrB_Info GxB_Vector_reduce_FC64(GxB_FC64_t *c, const GrB_BinaryOp accum, const GrB_Monoid monoid, const GrB_Vector u, const GrB_Descriptor desc);
 extern GrB_Info GxB_Vector_select(GrB_Vector w, const GrB_Vector mask, const GrB_BinaryOp accum, const GxB_SelectOp op, const GrB_Vector u, const GxB_Scalar Thunk, const GrB_Descriptor desc);

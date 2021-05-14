@@ -301,6 +301,8 @@ CHAR_DEFINES = {
 }
 
 IGNORE_DEFINES = {
+    "GrB",
+    "GxB",
     "CMPLX",
     "CMPLXF",
     "GB_PUBLIC",
@@ -311,6 +313,12 @@ IGNORE_DEFINES = {
     "NMACRO",
     # deprecated
     "GxB_HYPER",
+}
+
+IGNORE_LINES = {
+    "GxB_cuda_calloc",
+    "GxB_cuda_malloc",
+    "GxB_cuda_free",
 }
 
 
@@ -410,6 +418,23 @@ def get_groups(ast):
     groups["not seen"] = sorted(set(lines) - seen, key=sort_key)
     for group in groups["not seen"]:
         assert "extern" not in group, group
+
+    unhandled = set()
+    for line in groups["not seen"]:
+        if "GrB" in line or "GxB" in line:
+            for item in IGNORE_LINES:
+                if item in line:
+                    break
+            else:
+                unhandled.add(line)
+    if unhandled:
+        raise ValueError(
+            "\n===================================\n"
+            "Unhandled functions with GrB or GxB\n"
+            "-----------------------------------\n    "
+            + "\n    ".join(sorted(unhandled))
+            + "\n==================================="
+        )
     return groups
 
 
