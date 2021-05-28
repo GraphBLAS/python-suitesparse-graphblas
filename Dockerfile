@@ -35,4 +35,3 @@ RUN ldconfig
 RUN /bin/rm -Rf /build
 WORKDIR /
 RUN pytest --pyargs suitesparse_graphblas.tests
-    
