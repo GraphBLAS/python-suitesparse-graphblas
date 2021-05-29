@@ -3,8 +3,7 @@ FROM ${BASE_CONTAINER}
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update \
-    && apt-get install -yq cmake gcc-multilib build-essential make libpython3-dev python3-pip git \
-    && apt-get clean
+    && apt-get install -yq build-essential cmake libpython3-dev python3-pip git
 
 ARG RELEASE=v5.0.3
 ARG COMPACT=0
@@ -35,3 +34,4 @@ RUN ldconfig
 RUN /bin/rm -Rf /build
 WORKDIR /
 RUN pytest --pyargs suitesparse_graphblas.tests
+RUN apt-get -y --purge remove git python3-pip && apt-get clean
