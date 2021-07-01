@@ -68,7 +68,7 @@ setup(
     ext_modules=ext_modules,
     cffi_modules=["suitesparse_graphblas/build.py:ffibuilder"],
     python_requires=">=3.7",
-    install_requires=["cffi>=1.0.0", "numpy>=1.15"],
+    install_requires=["cffi>=1.0.0", "numpy>=1.17"],
     setup_requires=["cffi>=1.0.0", "pytest-runner"],
     tests_require=["pytest"],
     license="Apache License 2.0",
