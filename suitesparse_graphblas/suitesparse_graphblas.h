@@ -2871,6 +2871,7 @@ extern GrB_Info GxB_Matrix_import_FullC(GrB_Matrix *A, GrB_Type type, GrB_Index 
 extern GrB_Info GxB_Matrix_import_FullR(GrB_Matrix *A, GrB_Type type, GrB_Index nrows, GrB_Index ncols, void **Ax, GrB_Index Ax_size, bool iso, const GrB_Descriptor desc);
 extern GrB_Info GxB_Matrix_import_HyperCSC(GrB_Matrix *A, GrB_Type type, GrB_Index nrows, GrB_Index ncols, GrB_Index **Ap, GrB_Index **Ah, GrB_Index **Ai, void **Ax, GrB_Index Ap_size, GrB_Index Ah_size, GrB_Index Ai_size, GrB_Index Ax_size, bool iso, GrB_Index nvec, bool jumbled, const GrB_Descriptor desc);
 extern GrB_Info GxB_Matrix_import_HyperCSR(GrB_Matrix *A, GrB_Type type, GrB_Index nrows, GrB_Index ncols, GrB_Index **Ap, GrB_Index **Ah, GrB_Index **Aj, void **Ax, GrB_Index Ap_size, GrB_Index Ah_size, GrB_Index Aj_size, GrB_Index Ax_size, bool iso, GrB_Index nvec, bool jumbled, const GrB_Descriptor desc);
+extern GrB_Info GxB_Matrix_iso(bool *iso, const GrB_Matrix A);
 extern GrB_Info GxB_Matrix_memoryUsage(size_t *size, const GrB_Matrix A);
 extern GrB_Info GxB_Matrix_pack_BitmapC(GrB_Matrix A, int8_t **Ab, void **Ax, GrB_Index Ab_size, GrB_Index Ax_size, bool iso, GrB_Index nvals, const GrB_Descriptor desc);
 extern GrB_Info GxB_Matrix_pack_BitmapR(GrB_Matrix A, int8_t **Ab, void **Ax, GrB_Index Ab_size, GrB_Index Ax_size, bool iso, GrB_Index nvals, const GrB_Descriptor desc);
@@ -3023,6 +3024,7 @@ extern GrB_Info GxB_Vector_fprint(GrB_Vector v, const char *name, GxB_Print_Leve
 extern GrB_Info GxB_Vector_import_Bitmap(GrB_Vector *v, GrB_Type type, GrB_Index n, int8_t **vb, void **vx, GrB_Index vb_size, GrB_Index vx_size, bool iso, GrB_Index nvals, const GrB_Descriptor desc);
 extern GrB_Info GxB_Vector_import_CSC(GrB_Vector *v, GrB_Type type, GrB_Index n, GrB_Index **vi, void **vx, GrB_Index vi_size, GrB_Index vx_size, bool iso, GrB_Index nvals, bool jumbled, const GrB_Descriptor desc);
 extern GrB_Info GxB_Vector_import_Full(GrB_Vector *v, GrB_Type type, GrB_Index n, void **vx, GrB_Index vx_size, bool iso, const GrB_Descriptor desc);
+extern GrB_Info GxB_Vector_iso(bool *iso, const GrB_Vector v);
 extern GrB_Info GxB_Vector_memoryUsage(size_t *size, const GrB_Vector v);
 extern GrB_Info GxB_Vector_pack_Bitmap(GrB_Vector v, int8_t **vb, void **vx, GrB_Index vb_size, GrB_Index vx_size, bool iso, GrB_Index nvals, const GrB_Descriptor desc);
 extern GrB_Info GxB_Vector_pack_CSC(GrB_Vector v, GrB_Index **vi, void **vx, GrB_Index vi_size, GrB_Index vx_size, bool iso, GrB_Index nvals, bool jumbled, const GrB_Descriptor desc);
