@@ -45,4 +45,6 @@ RUN apt-get -y --purge remove git python3-pip && apt-get clean
 FROM ${BASE_CONTAINER}
 COPY --from=suitesparse /usr/lib/x86_64-linux-gnu/libgraphblas* /usr/lib/x86_64-linux-gnu/
 COPY --from=suitesparse /usr/lib/x86_64-linux-gnu/libgomp* /usr/lib/x86_64-linux-gnu/
+COPY --from=suitesparse  /usr/include/GraphBLAS.h /usr/local/include/
 COPY --from=psg /usr/local/lib/python3.9/site-packages /usr/local/lib/python3.9/site-packages
+COPY --from=psg /build/python-suitesparse-graphblas/suitesparse_graphblas/suitesparse_graphblas.h /usr/local/include/
