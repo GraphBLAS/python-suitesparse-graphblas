@@ -49,12 +49,12 @@ def test_matrix_binfile_read_write(tmp_path):
     for compression in (None, "gzip"):
         for format in (lib.GxB_BY_ROW, lib.GxB_BY_COL):
             for T in grb_types:
-                A = ffi.new("GrB_Matrix*")
-                check_status(A, lib.GrB_Matrix_new(A, T, 2, 2))
-                for args in zip(*_test_elements(T)):
-                    f = _element_setters[T](A[0], *args)
-
                 for sparsity in (lib.GxB_HYPERSPARSE, lib.GxB_SPARSE, lib.GxB_BITMAP):
+                    A = ffi.new("GrB_Matrix*")
+                    check_status(A, lib.GrB_Matrix_new(A, T, 2, 2))
+                    for args in zip(*_test_elements(T)):
+                        f = _element_setters[T](A[0], *args)
+
                     check_status(
                         A[0],
                         lib.GxB_Matrix_Option_set(
@@ -70,6 +70,9 @@ def test_matrix_binfile_read_write(tmp_path):
                     binfilef = tmp_path / f"binfilewrite_test.binfile"
                     binary.binwrite(A, binfilef, compression=compression)
                     B = binary.binread(binfilef, compression=compression)
+
+                    check_status(A[0], lib.GrB_Matrix_free(A))
+                    check_status(B[0], lib.GrB_Matrix_free(B))
 
                 #     assert A.iseq(B)
                 #     assert A.sparsity == B.sparsity
