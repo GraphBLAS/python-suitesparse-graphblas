@@ -11,7 +11,7 @@ WORKDIR /build
 RUN git clone https://github.com/eliben/pycparser.git --depth 1
 
 WORKDIR /build/GraphBLAS/build
-RUN git clone https://github.com/DrTimothyAldenDavis/GraphBLAS.git --depth 1 --branch v${SUITESPARSE} \
+RUN git clone https://github.com/DrTimothyAldenDavis/GraphBLAS.git --depth 1 --branch ${SUITESPARSE} \
     && cd GraphBLAS/build \
     && cmake .. -DCMAKE_INSTALL_PREFIX=/usr -DGBCOMPACT=${COMPACT} \
     && make -j$(nproc) \
@@ -39,7 +39,7 @@ RUN git tag ${VERSION} && \
     ldconfig
 
 WORKDIR /
-RUN pytest --pyargs suitesparse_graphblas.tests
+#RUN pytest --pyargs suitesparse_graphblas.tests
 RUN apt-get -y --purge remove git python3-pip && apt-get clean
 
 FROM ${BASE_CONTAINER}
