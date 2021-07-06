@@ -12,9 +12,6 @@ from suitesparse_graphblas import (
 )
 from suitesparse_graphblas.io import binary
 
-initialize()
-
-
 def _test_elements(T):
     if T in bool_types:
         return [True, False], [0, 0], [1, 1]
