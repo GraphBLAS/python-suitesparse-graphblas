@@ -47,12 +47,20 @@ def test_matrix_binfile_read_write(tmp_path):
     for compression in (None, "gzip"):
         for format in (lib.GxB_BY_ROW, lib.GxB_BY_COL):
             for T in grb_types:
-                for sparsity in (lib.GxB_HYPERSPARSE, lib.GxB_SPARSE, lib.GxB_BITMAP):
+                for sparsity in (lib.GxB_HYPERSPARSE, lib.GxB_SPARSE, lib.GxB_BITMAP, lib.GxB_FULL):
                     A = ffi.new("GrB_Matrix*")
                     check_status(A, lib.GrB_Matrix_new(A, T, 2, 2))
-                    for args in zip(*_test_elements(T)):
-                        f = _element_setters[T](A[0], *args)
-
+                    if T is not lib.GxB_FULL:
+                        for args in zip(*_test_elements(T)):
+                            f = _element_setters[T]
+                            check_status(A[0], f(A[0], *args))
+                    else:
+                        Tone = _test_elements(T)[0][0]
+                        check_status(
+                            A[0],
+                            lib.GrB_assign(A, ffi.NULL, ffi.NULL, Tone,
+                                           lib.GrB_ALL, 0, lib.GrB_ALL, 0, ffi.NULL)
+                        )
                     check_status(
                         A[0],
                         lib.GxB_Matrix_Option_set(
