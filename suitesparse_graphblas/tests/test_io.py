@@ -103,6 +103,7 @@ def test_matrix_binfile_read_write(tmp_path):
                     check_status(B[0], lib.GrB_Matrix_ncols(Bncols, B[0]))
                     check_status(B[0], lib.GrB_Matrix_nvals(Bnvals, B[0]))
 
+                    assert Atype[0] == Btype[0]
                     assert Anrows[0] == Bnrows[0]
                     assert Ancols[0] == Bncols[0]
                     assert Anvals[0] == Bnvals[0]
