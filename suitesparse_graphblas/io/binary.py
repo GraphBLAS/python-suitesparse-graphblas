@@ -596,5 +596,6 @@ def binread(filename, compression=None):
             check_status(A[0], lib.GxB_Matrix_pack_FullR(A[0], Ax, Ax_size[0], is_iso[0], ffi.NULL))
         else:
             raise TypeError("Unknown format {format[0]}")
+        check_status(A[0], lib.GxB_Matrix_Option_set(A[0], lib.GxB_HYPER_SWITCH, hyper_switch))
         check_status(A[0], lib.GrB_Matrix_wait(A))
         return A
