@@ -91,59 +91,59 @@ complex_types = (
 grb_types = bool_types + integer_types + real_types + complex_types
 
 
-class GrblasException(Exception):
+class GraphBLASException(Exception):
     pass
 
 
-class NoValue(GrblasException):
+class NoValue(GraphBLASException):
     pass
 
 
-class UninitializedObject(GrblasException):
+class UninitializedObject(GraphBLASException):
     pass
 
 
-class InvalidObject(GrblasException):
+class InvalidObject(GraphBLASException):
     pass
 
 
-class NullPointer(GrblasException):
+class NullPointer(GraphBLASException):
     pass
 
 
-class InvalidValue(GrblasException):
+class InvalidValue(GraphBLASException):
     pass
 
 
-class InvalidIndex(GrblasException):
+class InvalidIndex(GraphBLASException):
     pass
 
 
-class DomainMismatch(GrblasException):
+class DomainMismatch(GraphBLASException):
     pass
 
 
-class DimensionMismatch(GrblasException):
+class DimensionMismatch(GraphBLASException):
     pass
 
 
-class OutputNotEmpty(GrblasException):
+class OutputNotEmpty(GraphBLASException):
     pass
 
 
-class OutOfMemory(GrblasException):
+class OutOfMemory(GraphBLASException):
     pass
 
 
-class InsufficientSpace(GrblasException):
+class InsufficientSpace(GraphBLASException):
     pass
 
 
-class IndexOutOfBound(GrblasException):
+class IndexOutOfBound(GraphBLASException):
     pass
 
 
-class Panic(GrblasException):
+class Panic(GraphBLASException):
     pass
 
 
