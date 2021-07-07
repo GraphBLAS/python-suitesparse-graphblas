@@ -12,6 +12,7 @@ from suitesparse_graphblas import (
 )
 from suitesparse_graphblas.io import binary
 
+
 def _test_elements(T):
     if T in bool_types:
         return [True, False], [0, 0], [1, 1]
@@ -67,6 +68,28 @@ def test_matrix_binfile_read_write(tmp_path):
                     binfilef = tmp_path / f"binfilewrite_test.binfile"
                     binary.binwrite(A, binfilef, compression=compression)
                     B = binary.binread(binfilef, compression=compression)
+
+                    Atype = ffi.new("GrB_Type*")
+                    Anrows = ffi.new("GrB_Index*")
+                    Ancols = ffi.new("GrB_Index*")
+                    Anvals = ffi.new("GrB_Index*")
+                    check_status(A[0], lib.GxB_Matrix_type(Atype, A[0]))
+                    check_status(A[0], lib.GrB_Matrix_nrows(Anrows, A[0]))
+                    check_status(A[0], lib.GrB_Matrix_ncols(Ancols, A[0]))
+                    check_status(A[0], lib.GrB_Matrix_nvals(Anvals, A[0]))
+
+                    Btype = ffi.new("GrB_Type*")
+                    Bnrows = ffi.new("GrB_Index*")
+                    Bncols = ffi.new("GrB_Index*")
+                    Bnvals = ffi.new("GrB_Index*")
+                    check_status(B[0], lib.GxB_Matrix_type(Btype, B[0]))
+                    check_status(B[0], lib.GrB_Matrix_nrows(Bnrows, B[0]))
+                    check_status(B[0], lib.GrB_Matrix_ncols(Bncols, B[0]))
+                    check_status(B[0], lib.GrB_Matrix_nvals(Bnvals, B[0]))
+
+                    assert Anrows[0] == Bnrows[0]
+                    assert Ancols[0] == Bncols[0]
+                    assert Anvals[0] == Bnvals[0]
 
                     check_status(A[0], lib.GrB_Matrix_free(A))
                     check_status(B[0], lib.GrB_Matrix_free(B))
