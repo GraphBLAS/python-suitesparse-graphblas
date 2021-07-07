@@ -58,8 +58,17 @@ def test_matrix_binfile_read_write(tmp_path):
                         Tone = _test_elements(T)[0][0]
                         check_status(
                             A[0],
-                            lib.GrB_assign(A, ffi.NULL, ffi.NULL, Tone,
-                                           lib.GrB_ALL, 0, lib.GrB_ALL, 0, ffi.NULL)
+                            lib.GrB_assign(
+                                A,
+                                ffi.NULL,
+                                ffi.NULL,
+                                Tone,
+                                lib.GrB_ALL,
+                                0,
+                                lib.GrB_ALL,
+                                0,
+                                ffi.NULL,
+                            ),
                         )
                     check_status(
                         A[0],
@@ -101,12 +110,3 @@ def test_matrix_binfile_read_write(tmp_path):
 
                     check_status(A[0], lib.GrB_Matrix_free(A))
                     check_status(B[0], lib.GrB_Matrix_free(B))
-
-                #     assert A.iseq(B)
-                #     assert A.sparsity == B.sparsity
-                # A[:, :] = typ.default_one
-                # A.sparsity = lib.GxB_FULL
-                # A.to_binfile(binfilef, compression=compression)
-                # B = Matrix.from_binfile(binfilef, compression=compression)
-                # assert A.iseq(B)
-                # assert A.sparsity == B.sparsity
