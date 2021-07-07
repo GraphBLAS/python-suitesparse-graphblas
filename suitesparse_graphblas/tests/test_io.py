@@ -8,7 +8,6 @@ from suitesparse_graphblas import (
     unsigned_integer_types,
     real_types,
     complex_types,
-    initialize,
 )
 from suitesparse_graphblas.io import binary
 
@@ -82,7 +81,7 @@ def test_matrix_binfile_read_write(tmp_path):
                             A[0], lib.GxB_FORMAT, ffi.cast("GxB_Format_Value", format)
                         ),
                     )
-                    binfilef = tmp_path / f"binfilewrite_test.binfile"
+                    binfilef = tmp_path / "binfilewrite_test.binfile"
                     binary.binwrite(A, binfilef, compression=compression)
                     B = binary.binread(binfilef, compression=compression)
 

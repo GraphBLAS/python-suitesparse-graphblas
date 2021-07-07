@@ -1,6 +1,5 @@
 from suitesparse_graphblas import ffi, lib, check_status, __version__
 from pathlib import Path
-import ctypes
 from cffi import FFI
 
 
@@ -120,7 +119,6 @@ def binwrite(A, filename, comments=None, compression=None):
     is_iso = ffinew("bool*")
     is_jumbled = ffinew("bool*")
 
-    nonempty = ffinew("int64_t*", -1)
     hyper_switch = ffinew("double*")
     typecode = ffinew("int32_t*")
     format = ffinew("GxB_Format_Value*")
@@ -283,7 +281,6 @@ def binwrite(A, filename, comments=None, compression=None):
         fwrite(buff(hyper_switch, sizeof("double")))
         fwrite(buff(nrows, Isize))
         fwrite(buff(ncols, Isize))
-        fwrite(buff(nonempty, sizeof("int64_t")))
         fwrite(buff(nvec, Isize))
         fwrite(buff(nvals, Isize))
         fwrite(buff(typecode, sizeof("int32_t")))
@@ -424,7 +421,7 @@ def binwrite(A, filename, comments=None, compression=None):
     else:
         raise TypeError("This should hever happen")
 
-    # check_status(A[0], lib.GxB_Matrix_Option_set(A[0], lib.GxB_HYPER_SWITCH, hyper_switch))
+    check_status(A[0], lib.GxB_Matrix_Option_set(A[0], lib.GxB_HYPER_SWITCH, hyper_switch))
 
 
 def binread(filename, compression=None):
@@ -440,13 +437,12 @@ def binread(filename, compression=None):
     with opener(filename, "rb") as f:
         fread = f.read
 
-        header = fread(GRB_HEADER_LEN)
+        fread(GRB_HEADER_LEN)
         format = frombuff("GxB_Format_Value*", fread(sizeof("GxB_Format_Value")))
         status = frombuff("int32_t*", fread(sizeof("int32_t")))
         hyper_switch = frombuff("double*", fread(sizeof("double")))
         nrows = frombuff("GrB_Index*", fread(Isize))
         ncols = frombuff("GrB_Index*", fread(Isize))
-        nonempty = frombuff("int64_t*", fread(sizeof("int64_t")))
         nvec = frombuff("GrB_Index*", fread(Isize))
         nvals = frombuff("GrB_Index*", fread(Isize))
         typecode = frombuff("int32_t*", fread(sizeof("int32_t")))
