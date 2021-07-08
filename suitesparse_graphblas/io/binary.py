@@ -30,7 +30,7 @@ GRB_HEADER_LEN = 512
 
 header_template = """\
 SuiteSparse:GraphBLAS matrix
-v{major}.{minor}.{sub} (pygraphblas {pyversion})
+{suitesparse_version} ({user_agent})
 nrows:   {nrows}
 ncols:   {ncols}
 nvec:    {nvec}
@@ -248,11 +248,15 @@ def binwrite(A, filename, comments=None, opener=Path.open):
     else:  # pragma nocover
         raise TypeError(f"Unknown Matrix format {format[0]}")
 
+    suitesparse_version = (
+        f"v{lib.GxB_IMPLEMENTATION_MAJOR}."
+        "{lib.GxB_IMPLEMENTATION_MINOR}."
+        "{lib.GxB_IMPLEMENTATION_SUB}"
+    )
+
     vars = dict(
-        major=lib.GxB_IMPLEMENTATION_MAJOR,
-        minor=lib.GxB_IMPLEMENTATION_MINOR,
-        sub=lib.GxB_IMPLEMENTATION_SUB,
-        pyversion=__version__,
+        suitesparse_version=suitesparse_version,
+        user_agent="pygraphblas-" + __version__,
         nrows=nrows[0],
         ncols=ncols[0],
         nvals=nvals[0],
