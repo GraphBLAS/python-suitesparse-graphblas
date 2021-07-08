@@ -113,9 +113,10 @@ def binwrite(A, filename, comments=None, opener=Path.open):
     is_iso = ffinew("bool*")
     is_jumbled = ffinew("bool*")
 
+    impl = ffi.new("uint64_t*", lib.GxB_IMPLEMENTATION)
+    format = ffinew("GxB_Format_Value*")
     hyper_switch = ffinew("double*")
     typecode = ffinew("int32_t*")
-    format = ffinew("GxB_Format_Value*")
     matrix_type = ffi.new("GrB_Type*")
     status = ffinew("int32_t*")
 
@@ -274,6 +275,7 @@ def binwrite(A, filename, comments=None, opener=Path.open):
     with opener(filename, "wb") as f:
         fwrite = f.write
         fwrite(header)
+        fwrite(buff(impl, sizeof("uint64_t")))
         fwrite(buff(format, sizeof("GxB_Format_Value")))
         fwrite(buff(status, sizeof("int32_t")))
         fwrite(buff(hyper_switch, sizeof("double")))
@@ -430,6 +432,10 @@ def binread(filename, opener=Path.open):
         fread = f.read
 
         fread(GRB_HEADER_LEN)
+        impl = frombuff("uint64_t*", fread(sizeof("uint64_t")))
+
+        assert impl[0] == lib.GxB_IMPLEMENTATION
+
         format = frombuff("GxB_Format_Value*", fread(sizeof("GxB_Format_Value")))
         status = frombuff("int32_t*", fread(sizeof("int32_t")))
         hyper_switch = frombuff("double*", fread(sizeof("double")))
