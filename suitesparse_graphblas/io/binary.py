@@ -10,7 +10,7 @@ stdffi.cdef(
 void *malloc(size_t size);
 """
 )
-stdlib = stdffi.dlopen(find_library('c'))
+stdlib = stdffi.dlopen(find_library("c"))
 
 # When "packing" a matrix the owner of the memory buffer is transfered
 # to SuiteSparse, which then becomes responsible for freeing it.  cffi
