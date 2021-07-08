@@ -1,5 +1,6 @@
-from suitesparse_graphblas import ffi, lib, check_status, __version__
 from pathlib import Path
+from ctypes.util import find_library
+from suitesparse_graphblas import ffi, lib, check_status, __version__
 from cffi import FFI
 
 
@@ -9,7 +10,7 @@ stdffi.cdef(
 void *malloc(size_t size);
 """
 )
-stdlib = stdffi.dlopen(None)
+stdlib = stdffi.dlopen(find_library('c'))
 
 # When "packing" a matrix the owner of the memory buffer is transfered
 # to SuiteSparse, which then becomes responsible for freeing it.  cffi
