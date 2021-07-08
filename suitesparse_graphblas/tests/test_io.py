@@ -1,4 +1,5 @@
 import gzip, bz2, lzma
+from pathlib import Path
 
 from suitesparse_graphblas import (
     ffi,
@@ -63,7 +64,7 @@ _eq_ops = {
 
 
 def test_matrix_binfile_read_write(tmp_path):
-    for opener in (None, gzip.open, bz2.open, lzma.open):
+    for opener in (Path.open, gzip.open, bz2.open, lzma.open):
         for format in (lib.GxB_BY_ROW, lib.GxB_BY_COL):
             for T in grb_types:
                 for sparsity in (lib.GxB_HYPERSPARSE, lib.GxB_SPARSE, lib.GxB_BITMAP, lib.GxB_FULL):
