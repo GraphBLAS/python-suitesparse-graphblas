@@ -70,12 +70,12 @@ def test_matrix_binfile_read_write(tmp_path):
                 for sparsity in (lib.GxB_HYPERSPARSE, lib.GxB_SPARSE, lib.GxB_BITMAP, lib.GxB_FULL):
 
                     A = ffi.new("GrB_Matrix*")
-                    check_status(A[0], lib.GrB_Matrix_new(A, T, 2, 2))
+                    check_status(A, lib.GrB_Matrix_new(A, T, 2, 2))
 
                     if T is not lib.GxB_FULL:
                         for args in zip(*_test_elements(T)):
                             f = _element_setters[T]
-                            check_status(A[0], f(A[0], *args))
+                            check_status(A, f(A[0], *args))
                     else:
                         Tone = _test_elements(T)[0][0]
                         check_status(
@@ -112,42 +112,75 @@ def test_matrix_binfile_read_write(tmp_path):
                     Anrows = ffi.new("GrB_Index*")
                     Ancols = ffi.new("GrB_Index*")
                     Anvals = ffi.new("GrB_Index*")
-                    check_status(A[0], lib.GxB_Matrix_type(Atype, A[0]))
-                    check_status(A[0], lib.GrB_Matrix_nrows(Anrows, A[0]))
-                    check_status(A[0], lib.GrB_Matrix_ncols(Ancols, A[0]))
-                    check_status(A[0], lib.GrB_Matrix_nvals(Anvals, A[0]))
+                    Asparsity_control = ffi.new("int32_t*")
+                    Ahyper_switch = ffi.new("double*")
+                    Abitmap_switch = ffi.new("double*")
+                    check_status(A, lib.GxB_Matrix_type(Atype, A[0]))
+                    check_status(A, lib.GrB_Matrix_nrows(Anrows, A[0]))
+                    check_status(A, lib.GrB_Matrix_ncols(Ancols, A[0]))
+                    check_status(A, lib.GrB_Matrix_nvals(Anvals, A[0]))
+                    check_status(
+                        A, lib.GxB_Matrix_Option_get(A[0], lib.GxB_HYPER_SWITCH, Ahyper_switch)
+                    )
+                    check_status(
+                        A, lib.GxB_Matrix_Option_get(A[0], lib.GxB_BITMAP_SWITCH, Abitmap_switch)
+                    )
+                    check_status(
+                        A,
+                        lib.GxB_Matrix_Option_get(
+                            A[0], lib.GxB_SPARSITY_CONTROL, Asparsity_control
+                        ),
+                    )
 
                     Btype = ffi.new("GrB_Type*")
                     Bnrows = ffi.new("GrB_Index*")
                     Bncols = ffi.new("GrB_Index*")
                     Bnvals = ffi.new("GrB_Index*")
-                    check_status(B[0], lib.GxB_Matrix_type(Btype, B[0]))
-                    check_status(B[0], lib.GrB_Matrix_nrows(Bnrows, B[0]))
-                    check_status(B[0], lib.GrB_Matrix_ncols(Bncols, B[0]))
-                    check_status(B[0], lib.GrB_Matrix_nvals(Bnvals, B[0]))
+                    Bsparsity_control = ffi.new("int32_t*")
+                    Bhyper_switch = ffi.new("double*")
+                    Bbitmap_switch = ffi.new("double*")
+                    check_status(B, lib.GxB_Matrix_type(Btype, B[0]))
+                    check_status(B, lib.GrB_Matrix_nrows(Bnrows, B[0]))
+                    check_status(B, lib.GrB_Matrix_ncols(Bncols, B[0]))
+                    check_status(B, lib.GrB_Matrix_nvals(Bnvals, B[0]))
+                    check_status(
+                        B, lib.GxB_Matrix_Option_get(B[0], lib.GxB_HYPER_SWITCH, Bhyper_switch)
+                    )
+                    check_status(
+                        B, lib.GxB_Matrix_Option_get(B[0], lib.GxB_BITMAP_SWITCH, Bbitmap_switch)
+                    )
+                    check_status(
+                        B,
+                        lib.GxB_Matrix_Option_get(
+                            B[0], lib.GxB_SPARSITY_CONTROL, Bsparsity_control
+                        ),
+                    )
 
                     assert Atype[0] == Btype[0]
                     assert Anrows[0] == Bnrows[0]
                     assert Ancols[0] == Bncols[0]
+                    assert Ahyper_switch[0] == Bhyper_switch[0]
+                    assert Abitmap_switch[0] == Bbitmap_switch[0]
+                    # assert Asparsity_control[0] == Bsparsity_control[0]
 
                     C = ffi.new("GrB_Matrix*")
-                    check_status(C[0], lib.GrB_Matrix_new(C, lib.GrB_BOOL, 2, 2))
+                    check_status(C, lib.GrB_Matrix_new(C, lib.GrB_BOOL, 2, 2))
 
                     check_status(
-                        C[0],
+                        C,
                         lib.GrB_Matrix_eWiseAdd_BinaryOp(
                             C[0], NULL, NULL, _eq_ops[T], A[0], B[0], NULL
                         ),
                     )
 
                     Cnvals = ffi.new("GrB_Index*")
-                    check_status(C[0], lib.GrB_Matrix_nvals(Cnvals, C[0]))
+                    check_status(C, lib.GrB_Matrix_nvals(Cnvals, C[0]))
 
                     assert Cnvals[0] == Anvals[0] == Bnvals[0]
 
                     is_eq = ffi.new("bool*")
                     check_status(
-                        C[0],
+                        C,
                         lib.GrB_Matrix_reduce_BOOL(
                             is_eq, NULL, lib.GrB_LAND_MONOID_BOOL, C[0], NULL
                         ),
@@ -155,6 +188,6 @@ def test_matrix_binfile_read_write(tmp_path):
 
                     assert is_eq[0]
 
-                    check_status(A[0], lib.GrB_Matrix_free(A))
-                    check_status(B[0], lib.GrB_Matrix_free(B))
-                    check_status(C[0], lib.GrB_Matrix_free(C))
+                    check_status(A, lib.GrB_Matrix_free(A))
+                    check_status(B, lib.GrB_Matrix_free(B))
+                    check_status(C, lib.GrB_Matrix_free(C))

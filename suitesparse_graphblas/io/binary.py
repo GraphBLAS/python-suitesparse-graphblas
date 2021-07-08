@@ -27,6 +27,7 @@ def readinto_new_buffer(f, typ, size, allocator=stdlib.malloc):
 
 
 GRB_HEADER_LEN = 512
+NULL = ffi.NULL
 
 header_template = """\
 SuiteSparse:GraphBLAS matrix
@@ -88,7 +89,7 @@ def binwrite(A, filename, comments=None, opener=Path.open):
     if isinstance(filename, str):
         filename = Path(filename)
 
-    check_status(A[0], lib.GrB_Matrix_wait(A))
+    check_status(A, lib.GrB_Matrix_wait(A))
 
     ffinew = ffi.new
 
@@ -116,33 +117,39 @@ def binwrite(A, filename, comments=None, opener=Path.open):
     impl = ffi.new("uint64_t*", lib.GxB_IMPLEMENTATION)
     format = ffinew("GxB_Format_Value*")
     hyper_switch = ffinew("double*")
+    bitmap_switch = ffinew("double*")
+    sparsity_control = ffinew("int32_t*")
+    sparsity_status = ffinew("int32_t*")
+
     typecode = ffinew("int32_t*")
     matrix_type = ffi.new("GrB_Type*")
-    status = ffinew("int32_t*")
+    sparsity_status = ffinew("int32_t*")
 
-    check_status(A[0], lib.GrB_Matrix_nrows(nrows, A[0]))
-    check_status(A[0], lib.GrB_Matrix_ncols(ncols, A[0]))
-    check_status(A[0], lib.GrB_Matrix_nvals(nvals, A[0]))
+    check_status(A, lib.GrB_Matrix_nrows(nrows, A[0]))
+    check_status(A, lib.GrB_Matrix_ncols(ncols, A[0]))
+    check_status(A, lib.GrB_Matrix_nvals(nvals, A[0]))
 
-    check_status(A[0], lib.GxB_Matrix_type(matrix_type, A[0]))
-    check_status(A[0], lib.GxB_Type_size(typesize, matrix_type[0]))
+    check_status(A, lib.GxB_Matrix_type(matrix_type, A[0]))
+    check_status(A, lib.GxB_Type_size(typesize, matrix_type[0]))
     typecode[0] = _ss_typecodes[matrix_type[0]]
 
-    check_status(A[0], lib.GxB_Matrix_Option_get(A[0], lib.GxB_HYPER_SWITCH, hyper_switch))
-    check_status(A[0], lib.GxB_Matrix_Option_get(A[0], lib.GxB_FORMAT, format))
-    check_status(A[0], lib.GxB_Matrix_Option_get(A[0], lib.GxB_SPARSITY_STATUS, status))
+    check_status(A, lib.GxB_Matrix_Option_get(A[0], lib.GxB_FORMAT, format))
+    check_status(A, lib.GxB_Matrix_Option_get(A[0], lib.GxB_HYPER_SWITCH, hyper_switch))
+    check_status(A, lib.GxB_Matrix_Option_get(A[0], lib.GxB_BITMAP_SWITCH, bitmap_switch))
+    check_status(A, lib.GxB_Matrix_Option_get(A[0], lib.GxB_SPARSITY_STATUS, sparsity_status))
+    check_status(A, lib.GxB_Matrix_Option_get(A[0], lib.GxB_SPARSITY_CONTROL, sparsity_control))
 
     by_row = format[0] == lib.GxB_BY_ROW
     by_col = format[0] == lib.GxB_BY_COL
 
-    is_hyper = status[0] == lib.GxB_HYPERSPARSE
-    is_sparse = status[0] == lib.GxB_SPARSE
-    is_bitmap = status[0] == lib.GxB_BITMAP
-    is_full = status[0] == lib.GxB_FULL
+    is_hyper = sparsity_status[0] == lib.GxB_HYPERSPARSE
+    is_sparse = sparsity_status[0] == lib.GxB_SPARSE
+    is_bitmap = sparsity_status[0] == lib.GxB_BITMAP
+    is_full = sparsity_status[0] == lib.GxB_FULL
 
     if by_col and is_hyper:
         check_status(
-            A[0],
+            A,
             lib.GxB_Matrix_unpack_HyperCSC(
                 A[0],
                 Ap,
@@ -156,14 +163,14 @@ def binwrite(A, filename, comments=None, opener=Path.open):
                 is_iso,
                 nvec,
                 is_jumbled,
-                ffi.NULL,
+                NULL,
             ),
         )
         fmt_string = "HCSC"
 
     elif by_row and is_hyper:
         check_status(
-            A[0],
+            A,
             lib.GxB_Matrix_unpack_HyperCSR(
                 A[0],
                 Ap,
@@ -177,25 +184,16 @@ def binwrite(A, filename, comments=None, opener=Path.open):
                 is_iso,
                 nvec,
                 is_jumbled,
-                ffi.NULL,
+                NULL,
             ),
         )
         fmt_string = "HCSR"
 
     elif by_col and is_sparse:
         check_status(
-            A[0],
+            A,
             lib.GxB_Matrix_unpack_CSC(
-                A[0],
-                Ap,
-                Ai,
-                Ax,
-                Ap_size,
-                Ai_size,
-                Ax_size,
-                is_iso,
-                is_jumbled,
-                ffi.NULL,
+                A[0], Ap, Ai, Ax, Ap_size, Ai_size, Ax_size, is_iso, is_jumbled, NULL
             ),
         )
         nvec[0] = ncols[0]
@@ -203,18 +201,9 @@ def binwrite(A, filename, comments=None, opener=Path.open):
 
     elif by_row and is_sparse:
         check_status(
-            A[0],
+            A,
             lib.GxB_Matrix_unpack_CSR(
-                A[0],
-                Ap,
-                Ai,
-                Ax,
-                Ap_size,
-                Ai_size,
-                Ax_size,
-                is_iso,
-                is_jumbled,
-                ffi.NULL,
+                A[0], Ap, Ai, Ax, Ap_size, Ai_size, Ax_size, is_iso, is_jumbled, NULL
             ),
         )
         nvec[0] = nrows[0]
@@ -222,27 +211,25 @@ def binwrite(A, filename, comments=None, opener=Path.open):
 
     elif by_col and is_bitmap:
         check_status(
-            A[0],
-            lib.GxB_Matrix_unpack_BitmapC(A[0], Ab, Ax, Ab_size, Ax_size, is_iso, nvals, ffi.NULL),
+            A, lib.GxB_Matrix_unpack_BitmapC(A[0], Ab, Ax, Ab_size, Ax_size, is_iso, nvals, NULL)
         )
         nvec[0] = ncols[0]
         fmt_string = "BITMAPC"
 
     elif by_row and is_bitmap:
         check_status(
-            A[0],
-            lib.GxB_Matrix_unpack_BitmapR(A[0], Ab, Ax, Ab_size, Ax_size, is_iso, nvals, ffi.NULL),
+            A, lib.GxB_Matrix_unpack_BitmapR(A[0], Ab, Ax, Ab_size, Ax_size, is_iso, nvals, NULL)
         )
         nvec[0] = nrows[0]
         fmt_string = "BITMAPR"
 
     elif by_col and is_full:
-        check_status(A[0], lib.GxB_Matrix_unpack_FullC(A[0], Ax, Ax_size, is_iso, ffi.NULL))
+        check_status(A, lib.GxB_Matrix_unpack_FullC(A[0], Ax, Ax_size, is_iso, NULL))
         nvec[0] = ncols[0]
         fmt_string = "FULLC"
 
     elif by_row and is_full:
-        check_status(A[0], lib.GxB_Matrix_unpack_FullR(A[0], Ax, Ax_size, is_iso, ffi.NULL))
+        check_status(A, lib.GxB_Matrix_unpack_FullR(A[0], Ax, Ax_size, is_iso, NULL))
         nvec[0] = nrows[0]
         fmt_string = "FULLR"
 
@@ -277,8 +264,10 @@ def binwrite(A, filename, comments=None, opener=Path.open):
         fwrite(header)
         fwrite(buff(impl, sizeof("uint64_t")))
         fwrite(buff(format, sizeof("GxB_Format_Value")))
-        fwrite(buff(status, sizeof("int32_t")))
+        fwrite(buff(sparsity_status, sizeof("int32_t")))
+        fwrite(buff(sparsity_control, sizeof("int32_t")))
         fwrite(buff(hyper_switch, sizeof("double")))
+        fwrite(buff(bitmap_switch, sizeof("double")))
         fwrite(buff(nrows, Isize))
         fwrite(buff(ncols, Isize))
         fwrite(buff(nvec, Isize))
@@ -311,7 +300,7 @@ def binwrite(A, filename, comments=None, opener=Path.open):
 
     if by_col and is_hyper:
         check_status(
-            A[0],
+            A,
             lib.GxB_Matrix_pack_HyperCSC(
                 A[0],
                 Ap,
@@ -325,13 +314,13 @@ def binwrite(A, filename, comments=None, opener=Path.open):
                 is_iso[0],
                 nvec[0],
                 is_jumbled[0],
-                ffi.NULL,
+                NULL,
             ),
         )
 
     elif by_row and is_hyper:
         check_status(
-            A[0],
+            A,
             lib.GxB_Matrix_pack_HyperCSR(
                 A[0],
                 Ap,
@@ -345,83 +334,49 @@ def binwrite(A, filename, comments=None, opener=Path.open):
                 is_iso[0],
                 nvec[0],
                 is_jumbled[0],
-                ffi.NULL,
+                NULL,
             ),
         )
 
     elif by_col and is_sparse:
         check_status(
-            A[0],
+            A,
             lib.GxB_Matrix_pack_CSC(
-                A[0],
-                Ap,
-                Ai,
-                Ax,
-                Ap_size[0],
-                Ai_size[0],
-                Ax_size[0],
-                is_iso[0],
-                is_jumbled[0],
-                ffi.NULL,
+                A[0], Ap, Ai, Ax, Ap_size[0], Ai_size[0], Ax_size[0], is_iso[0], is_jumbled[0], NULL
             ),
         )
 
     elif by_row and is_sparse:
         check_status(
-            A[0],
+            A,
             lib.GxB_Matrix_pack_CSR(
-                A[0],
-                Ap,
-                Ai,
-                Ax,
-                Ap_size[0],
-                Ai_size[0],
-                Ax_size[0],
-                is_iso[0],
-                is_jumbled[0],
-                ffi.NULL,
+                A[0], Ap, Ai, Ax, Ap_size[0], Ai_size[0], Ax_size[0], is_iso[0], is_jumbled[0], NULL
             ),
         )
 
     elif by_col and is_bitmap:
         check_status(
-            A[0],
+            A,
             lib.GxB_Matrix_pack_BitmapC(
-                A[0],
-                Ab,
-                Ax,
-                Ab_size[0],
-                Ax_size[0],
-                is_iso[0],
-                nvals[0],
-                ffi.NULL,
+                A[0], Ab, Ax, Ab_size[0], Ax_size[0], is_iso[0], nvals[0], NULL
             ),
         )
 
     elif by_row and is_bitmap:
         check_status(
-            A[0],
+            A,
             lib.GxB_Matrix_pack_BitmapR(
-                A[0],
-                Ab,
-                Ax,
-                Ab_size[0],
-                Ax_size[0],
-                is_iso[0],
-                nvals[0],
-                ffi.NULL,
+                A[0], Ab, Ax, Ab_size[0], Ax_size[0], is_iso[0], nvals[0], NULL
             ),
         )
 
     elif by_col and is_full:
-        check_status(A[0], lib.GxB_Matrix_pack_FullC(A[0], Ax, Ax_size[0], is_iso[0], ffi.NULL))
+        check_status(A, lib.GxB_Matrix_pack_FullC(A[0], Ax, Ax_size[0], is_iso[0], NULL))
 
     elif by_row and is_full:
-        check_status(A[0], lib.GxB_Matrix_pack_FullR(A[0], Ax, Ax_size[0], is_iso[0], ffi.NULL))
+        check_status(A, lib.GxB_Matrix_pack_FullR(A[0], Ax, Ax_size[0], is_iso[0], NULL))
     else:
         raise TypeError("This should hever happen")
-
-    check_status(A[0], lib.GxB_Matrix_Option_set(A[0], lib.GxB_HYPER_SWITCH, hyper_switch))
 
 
 def binread(filename, opener=Path.open):
@@ -437,8 +392,10 @@ def binread(filename, opener=Path.open):
         assert impl[0] == lib.GxB_IMPLEMENTATION
 
         format = frombuff("GxB_Format_Value*", fread(sizeof("GxB_Format_Value")))
-        status = frombuff("int32_t*", fread(sizeof("int32_t")))
+        sparsity_status = frombuff("int32_t*", fread(sizeof("int32_t")))
+        sparsity_control = frombuff("int32_t*", fread(sizeof("int32_t")))
         hyper_switch = frombuff("double*", fread(sizeof("double")))
+        bitmap_switch = frombuff("double*", fread(sizeof("double")))
         nrows = frombuff("GrB_Index*", fread(Isize))
         ncols = frombuff("GrB_Index*", fread(Isize))
         nvec = frombuff("GrB_Index*", fread(Isize))
@@ -451,10 +408,10 @@ def binread(filename, opener=Path.open):
         by_row = format[0] == lib.GxB_BY_ROW
         by_col = format[0] == lib.GxB_BY_COL
 
-        is_hyper = status[0] == lib.GxB_HYPERSPARSE
-        is_sparse = status[0] == lib.GxB_SPARSE
-        is_bitmap = status[0] == lib.GxB_BITMAP
-        is_full = status[0] == lib.GxB_FULL
+        is_hyper = sparsity_status[0] == lib.GxB_HYPERSPARSE
+        is_sparse = sparsity_status[0] == lib.GxB_SPARSE
+        is_bitmap = sparsity_status[0] == lib.GxB_BITMAP
+        is_full = sparsity_status[0] == lib.GxB_FULL
 
         atype = _ss_codetypes[typecode[0]]
 
@@ -495,11 +452,11 @@ def binread(filename, opener=Path.open):
         Ax[0] = readinto_new_buffer(f, "uint8_t*", Ax_size[0])
 
         A = ffi.new("GrB_Matrix*")
-        check_status(A[0], lib.GrB_Matrix_new(A, atype, nrows[0], ncols[0]))
+        check_status(A, lib.GrB_Matrix_new(A, atype, nrows[0], ncols[0]))
 
         if by_col and is_hyper:
             check_status(
-                A[0],
+                A,
                 lib.GxB_Matrix_pack_HyperCSC(
                     A[0],
                     Ap,
@@ -513,13 +470,13 @@ def binread(filename, opener=Path.open):
                     is_iso[0],
                     nvec[0],
                     is_jumbled[0],
-                    ffi.NULL,
+                    NULL,
                 ),
             )
 
         elif by_row and is_hyper:
             check_status(
-                A[0],
+                A,
                 lib.GxB_Matrix_pack_HyperCSR(
                     A[0],
                     Ap,
@@ -533,13 +490,13 @@ def binread(filename, opener=Path.open):
                     is_iso[0],
                     nvec[0],
                     is_jumbled[0],
-                    ffi.NULL,
+                    NULL,
                 ),
             )
 
         elif by_col and is_sparse:
             check_status(
-                A[0],
+                A,
                 lib.GxB_Matrix_pack_CSC(
                     A[0],
                     Ap,
@@ -550,13 +507,13 @@ def binread(filename, opener=Path.open):
                     Ax_size[0],
                     is_iso[0],
                     is_jumbled[0],
-                    ffi.NULL,
+                    NULL,
                 ),
             )
 
         elif by_row and is_sparse:
             check_status(
-                A[0],
+                A,
                 lib.GxB_Matrix_pack_CSR(
                     A[0],
                     Ap,
@@ -567,33 +524,50 @@ def binread(filename, opener=Path.open):
                     Ax_size[0],
                     is_iso[0],
                     is_jumbled[0],
-                    ffi.NULL,
+                    NULL,
                 ),
             )
 
         elif by_col and is_bitmap:
             check_status(
-                A[0],
+                A,
                 lib.GxB_Matrix_pack_BitmapC(
-                    A[0], Ab, Ax, Ab_size[0], Ax_size[0], is_iso[0], nvals[0], ffi.NULL
+                    A[0], Ab, Ax, Ab_size[0], Ax_size[0], is_iso[0], nvals[0], NULL
                 ),
             )
 
         elif by_row and is_bitmap:
             check_status(
-                A[0],
+                A,
                 lib.GxB_Matrix_pack_BitmapR(
-                    A[0], Ab, Ax, Ab_size[0], Ax_size[0], is_iso[0], nvals[0], ffi.NULL
+                    A[0], Ab, Ax, Ab_size[0], Ax_size[0], is_iso[0], nvals[0], NULL
                 ),
             )
 
         elif by_col and is_full:
-            check_status(A[0], lib.GxB_Matrix_pack_FullC(A[0], Ax, Ax_size[0], is_iso[0], ffi.NULL))
+            check_status(A, lib.GxB_Matrix_pack_FullC(A[0], Ax, Ax_size[0], is_iso[0], NULL))
 
         elif by_row and is_full:
-            check_status(A[0], lib.GxB_Matrix_pack_FullR(A[0], Ax, Ax_size[0], is_iso[0], ffi.NULL))
+            check_status(A, lib.GxB_Matrix_pack_FullR(A[0], Ax, Ax_size[0], is_iso[0], NULL))
         else:
             raise TypeError("Unknown format {format[0]}")
-        check_status(A[0], lib.GxB_Matrix_Option_set(A[0], lib.GxB_HYPER_SWITCH, hyper_switch))
-        check_status(A[0], lib.GrB_Matrix_wait(A))
+        check_status(
+            A,
+            lib.GxB_Matrix_Option_set(
+                A[0], lib.GxB_SPARSITY_CONTROL, ffi.cast("int32_t", sparsity_control[0])
+            ),
+        )
+        check_status(
+            A,
+            lib.GxB_Matrix_Option_set(
+                A[0], lib.GxB_HYPER_SWITCH, ffi.cast("double", hyper_switch[0])
+            ),
+        )
+        check_status(
+            A,
+            lib.GxB_Matrix_Option_set(
+                A[0], lib.GxB_BITMAP_SWITCH, ffi.cast("double", bitmap_switch[0])
+            ),
+        )
+        check_status(A, lib.GrB_Matrix_wait(A))
         return A
