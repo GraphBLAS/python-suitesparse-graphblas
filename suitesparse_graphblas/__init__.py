@@ -8,6 +8,10 @@ def is_initialized():
     return lib.GxB_Global_Option_get(lib.GxB_MODE, ffi.new("GrB_Mode*")) != lib.GrB_PANIC
 
 
+def supports_complex():
+    return hasattr(lib, "GrB_FC64") or hasattr(lib, "GxB_FC64")
+
+
 def initialize(*, blocking=False, memory_manager="numpy"):
     """Initialize GraphBLAS via GrB_init or GxB_init.
 
@@ -82,10 +86,13 @@ real_types = (
     lib.GrB_FP64,
 )
 
-complex_types = (
-    lib.GxB_FC32,
-    lib.GxB_FC64,
-)
+if supports_complex():
+    complex_types = (
+        lib.GxB_FC32,
+        lib.GxB_FC64,
+    )
+else:
+    complex_types = ()
 
 
 grb_types = bool_types + integer_types + real_types + complex_types

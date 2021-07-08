@@ -13,6 +13,7 @@ from suitesparse_graphblas import (
     unsigned_integer_types,
     real_types,
     complex_types,
+    supports_complex,
 )
 
 from suitesparse_graphblas.io import binary
@@ -45,9 +46,16 @@ _element_setters = {
     lib.GrB_UINT64: lib.GrB_Matrix_setElement_UINT64,
     lib.GrB_FP32: lib.GrB_Matrix_setElement_FP32,
     lib.GrB_FP64: lib.GrB_Matrix_setElement_FP64,
-    lib.GxB_FC32: lib.GxB_Matrix_setElement_FC32,
-    lib.GxB_FC64: lib.GxB_Matrix_setElement_FC64,
 }
+
+if supports_complex():
+    _element_setters.update(
+        {
+            lib.GxB_FC32: lib.GxB_Matrix_setElement_FC32,
+            lib.GxB_FC64: lib.GxB_Matrix_setElement_FC64,
+        }
+    )
+
 
 _eq_ops = {
     lib.GrB_BOOL: lib.GrB_EQ_BOOL,
@@ -61,9 +69,15 @@ _eq_ops = {
     lib.GrB_UINT64: lib.GrB_EQ_UINT64,
     lib.GrB_FP32: lib.GrB_EQ_FP32,
     lib.GrB_FP64: lib.GrB_EQ_FP64,
-    lib.GxB_FC32: lib.GxB_EQ_FC32,
-    lib.GxB_FC64: lib.GxB_EQ_FC64,
 }
+
+if supports_complex():
+    _eq_ops.update(
+        {
+            lib.GxB_FC32: lib.GxB_EQ_FC32,
+            lib.GxB_FC64: lib.GxB_EQ_FC64,
+        }
+    )
 
 
 def test_matrix_binfile_read_write(tmp_path):
