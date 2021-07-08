@@ -1,5 +1,9 @@
 import platform
 import pytest
+
+if platform.system() == "Windows":
+    pytest.skip("skipping windows-only tests", allow_module_level=True)
+
 import gzip
 import bz2
 import lzma
@@ -19,10 +23,6 @@ from suitesparse_graphblas import (
 )
 
 from suitesparse_graphblas.io import binary
-
-if platform.system() == "Windows":
-    pytest.skip("skipping windows-only tests", allow_module_level=True)
-
 
 NULL = ffi.NULL
 
