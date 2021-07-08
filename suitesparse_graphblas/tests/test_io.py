@@ -1,4 +1,6 @@
-import gzip, bz2, lzma
+import gzip
+import bz2
+import lzma
 from pathlib import Path
 
 from suitesparse_graphblas import (
@@ -12,6 +14,7 @@ from suitesparse_graphblas import (
     real_types,
     complex_types,
 )
+
 from suitesparse_graphblas.io import binary
 
 NULL = ffi.NULL

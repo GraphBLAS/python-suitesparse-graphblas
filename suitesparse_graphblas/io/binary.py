@@ -40,7 +40,7 @@ format:  {format}
 size:    {size}
 type:    {type}
 iso:     {iso}
-jumbled: {iso}
+jumbled: {jumbled}
 {comments}
 """
 
