@@ -84,15 +84,11 @@ _ss_typenames = {
 _ss_codetypes = {v: k for k, v in _ss_typecodes.items()}
 
 
-def binwrite(A, filename, comments=None, compression=None):
+def binwrite(A, filename, comments=None, opener=None):
     if isinstance(filename, str):
         filename = Path(filename)
-    if compression is None:
+    if opener is None:
         opener = Path.open
-    elif compression == "gzip":
-        import gzip
-
-        opener = gzip.open
 
     check_status(A[0], lib.GrB_Matrix_wait(A))
 
@@ -424,15 +420,11 @@ def binwrite(A, filename, comments=None, compression=None):
     check_status(A[0], lib.GxB_Matrix_Option_set(A[0], lib.GxB_HYPER_SWITCH, hyper_switch))
 
 
-def binread(filename, compression=None):
+def binread(filename, opener=None):
     if isinstance(filename, str):
         filename = Path(filename)
-    if compression is None:
+    if opener is None:
         opener = Path.open
-    elif compression == "gzip":
-        import gzip
-
-        opener = gzip.open
 
     with opener(filename, "rb") as f:
         fread = f.read

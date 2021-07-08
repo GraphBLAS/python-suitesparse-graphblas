@@ -1,3 +1,5 @@
+import gzip, bz2, lzma
+
 from suitesparse_graphblas import (
     ffi,
     lib,
@@ -10,6 +12,8 @@ from suitesparse_graphblas import (
     complex_types,
 )
 from suitesparse_graphblas.io import binary
+
+NULL = ffi.NULL
 
 
 def _test_elements(T):
@@ -41,14 +45,32 @@ _element_setters = {
     lib.GxB_FC64: lib.GxB_Matrix_setElement_FC64,
 }
 
+_eq_ops = {
+    lib.GrB_BOOL: lib.GrB_EQ_BOOL,
+    lib.GrB_INT8: lib.GrB_EQ_INT8,
+    lib.GrB_INT16: lib.GrB_EQ_INT16,
+    lib.GrB_INT32: lib.GrB_EQ_INT32,
+    lib.GrB_INT64: lib.GrB_EQ_INT64,
+    lib.GrB_UINT8: lib.GrB_EQ_UINT8,
+    lib.GrB_UINT16: lib.GrB_EQ_UINT16,
+    lib.GrB_UINT32: lib.GrB_EQ_UINT32,
+    lib.GrB_UINT64: lib.GrB_EQ_UINT64,
+    lib.GrB_FP32: lib.GrB_EQ_FP32,
+    lib.GrB_FP64: lib.GrB_EQ_FP64,
+    lib.GxB_FC32: lib.GxB_EQ_FC32,
+    lib.GxB_FC64: lib.GxB_EQ_FC64,
+}
+
 
 def test_matrix_binfile_read_write(tmp_path):
-    for compression in (None, "gzip"):
+    for opener in (None, gzip.open, bz2.open, lzma.open):
         for format in (lib.GxB_BY_ROW, lib.GxB_BY_COL):
             for T in grb_types:
                 for sparsity in (lib.GxB_HYPERSPARSE, lib.GxB_SPARSE, lib.GxB_BITMAP, lib.GxB_FULL):
+
                     A = ffi.new("GrB_Matrix*")
-                    check_status(A, lib.GrB_Matrix_new(A, T, 2, 2))
+                    check_status(A[0], lib.GrB_Matrix_new(A, T, 2, 2))
+
                     if T is not lib.GxB_FULL:
                         for args in zip(*_test_elements(T)):
                             f = _element_setters[T]
@@ -59,14 +81,14 @@ def test_matrix_binfile_read_write(tmp_path):
                             A[0],
                             lib.GrB_assign(
                                 A,
-                                ffi.NULL,
-                                ffi.NULL,
+                                NULL,
+                                NULL,
                                 Tone,
                                 lib.GrB_ALL,
                                 0,
                                 lib.GrB_ALL,
                                 0,
-                                ffi.NULL,
+                                NULL,
                             ),
                         )
                     check_status(
@@ -82,8 +104,8 @@ def test_matrix_binfile_read_write(tmp_path):
                         ),
                     )
                     binfilef = tmp_path / "binfilewrite_test.binfile"
-                    binary.binwrite(A, binfilef, compression=compression)
-                    B = binary.binread(binfilef, compression=compression)
+                    binary.binwrite(A, binfilef, opener=opener)
+                    B = binary.binread(binfilef, opener=opener)
 
                     Atype = ffi.new("GrB_Type*")
                     Anrows = ffi.new("GrB_Index*")
@@ -106,7 +128,32 @@ def test_matrix_binfile_read_write(tmp_path):
                     assert Atype[0] == Btype[0]
                     assert Anrows[0] == Bnrows[0]
                     assert Ancols[0] == Bncols[0]
-                    assert Anvals[0] == Bnvals[0]
+
+                    C = ffi.new("GrB_Matrix*")
+                    check_status(C[0], lib.GrB_Matrix_new(C, lib.GrB_BOOL, 2, 2))
+
+                    check_status(
+                        C[0],
+                        lib.GrB_Matrix_eWiseAdd_BinaryOp(
+                            C[0], NULL, NULL, _eq_ops[T], A[0], B[0], NULL
+                        ),
+                    )
+
+                    Cnvals = ffi.new("GrB_Index*")
+                    check_status(C[0], lib.GrB_Matrix_nvals(Cnvals, C[0]))
+
+                    assert Cnvals[0] == Anvals[0] == Bnvals[0]
+
+                    is_eq = ffi.new("bool*")
+                    check_status(
+                        C[0],
+                        lib.GrB_Matrix_reduce_BOOL(
+                            is_eq, NULL, lib.GrB_LAND_MONOID_BOOL, C[0], NULL
+                        ),
+                    )
+
+                    assert is_eq[0]
 
                     check_status(A[0], lib.GrB_Matrix_free(A))
                     check_status(B[0], lib.GrB_Matrix_free(B))
+                    check_status(C[0], lib.GrB_Matrix_free(C))
