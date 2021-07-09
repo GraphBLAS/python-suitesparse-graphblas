@@ -570,5 +570,4 @@ def binread(filename, opener=Path.open):
                 A[0], lib.GxB_BITMAP_SWITCH, ffi.cast("double", bitmap_switch[0])
             ),
         )
-        check_status(A, lib.GrB_Matrix_wait(A))
         return A
