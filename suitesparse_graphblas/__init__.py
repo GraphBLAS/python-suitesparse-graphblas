@@ -1,6 +1,7 @@
 from ._graphblas import ffi, lib  # noqa
 from . import utils
 from ._version import get_versions
+from . import exceptions as ex
 
 
 def is_initialized():
@@ -98,79 +99,23 @@ else:
 grb_types = bool_types + integer_types + real_types + complex_types
 
 
-class GraphBLASException(Exception):
-    pass
-
-
-class NoValue(GraphBLASException):
-    pass
-
-
-class UninitializedObject(GraphBLASException):
-    pass
-
-
-class InvalidObject(GraphBLASException):
-    pass
-
-
-class NullPointer(GraphBLASException):
-    pass
-
-
-class InvalidValue(GraphBLASException):
-    pass
-
-
-class InvalidIndex(GraphBLASException):
-    pass
-
-
-class DomainMismatch(GraphBLASException):
-    pass
-
-
-class DimensionMismatch(GraphBLASException):
-    pass
-
-
-class OutputNotEmpty(GraphBLASException):
-    pass
-
-
-class OutOfMemory(GraphBLASException):
-    pass
-
-
-class InsufficientSpace(GraphBLASException):
-    pass
-
-
-class IndexOutOfBound(GraphBLASException):
-    pass
-
-
-class Panic(GraphBLASException):
-    pass
-
-
 _error_code_lookup = {
     # Warning
-    lib.GrB_NO_VALUE: NoValue,
+    lib.GrB_NO_VALUE: ex.NoValue,
     # API Errors
-    lib.GrB_UNINITIALIZED_OBJECT: UninitializedObject,
-    lib.GrB_INVALID_OBJECT: InvalidObject,
-    lib.GrB_NULL_POINTER: NullPointer,
-    lib.GrB_INVALID_VALUE: InvalidValue,
-    lib.GrB_INVALID_INDEX: InvalidIndex,
-    lib.GrB_DOMAIN_MISMATCH: DomainMismatch,
-    lib.GrB_DIMENSION_MISMATCH: DimensionMismatch,
-    lib.GrB_OUTPUT_NOT_EMPTY: OutputNotEmpty,
+    lib.GrB_UNINITIALIZED_OBJECT: ex.UninitializedObject,
+    lib.GrB_INVALID_OBJECT: ex.InvalidObject,
+    lib.GrB_NULL_POINTER: ex.NullPointer,
+    lib.GrB_INVALID_VALUE: ex.InvalidValue,
+    lib.GrB_INVALID_INDEX: ex.InvalidIndex,
+    lib.GrB_DOMAIN_MISMATCH: ex.DomainMismatch,
+    lib.GrB_DIMENSION_MISMATCH: ex.DimensionMismatch,
+    lib.GrB_OUTPUT_NOT_EMPTY: ex.OutputNotEmpty,
     # Execution Errors
-    lib.GrB_OUT_OF_MEMORY: OutOfMemory,
-    lib.GrB_INSUFFICIENT_SPACE: InsufficientSpace,
-    lib.GrB_INDEX_OUT_OF_BOUNDS: IndexOutOfBound,
-    lib.GrB_PANIC: Panic,
+    lib.GrB_OUT_OF_MEMORY: ex.OutOfMemory,
+    lib.GrB_INSUFFICIENT_SPACE: ex.InsufficientSpace,
+    lib.GrB_INDEX_OUT_OF_BOUNDS: ex.IndexOutOfBound,
+    lib.GrB_PANIC: ex.Panic,
 }
 GrB_SUCCESS = lib.GrB_SUCCESS
 GrB_NO_VALUE = lib.GrB_NO_VALUE
@@ -205,12 +150,16 @@ def check_status(obj, response_code):
         return
     if response_code == GrB_NO_VALUE:
         return NoValue
-    cname = ffi.typeof(obj).item.cname
+
+    if ffi.typeof(obj).item.kind == "pointer":
+        obj = obj[0]
+
+    cname = ffi.typeof(obj).cname
     error_func = _error_func_lookup.get(cname)
     if error_func is None:
-        raise TypeError(f"Unknown cname {cname}")
+        raise TypeError(f"Unknown cname {cname} looking up error string.")
 
     string = ffi.new("char**")
-    error_func(string, obj[0])
+    error_func(string, obj)
     text = ffi.string(string[0]).decode()
     raise _error_code_lookup[response_code](text)

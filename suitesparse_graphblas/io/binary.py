@@ -1,6 +1,6 @@
 from pathlib import Path
 from ctypes.util import find_library
-from suitesparse_graphblas import ffi, lib, check_status, __version__
+from suitesparse_graphblas import ffi, lib, check_status, matrix, __version__
 from cffi import FFI
 
 
@@ -126,19 +126,19 @@ def binwrite(A, filename, comments=None, opener=Path.open):
     matrix_type = ffi.new("GrB_Type*")
     sparsity_status = ffinew("int32_t*")
 
-    check_status(A, lib.GrB_Matrix_nrows(nrows, A[0]))
-    check_status(A, lib.GrB_Matrix_ncols(ncols, A[0]))
-    check_status(A, lib.GrB_Matrix_nvals(nvals, A[0]))
+    nrows[0] = matrix.nrows(A)
+    ncols[0] = matrix.ncols(A)
+    nvals[0] = matrix.nvals(A)
+    matrix_type[0] = matrix.type(A)
 
-    check_status(A, lib.GxB_Matrix_type(matrix_type, A[0]))
     check_status(A, lib.GxB_Type_size(typesize, matrix_type[0]))
     typecode[0] = _ss_typecodes[matrix_type[0]]
 
-    check_status(A, lib.GxB_Matrix_Option_get(A[0], lib.GxB_FORMAT, format))
-    check_status(A, lib.GxB_Matrix_Option_get(A[0], lib.GxB_HYPER_SWITCH, hyper_switch))
-    check_status(A, lib.GxB_Matrix_Option_get(A[0], lib.GxB_BITMAP_SWITCH, bitmap_switch))
-    check_status(A, lib.GxB_Matrix_Option_get(A[0], lib.GxB_SPARSITY_STATUS, sparsity_status))
-    check_status(A, lib.GxB_Matrix_Option_get(A[0], lib.GxB_SPARSITY_CONTROL, sparsity_control))
+    format[0] = matrix.format(A)
+    hyper_switch[0] = matrix.hyper_switch(A)
+    bitmap_switch[0] = matrix.bitmap_switch(A)
+    sparsity_status[0] = matrix.sparsity_status(A)
+    sparsity_control[0] = matrix.sparsity_control(A)
 
     by_row = format[0] == lib.GxB_BY_ROW
     by_col = format[0] == lib.GxB_BY_COL
@@ -452,8 +452,7 @@ def binread(filename, opener=Path.open):
 
         Ax[0] = readinto_new_buffer(f, "uint8_t*", Ax_size[0])
 
-        A = ffi.new("GrB_Matrix*")
-        check_status(A, lib.GrB_Matrix_new(A, atype, nrows[0], ncols[0]))
+        A = matrix.new(atype, nrows[0], ncols[0])
 
         if by_col and is_hyper:
             check_status(
@@ -552,22 +551,8 @@ def binread(filename, opener=Path.open):
             check_status(A, lib.GxB_Matrix_pack_FullR(A[0], Ax, Ax_size[0], is_iso[0], NULL))
         else:
             raise TypeError("Unknown format {format[0]}")
-        check_status(
-            A,
-            lib.GxB_Matrix_Option_set(
-                A[0], lib.GxB_SPARSITY_CONTROL, ffi.cast("int32_t", sparsity_control[0])
-            ),
-        )
-        check_status(
-            A,
-            lib.GxB_Matrix_Option_set(
-                A[0], lib.GxB_HYPER_SWITCH, ffi.cast("double", hyper_switch[0])
-            ),
-        )
-        check_status(
-            A,
-            lib.GxB_Matrix_Option_set(
-                A[0], lib.GxB_BITMAP_SWITCH, ffi.cast("double", bitmap_switch[0])
-            ),
-        )
+
+        matrix.set_sparsity_control(A, sparsity_status[0])
+        matrix.set_hyper_switch(A, hyper_switch[0])
+        matrix.set_bitmap_switch(A, bitmap_switch[0])
         return A
