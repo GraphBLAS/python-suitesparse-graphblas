@@ -149,7 +149,7 @@ def check_status(obj, response_code):
     if response_code == GrB_SUCCESS:
         return
     if response_code == GrB_NO_VALUE:
-        return NoValue
+        return ex.NoValue
 
     if ffi.typeof(obj).item.kind == "pointer":
         obj = obj[0]

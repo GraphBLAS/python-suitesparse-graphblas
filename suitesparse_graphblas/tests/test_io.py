@@ -21,7 +21,6 @@ from suitesparse_graphblas import (
     complex_types,
     supports_complex,
     matrix,
-    exceptions,
 )
 
 from suitesparse_graphblas.io import binary

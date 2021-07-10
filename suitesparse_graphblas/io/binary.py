@@ -552,7 +552,7 @@ def binread(filename, opener=Path.open):
         else:
             raise TypeError("Unknown format {format[0]}")
 
-        matrix.set_sparsity_control(A, sparsity_status[0])
+        matrix.set_sparsity_control(A, sparsity_control[0])
         matrix.set_hyper_switch(A, hyper_switch[0])
         matrix.set_bitmap_switch(A, bitmap_switch[0])
         return A
