@@ -65,39 +65,47 @@ def libget(name):
         raise
 
 
-bool_types = (lib.GrB_BOOL,)
+bool_types = frozenset((lib.GrB_BOOL,))
 
-signed_integer_types = (
-    lib.GrB_INT8,
-    lib.GrB_INT16,
-    lib.GrB_INT32,
-    lib.GrB_INT64,
+signed_integer_types = frozenset(
+    (
+        lib.GrB_INT8,
+        lib.GrB_INT16,
+        lib.GrB_INT32,
+        lib.GrB_INT64,
+    )
 )
 
-unsigned_integer_types = (
-    lib.GrB_UINT8,
-    lib.GrB_UINT16,
-    lib.GrB_UINT32,
-    lib.GrB_UINT64,
+unsigned_integer_types = frozenset(
+    (
+        lib.GrB_UINT8,
+        lib.GrB_UINT16,
+        lib.GrB_UINT32,
+        lib.GrB_UINT64,
+    )
 )
 
-integer_types = signed_integer_types + unsigned_integer_types
+integer_types = signed_integer_types | unsigned_integer_types
 
-real_types = (
-    lib.GrB_FP32,
-    lib.GrB_FP64,
+real_types = frozenset(
+    (
+        lib.GrB_FP32,
+        lib.GrB_FP64,
+    )
 )
 
 if supports_complex():
-    complex_types = (
-        lib.GxB_FC32,
-        lib.GxB_FC64,
+    complex_types = frozenset(
+        (
+            lib.GxB_FC32,
+            lib.GxB_FC64,
+        )
     )
 else:
-    complex_types = ()
+    complex_types = frozenset()
 
 
-grb_types = bool_types + integer_types + real_types + complex_types
+grb_types = bool_types | integer_types | real_types | complex_types
 
 
 _error_code_lookup = {
