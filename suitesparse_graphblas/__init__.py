@@ -10,6 +10,7 @@ def is_initialized():
 
 
 def supports_complex():
+    """Does this package support complex numbers?"""
     return hasattr(lib, "GrB_FC64") or hasattr(lib, "GxB_FC64")
 
 
