@@ -175,3 +175,29 @@ def set_bitmap_switch(A, bitmap_switch):
     check_status(
         A, lib.GxB_Matrix_Option_set(A[0], lib.GxB_BITMAP_SWITCH, ffi.cast("double", bitmap_switch))
     )
+
+
+def set_bool(A, value, i, j):
+    """Set a boolean value to the matrix at row `i` column `j`.
+
+    >>> A = new(lib.GrB_BOOL, 3, 3)
+    >>> set_bool(A, True, 2, 2)
+    >>> bool(A, 2, 2) == True
+    True
+
+    """
+    check_status(A, lib.GrB_Matrix_setElement_BOOL(A[0], value, i, j))
+
+
+def bool(A, i, j):
+    """Get a boolean value from the matrix at row `i` column `j`.
+
+    >>> A = new(lib.GrB_BOOL, 3, 3)
+    >>> set_bool(A, True, 2, 2)
+    >>> bool(A, 2, 2) == True
+    True
+
+    """
+    value = ffi.new("bool*")
+    check_status(A, lib.GrB_Matrix_extractElement_BOOL(value, A[0], i, j))
+    return value[0]

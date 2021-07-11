@@ -29,16 +29,15 @@ COPY --from=suitesparse /build/pycparser/utils/fake_libc_include/* /usr/local/li
 RUN apt-get update && apt-get install -yq build-essential git
 RUN pip3 install numpy cffi pytest cython
     
-RUN mkdir -p /build/python-suitesparse-graphblas
-ADD . /build/python-suitesparse-graphblas
+RUN mkdir -p /psg
+ADD . /psg
 
-WORKDIR /build/python-suitesparse-graphblas
+WORKDIR /psg
 RUN git tag ${VERSION} && \
     python3 suitesparse_graphblas/create_headers.py && \
     python3 setup.py install && \
     ldconfig
 
-WORKDIR /
 #RUN pytest --pyargs suitesparse_graphblas.tests
 RUN apt-get -y --purge remove git python3-pip && apt-get clean
 
