@@ -43,9 +43,7 @@ def initialize(*, blocking=False, memory_manager="numpy"):
     elif memory_manager == "c":
         lib.GrB_init(blocking)
     else:
-        raise ValueError(
-            f'memory_manager argument must be "numpy" or "c"; got: ' "{memory_manager!r}"  # noqa
-        )
+        raise ValueError(f'memory_manager argument must be "numpy" or "c"; got: {memory_manager!r}')
 
 
 __version__ = get_versions()["version"]
