@@ -1,8 +1,8 @@
 if [ $# -eq 0 ]
     then
-        echo "Usage: ./docker_build.sh SUITESPARSE VERSION BRANCH [LOCATION PUSH]
+        echo "Usage: ./docker_build.sh SUITESPARSE_BRANCH VERSION [BRANCH LOCATION PUSH]
 
-Example: ./docker_build.sh 5.0.6 5.0.6.0 main clone push
+Example: ./docker_build.sh v5.1.3 5.1.3.1 main clone push
 
 If location is clone then a fresh git clone will be used.  
 If push is provided then the script will attempt to push to dockerhub."
