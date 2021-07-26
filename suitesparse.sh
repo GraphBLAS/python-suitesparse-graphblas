@@ -8,6 +8,6 @@ fi
 
 curl -L https://github.com/DrTimothyAldenDavis/GraphBLAS/archive/refs/tags/v${VERSION}.tar.gz | tar xzf -
 cd GraphBLAS-${VERSION}/build
-cmake .. -DGBCOMPACT=1
+cmake ..
 make -j$(nproc)
 make install
