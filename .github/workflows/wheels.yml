@@ -16,7 +16,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ["ubuntu-latest-gcc-9", "macos-latest"]
+#        os: ["ubuntu-latest-gcc-9", "macos-latest"]
+        os: ["ubuntu-latest-gcc-9"]
         python-version: [3.7, 3.8, 3.9]
     steps:
     - name: Checkout
