@@ -1,8 +1,6 @@
 name: Python wheel package build and publish
 
 on:
-  push:
-    branches: [ main ]
   release:
     types: [created]
 
@@ -24,7 +22,7 @@ jobs:
       with:
         python-versions: 'cp37-cp37m cp38-cp38 cp39-cp39'
         build-requirements: 'cffi numpy cython'
-        pre-build-command: 'sh suitesparse.sh $GITHUB_REF'
+        pre-build-command: ${{ 'sh suitesparse.sh ' + $GITHUB_REF }}
     - name: Publish wheels to PyPI
       env:
         TWINE_USERNAME: __token__
