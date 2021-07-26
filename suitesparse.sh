@@ -1,7 +1,9 @@
-echo "REf!"
-echo $GITHUB_REF
-curl -Ls https://github.com/DrTimothyAldenDavis/GraphBLAS/archive/refs/tags/v5.1.5.tar.gz | tar xzf -
-cd GraphBLAS-5.1.5/build
+VERSION=${GITHUB_REF}
+a=( ${version//./ } )
+VERSION="${a[0]}.${a[1]}.${a[2]}"
+
+curl -Ls https://github.com/DrTimothyAldenDavis/GraphBLAS/archive/refs/tags/v${VERSION}.tar.gz | tar xzf -
+cd GraphBLAS-${VERSION}/build
 cmake .. -DGBCOMPACT=1
 make -j$(nproc)
 make install
