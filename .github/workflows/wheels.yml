@@ -1,11 +1,10 @@
-name: Python package build and publish
+name: Python wheel package build and publish
 
 on:
   push:
     branches: [ main ]
-# on:
-#   release:
-#     types: [created]
+  release:
+    types: [created]
 
 jobs:
   wheels:
@@ -16,13 +15,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-#        os: ["ubuntu-latest", "macos-latest"]
         os: ["ubuntu-latest"]
     steps:
     - name: Checkout
       uses: actions/checkout@v2
     - name: Build manylinux Python wheels
       uses: RalfG/python-wheels-manylinux-build@v0.3.4-manylinux2014_x86_64
+      env:
+        GITHUB_REF: ${{ github.ref }}
       with:
         python-versions: 'cp37-cp37m cp38-cp38 cp39-cp39'
         build-requirements: 'cffi numpy cython'
