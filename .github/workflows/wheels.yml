@@ -29,6 +29,7 @@ jobs:
         cmake .. -DGBCOMPACT=1
         make -j$(nproc)
         sudo make install
+        echo | gcc -E -Wp,-v -        
     - name: Install Python Dependencies
       run: |
         python -m pip install --upgrade pip
