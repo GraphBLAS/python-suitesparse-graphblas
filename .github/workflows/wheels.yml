@@ -18,14 +18,13 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
-    - name: Conda
-      uses: conda-incubator/setup-miniconda@v2
-      with:
-        auto-update-conda: true
-        python-version: ${{ matrix.python-version }}
-        environment-file: continuous_integration/environment.yml
-        channels: conda-forge
-        activate-environment: suitesparse-graphblas
+    - name: Install SuiteSparse
+      run: |
+        curl -Ls https://github.com/DrTimothyAldenDavis/GraphBLAS/archive/refs/tags/v5.1.5.tar.gz | tar xzf -
+        cd GraphBLAS-5.1.5/build
+        cmake .. -DCMAKE_INSTALL_PREFIX=/usr
+        make -j$(nproc)
+        make install
     - name: Build
       run: |
         python setup.py build_ext --inplace
@@ -34,7 +33,7 @@ jobs:
       uses: RalfG/python-wheels-manylinux-build@v0.3.4-manylinux2010_x86_64
       with:
         python-versions: 'cp37-cp37m cp38-cp38 cp39-cp39'
-        build-requirements: 'cython numpy'
+        build-requirements: '"cffi>=1.0.0", "numpy>=1.17"'
     - name: Publish wheels to PyPI
       env:
         TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
