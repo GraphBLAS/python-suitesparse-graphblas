@@ -1,6 +1,8 @@
-VERSION=${GITHUB_REF}
-a=( ${version//./ } )
-VERSION="${a[0]}.${a[1]}.${a[2]}"
+# VERSION=${GITHUB_REF}
+# a=( ${version//./ } )
+# VERSION="${a[0]}.${a[1]}.${a[2]}"
+
+VERSION='5.1.5'
 
 curl -L https://github.com/DrTimothyAldenDavis/GraphBLAS/archive/refs/tags/v${VERSION}.tar.gz | tar xzf -
 cd GraphBLAS-${VERSION}/build
