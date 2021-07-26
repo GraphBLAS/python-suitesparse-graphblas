@@ -22,7 +22,7 @@ jobs:
       with:
         python-versions: 'cp37-cp37m cp38-cp38 cp39-cp39'
         build-requirements: 'cffi numpy cython'
-        pre-build-command: ${{ format('sh suitesparse.sh {0}', $GITHUB_REF) }}
+        pre-build-command: ${{ format('sh suitesparse.sh {0}', github.ref) }}
     - name: Publish wheels to PyPI
       env:
         TWINE_USERNAME: __token__
