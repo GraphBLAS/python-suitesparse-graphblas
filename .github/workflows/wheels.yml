@@ -24,23 +24,15 @@ jobs:
       uses: actions/checkout@v2
     - name: Install SuiteSparse
       run: |
-        curl -Ls https://github.com/DrTimothyAldenDavis/GraphBLAS/archive/refs/tags/v5.1.5.tar.gz | tar xzf -
-        cd GraphBLAS-5.1.5/build
-        cmake .. -DGBCOMPACT=1
-        make -j$(nproc)
-        sudo make install
-        echo | gcc -E -Wp,-v -        
-    - name: Install Python Dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install cffi numpy cython
     - name: Build manylinux Python wheels
       uses: RalfG/python-wheels-manylinux-build@v0.3.4-manylinux2010_x86_64
       with:
         python-versions: 'cp37-cp37m cp38-cp38 cp39-cp39'
-    - name: Publish wheels to PyPI
-      env:
-        TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
-        TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-      run: |
-        twine upload dist/*-manylinux*.whl
+        build-requirements: 'cffi numpy cython'
+        pre-build-command: 'sh suitesparse.sh'
+    # - name: Publish wheels to PyPI
+    #   env:
+    #     TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
+    #     TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+    #   run: |
+    #     twine upload dist/*-manylinux*.whl
