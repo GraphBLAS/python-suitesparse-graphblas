@@ -1,0 +1,42 @@
+name: Python package build and publish
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  wheels:
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash -l {0}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["ubuntu-latest", "macos-latest", "windows-latest"]
+        python-version: [3.7, 3.8, 3.9]
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Conda
+      uses: conda-incubator/setup-miniconda@v2
+      with:
+        auto-update-conda: true
+        python-version: ${{ matrix.python-version }}
+        environment-file: continuous_integration/environment.yml
+        channels: conda-forge
+        activate-environment: suitesparse-graphblas
+    - name: Build
+      run: |
+        python setup.py build_ext --inplace
+        python setup.py develop
+    - name: Build manylinux Python wheels
+      uses: RalfG/python-wheels-manylinux-build@v0.3.4-manylinux2010_x86_64
+      with:
+        build-requirements: 'cython numpy'
+    - name: Publish wheels to PyPI
+      env:
+        TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
+        TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+      run: |
+        twine upload dist/*-manylinux*.whl
