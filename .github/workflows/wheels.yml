@@ -22,9 +22,9 @@ jobs:
       run: |
         curl -Ls https://github.com/DrTimothyAldenDavis/GraphBLAS/archive/refs/tags/v5.1.5.tar.gz | tar xzf -
         cd GraphBLAS-5.1.5/build
-        cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local -DGBCOMPACT=1
+        cmake .. -DGBCOMPACT=1
         make -j$(nproc)
-        make install
+        sudo make install
     - name: Build
       run: |
         python setup.py build_ext --inplace
