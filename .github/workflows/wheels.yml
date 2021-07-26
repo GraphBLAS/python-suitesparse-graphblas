@@ -25,6 +25,10 @@ jobs:
         cmake .. -DGBCOMPACT=1
         make -j$(nproc)
         sudo make install
+    - name: Install Python Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install cffi numpy
     - name: Build
       run: |
         python setup.py build_ext --inplace
