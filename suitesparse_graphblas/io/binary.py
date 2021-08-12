@@ -239,8 +239,8 @@ def binwrite(A, filename, comments=None, opener=Path.open):
 
     suitesparse_version = (
         f"v{lib.GxB_IMPLEMENTATION_MAJOR}."
-        "{lib.GxB_IMPLEMENTATION_MINOR}."
-        "{lib.GxB_IMPLEMENTATION_SUB}"
+        f"{lib.GxB_IMPLEMENTATION_MINOR}."
+        f"{lib.GxB_IMPLEMENTATION_SUB}"
     )
 
     vars = dict(
@@ -253,8 +253,7 @@ def binwrite(A, filename, comments=None, opener=Path.open):
         format=fmt_string,
         size=typesize[0],
         type=_ss_typenames[matrix_type[0]],
-        iso=is_iso[0],
-        jumbled=is_jumbled[0],
+        iso=int(is_iso[0]),
         comments=comments,
     )
     header_content = header_template.format(**vars)
@@ -276,7 +275,6 @@ def binwrite(A, filename, comments=None, opener=Path.open):
         fwrite(buff(typecode, sizeof("int32_t")))
         fwrite(buff(typesize, sizeof("size_t")))
         fwrite(buff(is_iso, sizeof("bool")))
-        fwrite(buff(is_jumbled, sizeof("bool")))
 
         if is_hyper:
             Ap_size[0] = (nvec[0] + 1) * Isize
