@@ -282,20 +282,22 @@ def binwrite(A, filename, comments=None, opener=Path.open):
             Ap_size[0] = (nvec[0] + 1) * Isize
             Ah_size[0] = nvec[0] * Isize
             Ai_size[0] = nvals[0] * Isize
-            Ax_size[0] = nvals[0] * typesize[0]
+            Ax_size[0] = typesize[0] if is_iso[0] else nvals[0] * typesize[0]
             fwrite(buff(Ap[0], Ap_size[0]))
             fwrite(buff(Ah[0], Ah_size[0]))
             fwrite(buff(Ai[0], Ai_size[0]))
         elif is_sparse:
             Ap_size[0] = (nvec[0] + 1) * Isize
             Ai_size[0] = nvals[0] * Isize
-            Ax_size[0] = nvals[0] * typesize[0]
+            Ax_size[0] = typesize[0] if is_iso[0] else nvals[0] * typesize[0]
             fwrite(buff(Ap[0], Ap_size[0]))
             fwrite(buff(Ai[0], Ai_size[0]))
         elif is_bitmap:
             Ab_size[0] = nrows[0] * ncols[0] * ffi.sizeof("int8_t")
-            Ax_size[0] = nrows[0] * ncols[0] * typesize[0]
+            Ax_size[0] = typesize[0] if is_iso[0] else nrows[0] * ncols[0] * typesize[0]
             fwrite(buff(Ab[0], Ab_size[0]))
+        else:
+            Ax_size[0] = typesize[0] if is_iso[0] else nrows[0] * ncols[0] * typesize[0]
 
         fwrite(buff(Ax[0], Ax_size[0]))
 
@@ -450,7 +452,7 @@ def binread(filename, opener=Path.open):
         elif is_full:
             Ax_size[0] = nrows[0] * ncols[0] * typesize[0]
 
-        Ax[0] = readinto_new_buffer(f, "uint8_t*", Ax_size[0])
+        Ax[0] = readinto_new_buffer(f, "uint8_t*", typesize[0] if is_iso[0] else Ax_size[0])
 
         A = matrix.new(atype, nrows[0], ncols[0])
 
