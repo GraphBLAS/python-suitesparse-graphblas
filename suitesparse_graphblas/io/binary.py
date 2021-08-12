@@ -275,28 +275,25 @@ def binwrite(A, filename, comments=None, opener=Path.open):
         fwrite(buff(typesize, sizeof("size_t")))
         fwrite(buff(is_iso, sizeof("bool")))
 
-        if is_hyper:
-            Ap_size[0] = (nvec[0] + 1) * Isize
-            Ah_size[0] = nvec[0] * Isize
-            Ai_size[0] = nvals[0] * Isize
-            Ax_size[0] = typesize[0] if is_iso[0] else nvals[0] * typesize[0]
-            fwrite(buff(Ap[0], Ap_size[0]))
-            fwrite(buff(Ah[0], Ah_size[0]))
-            fwrite(buff(Ai[0], Ai_size[0]))
-        elif is_sparse:
-            Ap_size[0] = (nvec[0] + 1) * Isize
-            Ai_size[0] = nvals[0] * Isize
-            Ax_size[0] = typesize[0] if is_iso[0] else nvals[0] * typesize[0]
-            fwrite(buff(Ap[0], Ap_size[0]))
-            fwrite(buff(Ai[0], Ai_size[0]))
-        elif is_bitmap:
-            Ab_size[0] = nrows[0] * ncols[0] * ffi.sizeof("int8_t")
-            Ax_size[0] = typesize[0] if is_iso[0] else nrows[0] * ncols[0] * typesize[0]
-            fwrite(buff(Ab[0], Ab_size[0]))
-        else:
-            Ax_size[0] = typesize[0] if is_iso[0] else nrows[0] * ncols[0] * typesize[0]
+        Tsize = typesize[0]
+        iso = is_iso[0]
 
-        fwrite(buff(Ax[0], Ax_size[0]))
+        if is_hyper:
+            fwrite(buff(Ap[0], (nvec[0] + 1) * Isize))
+            fwrite(buff(Ah[0], nvec[0] * Isize))
+            fwrite(buff(Ai[0], nvals[0] * Isize))
+            Axsize = Tsize if iso else nvals[0] * Tsize
+        elif is_sparse:
+            fwrite(buff(Ap[0], (nvec[0] + 1) * Isize))
+            fwrite(buff(Ai[0], nvals[0] * Isize))
+            Axsize = Tsize if iso else nvals[0] * Tsize
+        elif is_bitmap:
+            fwrite(buff(Ab[0], nrows[0] * ncols[0] * ffi.sizeof("int8_t")))
+            Axsize = Tsize if iso else nrows[0] * ncols[0] * Tsize
+        else:
+            Axsize = Tsize if iso else nrows[0] * ncols[0] * Tsize
+
+        fwrite(buff(Ax[0], Axsize))
 
     if by_col and is_hyper:
         check_status(
