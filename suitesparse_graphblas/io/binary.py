@@ -403,7 +403,7 @@ def binread(filename, opener=Path.open):
         typecode = frombuff("int32_t*", fread(sizeof("int32_t")))
         typesize = frombuff("size_t*", fread(sizeof("size_t")))
         is_iso = frombuff("bool*", fread(sizeof("bool")))
-        is_jumbled = frombuff("bool*", fread(sizeof("bool")))
+        is_jumbled = ffi.new("bool*", 0)
 
         by_row = format[0] == lib.GxB_BY_ROW
         by_col = format[0] == lib.GxB_BY_COL
