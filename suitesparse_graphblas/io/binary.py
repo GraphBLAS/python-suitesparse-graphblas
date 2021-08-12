@@ -41,7 +41,6 @@ format:  {format}
 size:    {size}
 type:    {type}
 iso:     {iso}
-jumbled: {jumbled}
 {comments}
 """
 
