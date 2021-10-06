@@ -1,10 +1,15 @@
 import numpy as np
-from numpy cimport (
-    import_array, ndarray, npy_intp,
-    PyArray_SimpleNewFromData, PyArray_New,
-    NPY_ARRAY_OWNDATA, NPY_ARRAY_WRITEABLE, NPY_ARRAY_F_CONTIGUOUS,
-)
 from libc.stdint cimport uintptr_t
+from numpy cimport (
+    NPY_ARRAY_F_CONTIGUOUS,
+    NPY_ARRAY_OWNDATA,
+    NPY_ARRAY_WRITEABLE,
+    PyArray_New,
+    PyArray_SimpleNewFromData,
+    import_array,
+    ndarray,
+    npy_intp,
+)
 
 import_array()
 

@@ -1,7 +1,7 @@
-from ._graphblas import ffi, lib  # noqa
-from . import utils
-from ._version import get_versions
 from . import exceptions as ex
+from . import utils
+from ._graphblas import ffi, lib  # noqa
+from ._version import get_versions
 
 
 def is_initialized():
