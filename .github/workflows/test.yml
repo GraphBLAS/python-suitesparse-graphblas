@@ -14,7 +14,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ["ubuntu-latest", "macos-latest", "windows-latest"]
+        # os: ["ubuntu-latest", "macos-latest", "windows-latest"]
+        os: ["ubuntu-latest"]
         python-version: [3.7, 3.8, 3.9]
     steps:
     - name: Checkout
@@ -29,6 +30,7 @@ jobs:
         activate-environment: suitesparse-graphblas
     - name: Build
       run: |
+        sh suitesparse.sh refs/tags/6.0.0.alpha11
         python setup.py build_ext --inplace
         python setup.py develop
     - name: Test
