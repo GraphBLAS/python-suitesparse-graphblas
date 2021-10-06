@@ -1,5 +1,5 @@
 
-if [[ $1 =~ refs/tags/([0-9]\.[0-9]\.[0-9]).*$ ]];
+if [[ $1 =~ refs/tags/([0-9]\.[0-9]\.[0-9].*$) ]];
 then
     VERSION=${BASH_REMATCH[1]}
 else
