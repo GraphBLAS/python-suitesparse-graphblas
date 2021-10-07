@@ -90,7 +90,7 @@ def binwrite(A, filename, comments=None, opener=Path.open):
     if isinstance(filename, str):
         filename = Path(filename)
 
-    check_status(A, lib.GrB_Matrix_wait(A))
+    check_status(A, lib.GrB_Matrix_wait(A[0], lib.GrB_MATERIALIZE))
 
     ffinew = ffi.new
 
