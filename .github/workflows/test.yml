@@ -34,9 +34,15 @@ jobs:
         # sh suitesparse.sh refs/tags/6.0.0.alpha11
         curl -L https://github.com/DrTimothyAldenDavis/GraphBLAS/archive/refs/tags/v6.0.0.alpha11.tar.gz | tar xzf -
         pushd GraphBLAS-6.0.0.alpha11/build
-        cmake .. -DCMAKE_BUILD_TYPE=Release
-        make -j$(nproc)
-        sudo make install
+
+        export PREFIX="${CONDA_PREFIX}"
+        export INSTALL="${PREFIX}"
+        export CMAKE_OPTIONS="-DCMAKE_INSTALL_PREFIX=${PREFIX} -DCMAKE_INSTALL_LIBDIR=lib -DCMAKE_BUILD_TYPE=Release"
+        echo ${CMAKE_OPTIONS}
+
+        cmake ..
+        make library VERBOSE=1 JOBS=16
+        make install VERBOSE=1
         popd
 
         python setup.py build_ext --inplace
