@@ -14,8 +14,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ["ubuntu-latest", "macos-latest", "windows-latest"]
-        python-version: [3.7, 3.8, 3.9]
+        # os: ["ubuntu-latest", "macos-latest", "windows-latest"]
+        os: ["ubuntu-latest"]
+        # python-version: [3.7, 3.8, 3.9]
+        python-version: [3.8]
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -29,6 +31,16 @@ jobs:
         activate-environment: suitesparse-graphblas
     - name: Build
       run: |
+        # sh suitesparse.sh refs/tags/5.2.0.alpha11
+        curl -L https://github.com/DrTimothyAldenDavis/GraphBLAS/archive/refs/tags/v5.2.0.alpha11.tar.gz | tar xzf -
+        pushd GraphBLAS-5.2.0.alpha11/build
+        echo ${CONDA_PREFIX}
+
+        cmake -DCMAKE_INSTALL_PREFIX=${CONDA_PREFIX} -DCMAKE_INSTALL_LIBDIR=lib -DCMAKE_BUILD_TYPE=Release ..
+        make JOBS=16
+        make install
+        popd
+
         python setup.py build_ext --inplace
         python setup.py develop
     - name: Test

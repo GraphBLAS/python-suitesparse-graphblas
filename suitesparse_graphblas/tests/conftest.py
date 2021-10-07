@@ -1,4 +1,5 @@
 import pytest
+
 from suitesparse_graphblas import initialize
 
 

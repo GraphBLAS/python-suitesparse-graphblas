@@ -1,29 +1,29 @@
+import bz2
+import gzip
+import lzma
 import platform
+from pathlib import Path
+
 import pytest
+
+from suitesparse_graphblas import (
+    bool_types,
+    check_status,
+    complex_types,
+    ffi,
+    grb_types,
+    lib,
+    matrix,
+    real_types,
+    signed_integer_types,
+    supports_complex,
+    unsigned_integer_types,
+)
+from suitesparse_graphblas.io import binary
 
 if platform.system() == "Windows":
     pytest.skip("skipping windows-only tests", allow_module_level=True)
 
-import gzip
-import bz2
-import lzma
-from pathlib import Path
-
-from suitesparse_graphblas import (
-    ffi,
-    lib,
-    check_status,
-    grb_types,
-    bool_types,
-    signed_integer_types,
-    unsigned_integer_types,
-    real_types,
-    complex_types,
-    supports_complex,
-    matrix,
-)
-
-from suitesparse_graphblas.io import binary
 
 NULL = ffi.NULL
 
