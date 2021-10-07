@@ -41,7 +41,7 @@ jobs:
         echo ${CMAKE_OPTIONS}
 
         cmake ..
-        make library VERBOSE=1 JOBS=16
+        make VERBOSE=1 JOBS=16
         make install VERBOSE=1
         popd
 
