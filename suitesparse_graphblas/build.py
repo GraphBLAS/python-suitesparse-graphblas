@@ -1,5 +1,6 @@
 import os
 import sys
+
 from cffi import FFI
 
 is_win = sys.platform.startswith("win")

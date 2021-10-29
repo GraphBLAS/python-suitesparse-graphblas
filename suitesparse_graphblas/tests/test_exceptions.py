@@ -1,11 +1,6 @@
-from suitesparse_graphblas import (
-    ffi,
-    lib,
-    check_status,
-    exceptions,
-)
-
 import pytest
+
+from suitesparse_graphblas import check_status, exceptions, ffi, lib
 
 
 def test_check_status():

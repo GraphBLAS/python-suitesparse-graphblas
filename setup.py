@@ -1,5 +1,11 @@
-from setuptools import setup, find_packages, Extension
+import os
+import sys
 from glob import glob
+
+import numpy as np
+from setuptools import Extension, find_packages, setup
+
+import versioneer
 
 try:
     from Cython.Build import cythonize
@@ -8,10 +14,7 @@ try:
     use_cython = True
 except ImportError:
     use_cython = False
-import numpy as np
-import os
-import sys
-import versioneer
+
 
 is_win = sys.platform.startswith("win")
 define_macros = [("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")]

@@ -1,8 +1,9 @@
-from pathlib import Path
 from ctypes.util import find_library
-from suitesparse_graphblas import ffi, lib, check_status, matrix, __version__
+from pathlib import Path
+
 from cffi import FFI
 
+from suitesparse_graphblas import __version__, check_status, ffi, lib, matrix
 
 stdffi = FFI()
 stdffi.cdef(

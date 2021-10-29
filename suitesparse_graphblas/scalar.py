@@ -1,9 +1,4 @@
-from suitesparse_graphblas import (
-    lib,
-    ffi,
-    check_status,
-    exceptions,
-)
+from suitesparse_graphblas import check_status, exceptions, ffi, lib
 
 
 def free(v):

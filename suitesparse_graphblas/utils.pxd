@@ -1,5 +1,6 @@
-from numpy cimport ndarray
 from libc.stdint cimport uint64_t
+from numpy cimport ndarray
+
 
 cdef extern from "numpy/arrayobject.h" nogil:
     # These aren't public (i.e., "extern"), but other projects use them too

@@ -1,10 +1,7 @@
 def test_run_doctests():
     import doctest
-    from suitesparse_graphblas import (
-        matrix,
-        vector,
-        scalar,
-    )
+
+    from suitesparse_graphblas import matrix, scalar, vector
 
     for mod in (
         matrix,

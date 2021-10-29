@@ -1,6 +1,7 @@
 if __name__ == "__main__":
-    import suitesparse_graphblas as ssgb
     import pytest
+
+    import suitesparse_graphblas as ssgb
 
     assert ssgb.is_initialized() is False
     ssgb.initialize()
