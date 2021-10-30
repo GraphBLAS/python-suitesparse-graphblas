@@ -19,11 +19,11 @@ from suitesparse_graphblas import (
     supports_complex,
     unsigned_integer_types,
 )
-from suitesparse_graphblas.io import binary
 
 if platform.system() == "Windows":
     pytest.skip("skipping windows-only tests", allow_module_level=True)
 
+from suitesparse_graphblas.io import binary  # noqa isort:skip
 
 NULL = ffi.NULL
 
