@@ -1,7 +1,7 @@
-from ._graphblas import ffi, lib  # noqa
-from . import utils
-from ._version import get_versions
+from . import _version
 from . import exceptions as ex
+from . import utils
+from ._graphblas import ffi, lib  # noqa
 
 
 def is_initialized():
@@ -44,10 +44,6 @@ def initialize(*, blocking=False, memory_manager="numpy"):
         lib.GrB_init(blocking)
     else:
         raise ValueError(f'memory_manager argument must be "numpy" or "c"; got: {memory_manager!r}')
-
-
-__version__ = get_versions()["version"]
-del get_versions
 
 
 def libget(name):
@@ -170,3 +166,6 @@ def check_status(obj, response_code):
     error_func(string, obj)
     text = ffi.string(string[0]).decode()
     raise _error_code_lookup[response_code](text)
+
+
+__version__ = _version.get_versions()["version"]

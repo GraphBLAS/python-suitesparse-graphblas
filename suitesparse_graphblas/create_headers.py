@@ -27,6 +27,7 @@ import re
 import shutil
 import subprocess
 import sys
+
 import pycparser
 from pycparser import c_ast, c_generator, parse_file
 
@@ -579,7 +580,7 @@ def get_group_info(groups, ast, *, skip_complex=False):
             group = "matrix"
         elif "GrB_Vector" in text:
             group = "vector"
-        elif "GxB_Scalar" in text:
+        elif "GxB_Scalar" in text or "GrB_Scalar" in text:
             group = "scalar"
         else:
             group = node.name.split("_", 2)[1]
@@ -596,6 +597,7 @@ def get_group_info(groups, ast, *, skip_complex=False):
                 "Semiring": "semiring",
                 "Type": "type",
                 "UnaryOp": "unary",
+                "IndexUnaryOp": "indexunary",
                 # "everything else" is "core"
                 "getVersion": "core",
                 "Global": "core",
@@ -603,6 +605,7 @@ def get_group_info(groups, ast, *, skip_complex=False):
                 "finalize": "core",
                 "init": "core",
                 "wait": "core",
+                "deserialize": "core",
             }[group]
         return {
             "name": node.name,
@@ -807,8 +810,12 @@ def main():
     print("Step 6: check #define definitions")
     with open(graphblas_h) as f:
         text = f.read()
+    define_lines = re.compile(r".*?#define\s+\w+\s+")
     define_pattern = re.compile(r"#define\s+\w+\s+")
-    defines = {x[len("#define") :].strip() for x in define_pattern.findall(text)}
+    defines = set()
+    for line in define_lines.findall(text):
+        line = line.split("//")[0].split("/*")[0]
+        defines.update(x[len("#define") :].strip() for x in define_pattern.findall(line))
     extra_defines = (DEFINES | CHAR_DEFINES) - defines
     if extra_defines:
         # Should this raise?  If it's a problem, it will raise when compiling.
