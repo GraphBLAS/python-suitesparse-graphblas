@@ -27,7 +27,7 @@ cpdef int call_gxb_init(ffi, lib, int mode):
     #    Return: function pointer in Cython!
 
     cdef GxB_init func = <GxB_init><uintptr_t>int(ffi.cast("uintptr_t", ffi.addressof(lib, "GxB_init")))
-    return func(<GrB_Mode>mode, PyDataMem_NEW, PyDataMem_NEW_ZEROED, PyDataMem_RENEW, PyDataMem_FREE, True)
+    return func(<GrB_Mode>mode, PyDataMem_NEW, PyDataMem_NEW_ZEROED, PyDataMem_RENEW, PyDataMem_FREE)
 
 
 cpdef ndarray claim_buffer(ffi, cdata, size_t size, dtype):
