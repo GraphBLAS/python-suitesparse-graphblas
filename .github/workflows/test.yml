@@ -41,7 +41,7 @@ jobs:
         pushd GraphBLAS-${{ matrix.graphblas-version }}/build
         echo ${CONDA_PREFIX}
         cmake -DCMAKE_INSTALL_PREFIX=${CONDA_PREFIX} -DCMAKE_INSTALL_LIBDIR=lib -DCMAKE_BUILD_TYPE=Release ..
-        make JOBS=16
+        make library JOBS=16
         make install
         popd
     - name: Build
