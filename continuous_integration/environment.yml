@@ -3,7 +3,7 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  # - graphblas=6.0.0
+  # - graphblas=6.0.2
   - cffi
   - cython
   - numpy
