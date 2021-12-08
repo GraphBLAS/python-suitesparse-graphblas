@@ -261,6 +261,7 @@ DEPRECATED = {
 }
 
 DEFINES = {
+    "GrB_INDEX_MAX",
     "GxB_STDC_VERSION",
     "GxB_IMPLEMENTATION_MAJOR",
     "GxB_IMPLEMENTATION_MINOR",
@@ -290,6 +291,13 @@ DEFINES = {
     "GxB_BEGIN",
     "GxB_END",
     "GxB_INC",
+    "GxB_FAST_IMPORT",
+    "GxB_MAX_NAME_LEN",
+    "GxB_COMPRESSION_DEFAULT",
+    "GxB_COMPRESSION_INTEL",
+    "GxB_COMPRESSION_LZ4",
+    "GxB_COMPRESSION_LZ4HC",
+    "GxB_COMPRESSION_NONE",
 }
 
 CHAR_DEFINES = {
@@ -320,6 +328,9 @@ IGNORE_LINES = {
     "GxB_cuda_calloc",
     "GxB_cuda_malloc",
     "GxB_cuda_free",
+}
+IGNORE_ENUMS = {
+    "memory_order",
 }
 
 
@@ -360,7 +371,7 @@ def get_groups(ast):
     groups["GB methods"] = sorted(vals, key=sort_key)
 
     missing_methods = {x for x in lines if "extern GrB_Info " in x} - seen
-    assert not missing_methods
+    assert not missing_methods, ", ".join(sorted(missing_methods))
 
     vals = {x for x in lines if "extern GrB" in x} - seen
     seen.update(vals)
@@ -379,7 +390,7 @@ def get_groups(ast):
     groups["GrB const"] = sorted(vals, key=sort_key)
 
     missing_const = {x for x in lines if "extern const" in x} - seen
-    assert not missing_const
+    assert not missing_const, ", ".join(sorted(missing_const))
 
     vals = {x for x in lines if "typedef" in x and "GxB" in x and "(" not in x} - seen
     seen.update(vals)
@@ -390,7 +401,7 @@ def get_groups(ast):
     groups["GrB typedef"] = sorted(vals, key=sort_key)
 
     missing_typedefs = {x for x in lines if "typedef" in x and "GB" in x and "(" not in x} - seen
-    assert not missing_typedefs
+    assert not missing_typedefs, ", ".join(sorted(missing_typedefs))
     assert all(x.endswith(";") for x in seen)  # sanity check
 
     g = VisitEnumTypedef()
@@ -408,14 +419,15 @@ def get_groups(ast):
     groups["GxB typedef enums"] = sorted(vals, key=lambda x: sort_key(x.rsplit("}", 1)[-1]))
 
     missing_enums = set(enums) - set(groups["GrB typedef enums"]) - set(groups["GxB typedef enums"])
-    assert not missing_enums
+    missing_enums = {x for x in missing_enums if not any(y in x for y in IGNORE_ENUMS)}
+    assert not missing_enums, ", ".join(sorted(missing_enums))
 
     vals = {x for x in lines if "typedef" in x and "GxB" in x} - seen
     seen.update(vals)
     groups["GxB typedef funcs"] = sorted(vals, key=sort_key)
 
     vals = {x for x in lines if "typedef" in x and "GrB" in x} - seen
-    assert not vals
+    assert not vals, ", ".join(sorted(vals))
     groups["not seen"] = sorted(set(lines) - seen, key=sort_key)
     for group in groups["not seen"]:
         assert "extern" not in group, group

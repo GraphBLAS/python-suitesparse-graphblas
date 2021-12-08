@@ -22,7 +22,6 @@ ctypedef uint64_t (*GxB_init)(
     void *(*user_calloc_function)(size_t, size_t),
     void *(*user_realloc_function)(void *, size_t),
     void (*user_free_function)(void *),
-    bint,  # user_malloc_is_thread_safe
 )
 
 cpdef int call_gxb_init(ffi, lib, int mode)
