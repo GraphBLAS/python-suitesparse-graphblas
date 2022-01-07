@@ -20,7 +20,7 @@ jobs:
     - name: Build manylinux Python wheels
       uses: RalfG/python-wheels-manylinux-build@v0.4.2-manylinux2014_x86_64
       with:
-        python-versions: 'cp38-cp38 cp39-cp39 cp310-cp310'
+        python-versions: 'cp38-cp38 cp39-cp39'
         build-requirements: 'cffi numpy>=1.19,<1.20 cython'
         pre-build-command: ${{ format('sh suitesparse.sh {0}', github.ref) }}
     - name: Publish wheels to PyPI
