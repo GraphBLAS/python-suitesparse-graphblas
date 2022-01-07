@@ -16,7 +16,7 @@ jobs:
       matrix:
         # os: ["ubuntu-latest", "macos-latest", "windows-latest"]  # Waiting on builds
         os: ["ubuntu-latest"]
-        python-version: ["3.7", "3.8", "3.9", "3.10"]
+        python-version: ["3.8", "3.9", "3.10"]
         source: ["conda-forge"]
         graphblas-version: ["6.1.3"]
     steps:
