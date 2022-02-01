@@ -363,16 +363,6 @@ inline static double GxB_Iterator_get_FP64(GxB_Iterator iterator)
   return ((double *) iterator->Ax)[(iterator->iso) ? (0) : (iterator->p)];
 }
 
-inline static GxB_FC32_t GxB_Iterator_get_FC32(GxB_Iterator iterator)
-{
-  return ((GxB_FC32_t *) iterator->Ax)[(iterator->iso) ? (0) : (iterator->p)];
-}
-
-inline static GxB_FC64_t GxB_Iterator_get_FC64(GxB_Iterator iterator)
-{
-  return ((GxB_FC64_t *) iterator->Ax)[(iterator->iso) ? (0) : (iterator->p)];
-}
-
 inline static void GxB_Iterator_get_UDT(GxB_Iterator iterator, void *value)
 {
   memcpy(value, iterator->Ax + ((iterator->iso) ? (0) : (iterator->type_size * iterator->p)), iterator->type_size);

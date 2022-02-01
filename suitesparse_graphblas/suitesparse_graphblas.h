@@ -15,6 +15,7 @@ typedef uint64_t GrB_Index;
 /* GxB typedefs */
 typedef double _Complex GxB_FC64_t;
 typedef float _Complex GxB_FC32_t;
+typedef struct GB_Iterator_opaque *GxB_Iterator;
 typedef struct GB_Scalar_opaque *GxB_Scalar;
 typedef struct GB_SelectOp_opaque *GxB_SelectOp;
 
@@ -68,6 +69,7 @@ typedef enum
 {
   GrB_SUCCESS = 0,
   GrB_NO_VALUE = 1,
+  GxB_EXHAUSTED = 2,
   GrB_UNINITIALIZED_OBJECT = -1,
   GrB_NULL_POINTER = -2,
   GrB_INVALID_VALUE = -3,
@@ -3059,6 +3061,12 @@ extern GrB_Info GrB_Vector_wait(GrB_Vector v, GrB_WaitMode waitmode);
 /* binary */
 extern GrB_Info GB_BinaryOp_new(GrB_BinaryOp *binaryop, GxB_binary_function function, GrB_Type ztype, GrB_Type xtype, GrB_Type ytype, const char *binop_name);
 
+/* iterator */
+extern GrB_Info GB_Iterator_rc_seek(GxB_Iterator iterator, GrB_Index j, bool jth_vector);
+
+/* matrix */
+extern GrB_Info GB_Iterator_attach(GxB_Iterator iterator, GrB_Matrix A, GxB_Format_Value format, GrB_Descriptor desc);
+
 /* selectop */
 extern GrB_Info GB_SelectOp_new(GxB_SelectOp *selectop, GxB_select_function function, GrB_Type xtype, GrB_Type ttype, const char *name);
 
@@ -3101,8 +3109,14 @@ extern GrB_Info GxB_IndexUnaryOp_xtype_name(char *type_name, const GrB_IndexUnar
 extern GrB_Info GxB_IndexUnaryOp_ytype_name(char *type_name, const GrB_IndexUnaryOp op);
 extern GrB_Info GxB_IndexUnaryOp_ztype_name(char *type_name, const GrB_IndexUnaryOp op);
 
+/* iterator */
+extern GrB_Info GxB_Iterator_free(GxB_Iterator *iterator);
+extern GrB_Info GxB_Iterator_new(GxB_Iterator *iterator);
+
 /* matrix */
 extern GrB_Info GxB_Col_subassign(GrB_Matrix C, const GrB_Vector mask, const GrB_BinaryOp accum, const GrB_Vector u, const GrB_Index *I, GrB_Index ni, GrB_Index j, const GrB_Descriptor desc);
+extern GrB_Info GxB_Matrix_Iterator_next(GxB_Iterator iterator);
+extern GrB_Info GxB_Matrix_Iterator_seek(GxB_Iterator iterator, GrB_Index p);
 extern GrB_Info GxB_Matrix_Option_get(GrB_Matrix A, GxB_Option_Field field, ...);
 extern GrB_Info GxB_Matrix_Option_set(GrB_Matrix A, GxB_Option_Field field, ...);
 extern GrB_Info GxB_Matrix_apply_BinaryOp1st(GrB_Matrix C, const GrB_Matrix Mask, const GrB_BinaryOp accum, const GrB_BinaryOp op, const GrB_Scalar x, const GrB_Matrix A, const GrB_Descriptor desc);
@@ -3289,6 +3303,7 @@ extern GrB_Info GxB_UnaryOp_ztype(GrB_Type *ztype, GrB_UnaryOp unaryop);
 extern GrB_Info GxB_UnaryOp_ztype_name(char *type_name, const GrB_UnaryOp unaryop);
 
 /* vector */
+extern GrB_Info GxB_Vector_Iterator_attach(GxB_Iterator iterator, GrB_Vector v, GrB_Descriptor desc);
 extern GrB_Info GxB_Vector_Option_get(GrB_Vector A, GxB_Option_Field field, ...);
 extern GrB_Info GxB_Vector_Option_set(GrB_Vector A, GxB_Option_Field field, ...);
 extern GrB_Info GxB_Vector_apply_BinaryOp1st(GrB_Vector w, const GrB_Vector mask, const GrB_BinaryOp accum, const GrB_BinaryOp op, const GrB_Scalar x, const GrB_Vector u, const GrB_Descriptor desc);
