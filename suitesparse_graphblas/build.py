@@ -8,12 +8,7 @@ thisdir = os.path.dirname(__file__)
 
 ffibuilder = FFI()
 
-if is_win:
-    source_filename = "source_no_complex.c"
-else:
-    source_filename = "source.c"
-
-with open(os.path.join(thisdir, source_filename)) as f:
+with open(os.path.join(thisdir, "source.c")) as f:
     source = f.read()
 
 include_dirs = [os.path.join(sys.prefix, "include")]
