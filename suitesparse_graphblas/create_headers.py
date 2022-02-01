@@ -710,7 +710,7 @@ def get_group_info(groups, ast, *, skip_complex=False):
     rv["GrB methods"] = sorted(grb_funcs, key=lambda x: sort_key(x["text"]))
     rv["GxB methods"] = sorted(gxb_funcs, key=lambda x: sort_key(x["text"]))
     rv["GB methods"] = sorted(gb_funcs, key=lambda x: sort_key(x["text"]))
-    rv["static inline"] = si_funcs  # Should we sort these?
+    rv["static inline"] = sorted(si_funcs, key=lambda x: sort_key(x["text"]))
     for key in groups.keys() - rv.keys():
         rv[key] = groups[key]
     return rv
