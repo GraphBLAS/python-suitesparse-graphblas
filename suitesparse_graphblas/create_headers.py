@@ -682,7 +682,12 @@ def get_group_info(groups, ast, *, skip_complex=False):
         decl = node.decl
         if decl.name in DEPRECATED:
             return
+        # Append "_" to the name that we expose to Python
+        decl.type.type.declname += "_"
+        decl.storage = ["extern"]
+        decl.funcspec = []
         text = generator.visit(node).strip()
+        decl_text = generator.visit(decl).strip()
         if skip_complex and has_complex(text):
             return
         return {
@@ -690,6 +695,7 @@ def get_group_info(groups, ast, *, skip_complex=False):
             "group": "static inline",
             "node": node,
             "text": text + "\n",
+            "decl_text": decl_text + ";",
         }
 
     grb_funcs = (handle_function_node(node) for node in grb_nodes)
@@ -791,9 +797,12 @@ def create_header_text(groups, *, char_defines=None, defines=None):
     text.append("****************/")
     text.extend(handle_funcs(groups["GxB methods"]))
 
-    # CFFI doesn't like compiling this
-    # text.append("")
-    # text.extend(handle_funcs(groups["static inline"]))
+    # Declare wrapper functions with '_' appended to the name
+    text.append("")
+    text.append("/**************************")
+    text.append("* static inline functions *")
+    text.append("**************************/")
+    text.extend(sorted((info["decl_text"] for info in groups["static inline"]), key=sort_key))
 
     text.append("")
     text.append("/* int DEFINES */")
@@ -816,6 +825,9 @@ def create_source_text(groups, *, char_defines=None):
     ]
     for item in sorted(char_defines, key=sort_key):
         text.append(f"char *{item}_STR = {item};")
+    text.append("")
+    for node in groups["static inline"]:
+        text.append(node["text"])
     return text
 
 
@@ -843,6 +855,7 @@ def main():
     final_h = os.path.join(thisdir, "suitesparse_graphblas.h")
     final_no_complex_h = os.path.join(thisdir, "suitesparse_graphblas_no_complex.h")
     source_c = os.path.join(thisdir, "source.c")
+    source_no_complex_c = os.path.join(thisdir, "source_no_complex.c")
 
     # Copy original file
     print(f"Step 1: copy {args.graphblas} to {graphblas_h}")
@@ -881,8 +894,14 @@ def main():
     with open(source_c, "w") as f:
         f.write("\n".join(text))
 
+    # Create source (no complex)
+    print(f"Step 6: create {source_no_complex_c}")
+    text = create_source_text(groups_no_complex)
+    with open(source_no_complex_c, "w") as f:
+        f.write("\n".join(text))
+
     # Check defines
-    print("Step 6: check #define definitions")
+    print("Step 7: check #define definitions")
     with open(graphblas_h) as f:
         text = f.read()
     define_lines = re.compile(r".*?#define\s+\w+\s+")

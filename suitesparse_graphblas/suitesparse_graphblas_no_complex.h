@@ -13,6 +13,7 @@ typedef struct GB_Vector_opaque *GrB_Vector;
 typedef uint64_t GrB_Index;
 
 /* GxB typedefs */
+typedef struct GB_Iterator_opaque *GxB_Iterator;
 typedef struct GB_Scalar_opaque *GxB_Scalar;
 typedef struct GB_SelectOp_opaque *GxB_SelectOp;
 
@@ -66,6 +67,7 @@ typedef enum
 {
   GrB_SUCCESS = 0,
   GrB_NO_VALUE = 1,
+  GxB_EXHAUSTED = 2,
   GrB_UNINITIALIZED_OBJECT = -1,
   GrB_NULL_POINTER = -2,
   GrB_INVALID_VALUE = -3,
@@ -2885,6 +2887,12 @@ extern GrB_Info GrB_Vector_wait(GrB_Vector v, GrB_WaitMode waitmode);
 /* binary */
 extern GrB_Info GB_BinaryOp_new(GrB_BinaryOp *binaryop, GxB_binary_function function, GrB_Type ztype, GrB_Type xtype, GrB_Type ytype, const char *binop_name);
 
+/* iterator */
+extern GrB_Info GB_Iterator_rc_seek(GxB_Iterator iterator, GrB_Index j, bool jth_vector);
+
+/* matrix */
+extern GrB_Info GB_Iterator_attach(GxB_Iterator iterator, GrB_Matrix A, GxB_Format_Value format, GrB_Descriptor desc);
+
 /* selectop */
 extern GrB_Info GB_SelectOp_new(GxB_SelectOp *selectop, GxB_select_function function, GrB_Type xtype, GrB_Type ttype, const char *name);
 
@@ -2927,8 +2935,14 @@ extern GrB_Info GxB_IndexUnaryOp_xtype_name(char *type_name, const GrB_IndexUnar
 extern GrB_Info GxB_IndexUnaryOp_ytype_name(char *type_name, const GrB_IndexUnaryOp op);
 extern GrB_Info GxB_IndexUnaryOp_ztype_name(char *type_name, const GrB_IndexUnaryOp op);
 
+/* iterator */
+extern GrB_Info GxB_Iterator_free(GxB_Iterator *iterator);
+extern GrB_Info GxB_Iterator_new(GxB_Iterator *iterator);
+
 /* matrix */
 extern GrB_Info GxB_Col_subassign(GrB_Matrix C, const GrB_Vector mask, const GrB_BinaryOp accum, const GrB_Vector u, const GrB_Index *I, GrB_Index ni, GrB_Index j, const GrB_Descriptor desc);
+extern GrB_Info GxB_Matrix_Iterator_next(GxB_Iterator iterator);
+extern GrB_Info GxB_Matrix_Iterator_seek(GxB_Iterator iterator, GrB_Index p);
 extern GrB_Info GxB_Matrix_Option_get(GrB_Matrix A, GxB_Option_Field field, ...);
 extern GrB_Info GxB_Matrix_Option_set(GrB_Matrix A, GxB_Option_Field field, ...);
 extern GrB_Info GxB_Matrix_apply_BinaryOp1st(GrB_Matrix C, const GrB_Matrix Mask, const GrB_BinaryOp accum, const GrB_BinaryOp op, const GrB_Scalar x, const GrB_Matrix A, const GrB_Descriptor desc);
@@ -3081,6 +3095,7 @@ extern GrB_Info GxB_UnaryOp_ztype(GrB_Type *ztype, GrB_UnaryOp unaryop);
 extern GrB_Info GxB_UnaryOp_ztype_name(char *type_name, const GrB_UnaryOp unaryop);
 
 /* vector */
+extern GrB_Info GxB_Vector_Iterator_attach(GxB_Iterator iterator, GrB_Vector v, GrB_Descriptor desc);
 extern GrB_Info GxB_Vector_Option_get(GrB_Vector A, GxB_Option_Field field, ...);
 extern GrB_Info GxB_Vector_Option_set(GrB_Vector A, GxB_Option_Field field, ...);
 extern GrB_Info GxB_Vector_apply_BinaryOp1st(GrB_Vector w, const GrB_Vector mask, const GrB_BinaryOp accum, const GrB_BinaryOp op, const GrB_Scalar x, const GrB_Vector u, const GrB_Descriptor desc);
@@ -3122,6 +3137,52 @@ extern GrB_Info GxB_Vector_type_name(char *type_name, const GrB_Vector v);
 extern GrB_Info GxB_Vector_unpack_Bitmap(GrB_Vector v, int8_t **vb, void **vx, GrB_Index *vb_size, GrB_Index *vx_size, bool *iso, GrB_Index *nvals, const GrB_Descriptor desc);
 extern GrB_Info GxB_Vector_unpack_CSC(GrB_Vector v, GrB_Index **vi, void **vx, GrB_Index *vi_size, GrB_Index *vx_size, bool *iso, GrB_Index *nvals, bool *jumbled, const GrB_Descriptor desc);
 extern GrB_Info GxB_Vector_unpack_Full(GrB_Vector v, void **vx, GrB_Index *vx_size, bool *iso, const GrB_Descriptor desc);
+
+/**************************
+* static inline functions *
+**************************/
+extern GrB_Index GB_Iterator_rc_geti_(GxB_Iterator iterator);
+extern GrB_Index GB_Iterator_rc_getj_(GxB_Iterator iterator);
+extern GrB_Index GxB_Matrix_Iterator_getp_(GxB_Iterator iterator);
+extern GrB_Index GxB_Matrix_Iterator_getpmax_(GxB_Iterator iterator);
+extern GrB_Index GxB_Vector_Iterator_getIndex_(GxB_Iterator iterator);
+extern GrB_Index GxB_Vector_Iterator_getp_(GxB_Iterator iterator);
+extern GrB_Index GxB_Vector_Iterator_getpmax_(GxB_Iterator iterator);
+extern GrB_Index GxB_colIterator_getColIndex_(GxB_Iterator iterator);
+extern GrB_Index GxB_colIterator_getRowIndex_(GxB_Iterator iterator);
+extern GrB_Index GxB_colIterator_kount_(GxB_Iterator iterator);
+extern GrB_Index GxB_rowIterator_getColIndex_(GxB_Iterator iterator);
+extern GrB_Index GxB_rowIterator_getRowIndex_(GxB_Iterator iterator);
+extern GrB_Index GxB_rowIterator_kount_(GxB_Iterator iterator);
+extern GrB_Info GB_Iterator_rc_bitmap_next_(GxB_Iterator iterator);
+extern GrB_Info GB_Iterator_rc_inext_(GxB_Iterator iterator);
+extern GrB_Info GB_Iterator_rc_knext_(GxB_Iterator iterator);
+extern GrB_Info GxB_Matrix_Iterator_attach_(GxB_Iterator iterator, GrB_Matrix A, GrB_Descriptor desc);
+extern GrB_Info GxB_Vector_Iterator_next_(GxB_Iterator iterator);
+extern GrB_Info GxB_Vector_Iterator_seek_(GxB_Iterator iterator, GrB_Index p);
+extern GrB_Info GxB_colIterator_attach_(GxB_Iterator iterator, GrB_Matrix A, GrB_Descriptor desc);
+extern GrB_Info GxB_colIterator_kseek_(GxB_Iterator iterator, GrB_Index k);
+extern GrB_Info GxB_colIterator_nextCol_(GxB_Iterator iterator);
+extern GrB_Info GxB_colIterator_nextRow_(GxB_Iterator iterator);
+extern GrB_Info GxB_colIterator_seekCol_(GxB_Iterator iterator, GrB_Index col);
+extern GrB_Info GxB_rowIterator_attach_(GxB_Iterator iterator, GrB_Matrix A, GrB_Descriptor desc);
+extern GrB_Info GxB_rowIterator_kseek_(GxB_Iterator iterator, GrB_Index k);
+extern GrB_Info GxB_rowIterator_nextCol_(GxB_Iterator iterator);
+extern GrB_Info GxB_rowIterator_nextRow_(GxB_Iterator iterator);
+extern GrB_Info GxB_rowIterator_seekRow_(GxB_Iterator iterator, GrB_Index row);
+extern bool GxB_Iterator_get_BOOL_(GxB_Iterator iterator);
+extern double GxB_Iterator_get_FP64_(GxB_Iterator iterator);
+extern float GxB_Iterator_get_FP32_(GxB_Iterator iterator);
+extern int8_t GxB_Iterator_get_INT8_(GxB_Iterator iterator);
+extern int16_t GxB_Iterator_get_INT16_(GxB_Iterator iterator);
+extern int32_t GxB_Iterator_get_INT32_(GxB_Iterator iterator);
+extern int64_t GxB_Iterator_get_INT64_(GxB_Iterator iterator);
+extern uint8_t GxB_Iterator_get_UINT8_(GxB_Iterator iterator);
+extern uint16_t GxB_Iterator_get_UINT16_(GxB_Iterator iterator);
+extern uint32_t GxB_Iterator_get_UINT32_(GxB_Iterator iterator);
+extern uint64_t GxB_Iterator_get_UINT64_(GxB_Iterator iterator);
+extern void GxB_Iterator_get_UDT_(GxB_Iterator iterator, void *value);
+extern void GxB_Matrix_Iterator_getIndex_(GxB_Iterator iterator, GrB_Index *row, GrB_Index *col);
 
 /* int DEFINES */
 #define GRB_SUBVERSION ...
