@@ -816,9 +816,10 @@ def create_source_text(groups, *, char_defines=None):
     ]
     for item in sorted(char_defines, key=sort_key):
         text.append(f"char *{item}_STR = {item};")
-    text.append("")
-    for node in groups["static inline"]:
-        text.append(node["text"])
+    # Don't define static inline twice
+    # text.append("")
+    # for node in groups["static inline"]:
+    #     text.append(node["text"])
     return text
 
 
