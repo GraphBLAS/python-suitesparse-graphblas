@@ -18,7 +18,7 @@ jobs:
         os: ["ubuntu-latest"]
         python-version: ["3.8", "3.9", "3.10"]
         source: ["source"]  # ["conda-forge"]
-        graphblas-version: ["6.2.0.beta2"]
+        graphblas-version: ["6.2.0.beta3"]
     steps:
     - name: Checkout
       uses: actions/checkout@v2

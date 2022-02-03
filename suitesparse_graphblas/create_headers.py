@@ -360,6 +360,7 @@ def get_groups(ast):
     seen = set()
     groups = {}
     vals = {x for x in lines if "extern GrB_Info GxB" in x} - seen
+    vals |= {x for x in lines if "extern " in x and "GxB_Iterator" in x and "GB" not in x} - seen
     seen.update(vals)
     groups["GxB methods"] = sorted(vals, key=sort_key)
 
@@ -368,6 +369,7 @@ def get_groups(ast):
     groups["GrB methods"] = sorted(vals, key=sort_key)
 
     vals = {x for x in lines if "extern GrB_Info GB" in x} - seen
+    vals |= {x for x in lines if "extern " in x and "GxB_Iterator" in x and "GB" in x} - seen
     seen.update(vals)
     groups["GB methods"] = sorted(vals, key=sort_key)
 
@@ -426,23 +428,6 @@ def get_groups(ast):
     vals = {x for x in lines if "typedef" in x and "GxB" in x} - seen
     seen.update(vals)
     groups["GxB typedef funcs"] = sorted(vals, key=sort_key)
-
-    vals = []
-    next_i = -1
-    for i, line in enumerate(lines):
-        if i < next_i or line in seen:
-            continue
-        if "inline static" in line and ("GB" in line or "GrB" in line or "GxB" in line):
-            val = [line]
-            i += 1
-            while lines[i] != "}":
-                val.append(lines[i])
-                i += 1
-            val.append(lines[i])
-            next_i = i + 1
-            seen.update(val)
-            vals.append("\n".join(val))
-    groups["static inline"] = vals
 
     vals = {x for x in lines if "typedef" in x and "GrB" in x} - seen
     assert not vals, ", ".join(sorted(vals))
@@ -597,21 +582,10 @@ def get_group_info(groups, ast, *, skip_complex=False):
             if isinstance(node.type, c_ast.FuncDecl) and node.storage == ["extern"]:
                 self.functions.append(node)
 
-    class FuncDefVisitorStaticInline(c_ast.NodeVisitor):
-        def __init__(self):
-            self.functions = []
-
-        def visit_FuncDef(self, node):
-            decl = node.decl
-            if (
-                isinstance(decl.type, c_ast.FuncDecl)
-                and decl.storage == ["static"]
-                and decl.funcspec == ["inline"]
-            ):
-                self.functions.append(node)
-
     def handle_function_node(node):
-        if generator.visit(node.type.type) != "GrB_Info":
+        if generator.visit(node.type.type) != "GrB_Info" and "GxB_Iterator" not in generator.visit(
+            node
+        ):
             raise ValueError(generator.visit(node))
         if node.name in DEPRECATED:
             return
@@ -625,6 +599,8 @@ def get_group_info(groups, ast, *, skip_complex=False):
             group = "vector"
         elif "GxB_Scalar" in text or "GrB_Scalar" in text:
             group = "scalar"
+        elif "GxB_Iterator" in text:
+            group = "iterator"
         else:
             group = node.name.split("_", 2)[1]
             group = {
@@ -665,52 +641,26 @@ def get_group_info(groups, ast, *, skip_complex=False):
     grb_nodes = [node for node in visitor.functions if node.name.startswith("GrB_")]
     gxb_nodes = [node for node in visitor.functions if node.name.startswith("GxB_")]
     gb_nodes = [node for node in visitor.functions if node.name.startswith("GB_")]
-    assert len(grb_nodes) == len(groups["GrB methods"])
-    assert len(gxb_nodes) == len(groups["GxB methods"])
-    assert len(gb_nodes) == len(groups["GB methods"])
-
-    visitor = FuncDefVisitorStaticInline()
-    visitor.visit(ast)
-    static_inline_nodes = visitor.functions
-    assert len(static_inline_nodes) == len(groups["static inline"])
-    for node in static_inline_nodes:
-        # Sanity check
-        text = generator.visit(node).strip()
-        assert text in groups["static inline"]
-
-    def handle_static_inline(node):
-        decl = node.decl
-        if decl.name in DEPRECATED:
-            return
-        # Append "_" to the name that we expose to Python
-        decl.type.type.declname += "_"
-        decl.storage = ["extern"]
-        decl.funcspec = []
-        text = generator.visit(node).strip()
-        decl_text = generator.visit(decl).strip()
-        if skip_complex and has_complex(text):
-            return
-        return {
-            "name": decl.name,
-            "group": "static inline",
-            "node": node,
-            "text": text + "\n",
-            "decl_text": decl_text + ";",
-        }
+    assert len(grb_nodes) == len(groups["GrB methods"]), (
+        len(grb_nodes),
+        len(groups["GrB methods"]),
+    )
+    assert len(gxb_nodes) == len(groups["GxB methods"]), (
+        len(gxb_nodes),
+        len(groups["GxB methods"]),
+    )
+    assert len(gb_nodes) == len(groups["GB methods"]), (len(gb_nodes), len(groups["GB methods"]))
 
     grb_funcs = (handle_function_node(node) for node in grb_nodes)
     gxb_funcs = (handle_function_node(node) for node in gxb_nodes)
     gb_funcs = (handle_function_node(node) for node in gb_nodes)
-    si_funcs = (handle_static_inline(node) for node in static_inline_nodes)
     grb_funcs = [x for x in grb_funcs if x is not None]
     gxb_funcs = [x for x in gxb_funcs if x is not None]
     gb_funcs = [x for x in gb_funcs if x is not None]
-    si_funcs = [x for x in si_funcs if x is not None]
 
     rv["GrB methods"] = sorted(grb_funcs, key=lambda x: sort_key(x["text"]))
     rv["GxB methods"] = sorted(gxb_funcs, key=lambda x: sort_key(x["text"]))
     rv["GB methods"] = sorted(gb_funcs, key=lambda x: sort_key(x["text"]))
-    rv["static inline"] = sorted(si_funcs, key=lambda x: sort_key(x["text"]))
     for key in groups.keys() - rv.keys():
         rv[key] = groups[key]
     return rv
@@ -797,13 +747,6 @@ def create_header_text(groups, *, char_defines=None, defines=None):
     text.append("****************/")
     text.extend(handle_funcs(groups["GxB methods"]))
 
-    # Declare wrapper functions with '_' appended to the name
-    text.append("")
-    text.append("/**************************")
-    text.append("* static inline functions *")
-    text.append("**************************/")
-    text.extend(sorted((info["decl_text"] for info in groups["static inline"]), key=sort_key))
-
     text.append("")
     text.append("/* int DEFINES */")
     for item in sorted(defines, key=sort_key):
@@ -825,9 +768,6 @@ def create_source_text(groups, *, char_defines=None):
     ]
     for item in sorted(char_defines, key=sort_key):
         text.append(f"char *{item}_STR = {item};")
-    text.append("")
-    for node in groups["static inline"]:
-        text.append(node["text"])
     return text
 
 
@@ -855,7 +795,6 @@ def main():
     final_h = os.path.join(thisdir, "suitesparse_graphblas.h")
     final_no_complex_h = os.path.join(thisdir, "suitesparse_graphblas_no_complex.h")
     source_c = os.path.join(thisdir, "source.c")
-    source_no_complex_c = os.path.join(thisdir, "source_no_complex.c")
 
     # Copy original file
     print(f"Step 1: copy {args.graphblas} to {graphblas_h}")
@@ -894,14 +833,8 @@ def main():
     with open(source_c, "w") as f:
         f.write("\n".join(text))
 
-    # Create source (no complex)
-    print(f"Step 6: create {source_no_complex_c}")
-    text = create_source_text(groups_no_complex)
-    with open(source_no_complex_c, "w") as f:
-        f.write("\n".join(text))
-
     # Check defines
-    print("Step 7: check #define definitions")
+    print("Step 6: check #define definitions")
     with open(graphblas_h) as f:
         text = f.read()
     define_lines = re.compile(r".*?#define\s+\w+\s+")
