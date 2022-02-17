@@ -14,11 +14,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # os: ["ubuntu-latest", "macos-latest", "windows-latest"]  # Waiting on builds
-        os: ["ubuntu-latest"]
+        os: ["ubuntu-latest", "macos-latest", "windows-latest"]
+        # os: ["ubuntu-latest"]
         python-version: ["3.8", "3.9", "3.10"]
         source: ["conda-forge"]
-        graphblas-version: ["6.1.3"]
+        # source: ["source"]
+        graphblas-version: ["6.2.1"]
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -64,11 +65,5 @@ jobs:
     - name: create_headers.py check
       if: (! contains(matrix.os, 'windows'))
       run: |
-        # These shouldn't change, so make copies to compare to
-        cp suitesparse_graphblas/suitesparse_graphblas.h .
-        cp suitesparse_graphblas/suitesparse_graphblas_no_complex.h .
-        cp suitesparse_graphblas/source.c .
         coverage run -a --branch suitesparse_graphblas/create_headers.py
-        diff suitesparse_graphblas/suitesparse_graphblas.h suitesparse_graphblas.h
-        diff suitesparse_graphblas/suitesparse_graphblas_no_complex.h suitesparse_graphblas_no_complex.h
-        diff suitesparse_graphblas/source.c source.c
+        git diff --exit-code  # error if anything changed

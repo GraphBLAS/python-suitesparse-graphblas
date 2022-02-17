@@ -315,6 +315,7 @@ IGNORE_DEFINES = {
     "CMPLX",
     "CMPLXF",
     "GB_PUBLIC",
+    "GB_restrict",
     "GRAPHBLAS_H",
     "GrB_INVALID_HANDLE",
     "GrB_NULL",
@@ -359,6 +360,7 @@ def get_groups(ast):
     seen = set()
     groups = {}
     vals = {x for x in lines if "extern GrB_Info GxB" in x} - seen
+    vals |= {x for x in lines if "extern " in x and "GxB_Iterator" in x and "GB" not in x} - seen
     seen.update(vals)
     groups["GxB methods"] = sorted(vals, key=sort_key)
 
@@ -367,6 +369,7 @@ def get_groups(ast):
     groups["GrB methods"] = sorted(vals, key=sort_key)
 
     vals = {x for x in lines if "extern GrB_Info GB" in x} - seen
+    vals |= {x for x in lines if "extern " in x and "GxB_Iterator" in x and "GB" in x} - seen
     seen.update(vals)
     groups["GB methods"] = sorted(vals, key=sort_key)
 
@@ -580,7 +583,9 @@ def get_group_info(groups, ast, *, skip_complex=False):
                 self.functions.append(node)
 
     def handle_function_node(node):
-        if generator.visit(node.type.type) != "GrB_Info":
+        if generator.visit(node.type.type) != "GrB_Info" and "GxB_Iterator" not in generator.visit(
+            node
+        ):
             raise ValueError(generator.visit(node))
         if node.name in DEPRECATED:
             return
@@ -594,11 +599,14 @@ def get_group_info(groups, ast, *, skip_complex=False):
             group = "vector"
         elif "GxB_Scalar" in text or "GrB_Scalar" in text:
             group = "scalar"
+        elif "GxB_Iterator" in text:
+            group = "iterator"
         else:
             group = node.name.split("_", 2)[1]
             group = {
                 # Apply our naming scheme
                 "GrB_Matrix": "matrix",
+                "Matrix": "matrix",
                 "GrB_Vector": "vector",
                 "GxB_Scalar": "scalar",
                 "SelectOp": "selectop",
@@ -610,6 +618,7 @@ def get_group_info(groups, ast, *, skip_complex=False):
                 "Type": "type",
                 "UnaryOp": "unary",
                 "IndexUnaryOp": "indexunary",
+                "Iterator": "iterator",
                 # "everything else" is "core"
                 "getVersion": "core",
                 "Global": "core",
@@ -632,9 +641,15 @@ def get_group_info(groups, ast, *, skip_complex=False):
     grb_nodes = [node for node in visitor.functions if node.name.startswith("GrB_")]
     gxb_nodes = [node for node in visitor.functions if node.name.startswith("GxB_")]
     gb_nodes = [node for node in visitor.functions if node.name.startswith("GB_")]
-    assert len(grb_nodes) == len(groups["GrB methods"])
-    assert len(gxb_nodes) == len(groups["GxB methods"])
-    assert len(gb_nodes) == len(groups["GB methods"])
+    assert len(grb_nodes) == len(groups["GrB methods"]), (
+        len(grb_nodes),
+        len(groups["GrB methods"]),
+    )
+    assert len(gxb_nodes) == len(groups["GxB methods"]), (
+        len(gxb_nodes),
+        len(groups["GxB methods"]),
+    )
+    assert len(gb_nodes) == len(groups["GB methods"]), (len(gb_nodes), len(groups["GB methods"]))
 
     grb_funcs = (handle_function_node(node) for node in grb_nodes)
     gxb_funcs = (handle_function_node(node) for node in gxb_nodes)
@@ -744,7 +759,7 @@ def create_header_text(groups, *, char_defines=None, defines=None):
     return text
 
 
-def create_source_text(*, char_defines=None):
+def create_source_text(groups, *, char_defines=None):
     if char_defines is None:
         char_defines = CHAR_DEFINES
     text = [
@@ -814,7 +829,7 @@ def main():
 
     # Create source
     print(f"Step 5: create {source_c}")
-    text = create_source_text()
+    text = create_source_text(groups)
     with open(source_c, "w") as f:
         f.write("\n".join(text))
 
