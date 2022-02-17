@@ -14,10 +14,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # os: ["ubuntu-latest", "macos-latest", "windows-latest"]  # Waiting on builds
-        os: ["ubuntu-latest"]
+        os: ["ubuntu-latest", "macos-latest", "windows-latest"]
+        # os: ["ubuntu-latest"]
         python-version: ["3.8", "3.9", "3.10"]
-        source: ["source"]  # ["conda-forge"]
+        source: ["conda-forge"]
+        # source: ["source"]
         graphblas-version: ["6.2.1"]
     steps:
     - name: Checkout
