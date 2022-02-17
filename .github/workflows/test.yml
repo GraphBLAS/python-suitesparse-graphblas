@@ -65,11 +65,5 @@ jobs:
     - name: create_headers.py check
       if: (! contains(matrix.os, 'windows'))
       run: |
-        # These shouldn't change, so make copies to compare to
-        cp suitesparse_graphblas/suitesparse_graphblas.h .
-        cp suitesparse_graphblas/suitesparse_graphblas_no_complex.h .
-        cp suitesparse_graphblas/source.c .
         coverage run -a --branch suitesparse_graphblas/create_headers.py
-        diff suitesparse_graphblas/suitesparse_graphblas.h suitesparse_graphblas.h
-        diff suitesparse_graphblas/suitesparse_graphblas_no_complex.h suitesparse_graphblas_no_complex.h
-        diff suitesparse_graphblas/source.c source.c
+        git diff --exit-code  # error if anything changed
