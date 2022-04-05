@@ -2714,7 +2714,7 @@ extern GrB_Info GrB_Matrix_build_UINT32(GrB_Matrix C, const GrB_Index *I, const 
 extern GrB_Info GrB_Matrix_build_UINT64(GrB_Matrix C, const GrB_Index *I, const GrB_Index *J, const uint64_t *X, GrB_Index nvals, const GrB_BinaryOp dup);
 extern GrB_Info GrB_Matrix_clear(GrB_Matrix A);
 extern GrB_Info GrB_Matrix_deserialize(GrB_Matrix *C, GrB_Type type, const void *blob, GrB_Index blob_size);
-extern GrB_Info GrB_Matrix_diag(GrB_Matrix C, const GrB_Vector v, int64_t k);
+extern GrB_Info GrB_Matrix_diag(GrB_Matrix *C, const GrB_Vector v, int64_t k);
 extern GrB_Info GrB_Matrix_dup(GrB_Matrix *C, const GrB_Matrix A);
 extern GrB_Info GrB_Matrix_eWiseAdd_BinaryOp(GrB_Matrix C, const GrB_Matrix Mask, const GrB_BinaryOp accum, const GrB_BinaryOp add, const GrB_Matrix A, const GrB_Matrix B, const GrB_Descriptor desc);
 extern GrB_Info GrB_Matrix_eWiseAdd_Monoid(GrB_Matrix C, const GrB_Matrix Mask, const GrB_BinaryOp accum, const GrB_Monoid monoid, const GrB_Matrix A, const GrB_Matrix B, const GrB_Descriptor desc);

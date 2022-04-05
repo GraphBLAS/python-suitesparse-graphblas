@@ -19,7 +19,7 @@ jobs:
         python-version: ["3.8", "3.9", "3.10"]
         source: ["conda-forge"]
         # source: ["source"]
-        graphblas-version: ["6.2.5"]
+        graphblas-version: ["7.0.1"]
     steps:
     - name: Checkout
       uses: actions/checkout@v2
