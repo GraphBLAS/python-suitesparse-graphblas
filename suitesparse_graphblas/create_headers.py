@@ -321,6 +321,7 @@ IGNORE_DEFINES = {
     "GrB_NULL",
     "GxB_SUITESPARSE_GRAPHBLAS",
     "NMACRO",
+    "RMM_WRAP_H",
     # deprecated
     "GxB_HYPER",
 }
@@ -332,6 +333,7 @@ IGNORE_LINES = {
 }
 IGNORE_ENUMS = {
     "memory_order",
+    "RMM_MODE",
 }
 
 
