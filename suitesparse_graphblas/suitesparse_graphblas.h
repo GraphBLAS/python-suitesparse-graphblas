@@ -3064,7 +3064,7 @@ extern GrB_Info GB_BinaryOp_new(GrB_BinaryOp *binaryop, GxB_binary_function func
 /* iterator */
 extern GrB_Info GB_Iterator_rc_bitmap_next(GxB_Iterator iterator);
 extern GrB_Info GB_Iterator_rc_seek(GxB_Iterator iterator, GrB_Index j, bool jth_vector);
-extern GrB_Info GB_Vector_Iterator_bitmap_seek(GxB_Iterator iterator, GrB_Index p);
+extern GrB_Info GB_Vector_Iterator_bitmap_seek(GxB_Iterator iterator, GrB_Index unused);
 
 /* matrix */
 extern GrB_Info GB_Iterator_attach(GxB_Iterator iterator, GrB_Matrix A, GxB_Format_Value format, GrB_Descriptor desc);
