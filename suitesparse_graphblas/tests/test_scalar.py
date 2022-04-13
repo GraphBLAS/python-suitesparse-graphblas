@@ -1,6 +1,9 @@
-from suitesparse_graphblas import ffi, lib
+import pytest
+
+from suitesparse_graphblas import ffi, lib, supports_complex  # noqa
 
 
+@pytest.mark.skipif("not supports_complex()")
 def test_complex():
     s = ffi.new("GrB_Scalar*")
     success = lib.GrB_SUCCESS
