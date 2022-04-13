@@ -1,5 +1,6 @@
 from libc.stdint cimport uint64_t
-from numpy cimport ndarray, npy_intp, dtype as dtype_t
+from numpy cimport dtype as dtype_t
+from numpy cimport ndarray, npy_intp
 
 
 cdef extern from "numpy/arrayobject.h" nogil:
