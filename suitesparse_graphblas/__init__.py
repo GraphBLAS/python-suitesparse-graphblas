@@ -44,6 +44,9 @@ def initialize(*, blocking=False, memory_manager="numpy"):
         lib.GrB_init(blocking)
     else:
         raise ValueError(f'memory_manager argument must be "numpy" or "c"; got: {memory_manager!r}')
+    # See: https://github.com/GraphBLAS/python-suitesparse-graphblas/issues/40
+    for attr in dir(lib):
+        getattr(lib, attr)
 
 
 def libget(name):

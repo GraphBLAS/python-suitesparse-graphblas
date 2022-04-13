@@ -1,15 +1,9 @@
 import numpy as np
 from cpython.ref cimport Py_INCREF
 from libc.stdint cimport uintptr_t
-from numpy cimport (
-    NPY_ARRAY_F_CONTIGUOUS,
-    NPY_ARRAY_OWNDATA,
-    NPY_ARRAY_WRITEABLE,
-    import_array,
-    ndarray,
-    npy_intp,
-    dtype as dtype_t,
-)
+from numpy cimport NPY_ARRAY_F_CONTIGUOUS, NPY_ARRAY_OWNDATA, NPY_ARRAY_WRITEABLE
+from numpy cimport dtype as dtype_t
+from numpy cimport import_array, ndarray, npy_intp
 
 import_array()
 
@@ -58,6 +52,7 @@ cpdef ndarray claim_buffer_2d(
         dims[1] = ncols
         if not is_c_order:
             flags |= NPY_ARRAY_F_CONTIGUOUS
+        Py_INCREF(dtype)
         array = PyArray_NewFromDescr(
             ndarray, dtype, 2, dims, NULL, <void*>ptr, flags, <object>NULL
         )

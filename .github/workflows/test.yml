@@ -34,7 +34,7 @@ jobs:
     - name: GraphBLAS (from conda-forge)
       if: (contains(matrix.source, 'conda-forge'))
       run: |
-        conda install -c conda-forge graphblas=${{ matrix.graphblas-version }}
+        conda install -c conda-forge graphblas=${{ matrix.graphblas-version }} pytest pytest-randomly
     - name: GraphBLAS (from source)
       if: (contains(matrix.source, 'source'))
       run: |
