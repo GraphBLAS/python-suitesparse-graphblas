@@ -18,6 +18,7 @@ from suitesparse_graphblas import (
     signed_integer_types,
     supports_complex,
     unsigned_integer_types,
+    vector,
 )
 
 if platform.system() == "Windows":
@@ -85,6 +86,53 @@ if supports_complex():
             lib.GxB_FC64: lib.GxB_EQ_FC64,
         }
     )
+
+
+def test_serialize_matrix():
+    T = lib.GrB_INT64
+    A = matrix.new(T, 2, 2)
+    for args in zip(*_test_elements(T)):
+        f = _element_setters[T]
+        check_status(A, f(A[0], *args))
+    data = matrix.serialize(A)
+    B = matrix.deserialize(data)
+
+    # Test equal
+    C = matrix.new(lib.GrB_BOOL, 2, 2)
+    check_status(
+        C,
+        lib.GrB_Matrix_eWiseAdd_BinaryOp(C[0], NULL, NULL, _eq_ops[T], A[0], B[0], NULL),
+    )
+    assert matrix.nvals(A) == matrix.nvals(B) == matrix.nvals(C)
+    is_eq = ffi.new("bool*")
+    check_status(
+        C,
+        lib.GrB_Matrix_reduce_BOOL(is_eq, NULL, lib.GrB_LAND_MONOID_BOOL, C[0], NULL),
+    )
+    assert is_eq[0]
+
+
+def test_serialize_vector():
+    T = lib.GrB_INT64
+    v = vector.new(T, 3)
+    check_status(v, lib.GrB_Vector_setElement_INT64(v[0], 2, 0))
+    check_status(v, lib.GrB_Vector_setElement_INT64(v[0], 10, 1))
+    data = vector.serialize(v, lib.GxB_COMPRESSION_LZ4HC, level=7)
+    w = vector.deserialize(data)
+
+    # Test equal
+    x = vector.new(lib.GrB_BOOL, 3)
+    check_status(
+        x,
+        lib.GrB_Vector_eWiseAdd_BinaryOp(x[0], NULL, NULL, _eq_ops[T], v[0], w[0], NULL),
+    )
+    assert vector.nvals(v) == vector.nvals(w) == vector.nvals(x)
+    is_eq = ffi.new("bool*")
+    check_status(
+        x,
+        lib.GrB_Vector_reduce_BOOL(is_eq, NULL, lib.GrB_LAND_MONOID_BOOL, x[0], NULL),
+    )
+    assert is_eq[0]
 
 
 def test_matrix_binfile_read_write(tmp_path):

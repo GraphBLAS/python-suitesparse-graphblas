@@ -38,6 +38,10 @@ class OutputNotEmpty(GraphBLASException):
     pass
 
 
+class EmptyObject(GraphBLASException):
+    pass
+
+
 class OutOfMemory(GraphBLASException):
     pass
 
@@ -51,4 +55,8 @@ class IndexOutOfBound(GraphBLASException):
 
 
 class Panic(GraphBLASException):
+    pass
+
+
+class NotImplementedException(GraphBLASException):
     pass

@@ -117,11 +117,15 @@ _error_code_lookup = {
     lib.GrB_DOMAIN_MISMATCH: ex.DomainMismatch,
     lib.GrB_DIMENSION_MISMATCH: ex.DimensionMismatch,
     lib.GrB_OUTPUT_NOT_EMPTY: ex.OutputNotEmpty,
+    lib.GrB_EMPTY_OBJECT: ex.EmptyObject,
     # Execution Errors
     lib.GrB_OUT_OF_MEMORY: ex.OutOfMemory,
     lib.GrB_INSUFFICIENT_SPACE: ex.InsufficientSpace,
     lib.GrB_INDEX_OUT_OF_BOUNDS: ex.IndexOutOfBound,
     lib.GrB_PANIC: ex.Panic,
+    lib.GrB_NOT_IMPLEMENTED: ex.NotImplementedException,
+    # GxB Errors
+    lib.GxB_EXHAUSTED: StopIteration,
 }
 GrB_SUCCESS = lib.GrB_SUCCESS
 GrB_NO_VALUE = lib.GrB_NO_VALUE

@@ -1,5 +1,8 @@
 from suitesparse_graphblas import check_status, ffi, lib
 
+from .io.serialize import deserialize_matrix as deserialize  # noqa
+from .io.serialize import serialize_matrix as serialize  # noqa
+
 
 def free(A):
     """Free a matrix."""
