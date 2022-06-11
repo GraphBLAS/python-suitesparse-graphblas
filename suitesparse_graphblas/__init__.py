@@ -1,3 +1,5 @@
+from contextlib import contextmanager as _contextmanager
+
 from . import _version
 from . import exceptions as ex
 from . import utils
@@ -173,6 +175,39 @@ def check_status(obj, response_code):
     error_func(string, obj)
     text = ffi.string(string[0]).decode()
     raise _error_code_lookup[response_code](text)
+
+
+def enable_burble():
+    """Enable diagnostic output"""
+    info = lib.GxB_Global_Option_set(lib.GxB_BURBLE, ffi.cast("int", 1))
+    if info != lib.GrB_SUCCESS:
+        raise _error_code_lookup[info]("Failed to enable burble (has GraphBLAS been initialized?")
+
+
+def disable_burble():
+    """Disable diagnostic output"""
+    info = lib.GxB_Global_Option_set(lib.GxB_BURBLE, ffi.cast("int", 0))
+    if info != lib.GrB_SUCCESS:
+        raise _error_code_lookup[info]("Failed to disable burble (has GraphBLAS been initialized?")
+
+
+@_contextmanager
+def burbling():
+    """Enable diagnostic output within a context.
+
+    >>> from suitesparse_graphblas import burbling, lib, matrix
+    >>>
+    >>> A = matrix.new(lib.GrB_BOOL, 3, 3)
+    >>> with burbling():
+    >>>     n = matrix.nvals(A)
+      [ GrB_Matrix_nvals
+         1.91e-06 sec ]
+    """
+    enable_burble()
+    try:
+        yield
+    finally:
+        disable_burble()
 
 
 __version__ = _version.get_versions()["version"]
