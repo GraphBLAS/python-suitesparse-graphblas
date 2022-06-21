@@ -175,4 +175,88 @@ def check_status(obj, response_code):
     raise _error_code_lookup[response_code](text)
 
 
+class burble:
+    """Control diagnostic output, and may be used as a context manager.
+
+    Set up and simple usage:
+
+    >>> from suitesparse_graphblas import burble, lib, matrix
+    >>>
+    >>> A = matrix.new(lib.GrB_BOOL, 3, 3)
+    >>> burble.is_enabled
+    False
+    >>> burble.enable()
+    >>> burble.is_enabled
+    True
+    >>> burble.disable()
+
+    Example with explicit enable and disable:
+
+    >>> burble.enable()
+    >>> n = matrix.nvals(A)
+      [ GrB_Matrix_nvals
+         1.91e-06 sec ]
+    >>> burble.disable()
+
+    Example as a context manager:
+
+    >>> with burble():
+    >>>     n = matrix.nvals(A)
+      [ GrB_Matrix_nvals
+         1.91e-06 sec ]
+
+    """
+
+    def __init__(self):
+        self._states = []
+
+    @property
+    def is_enabled(self):
+        """Is burble enabled?"""
+        val_ptr = ffi.new("bool*")
+        info = lib.GxB_Global_Option_get(lib.GxB_BURBLE, val_ptr)
+        if info != lib.GrB_SUCCESS:
+            raise _error_code_lookup[info](
+                "Failed to get burble status (has GraphBLAS been initialized?"
+            )
+        return val_ptr[0]
+
+    def enable(self):
+        """Enable diagnostic output"""
+        info = lib.GxB_Global_Option_set(lib.GxB_BURBLE, ffi.cast("int", 1))
+        if info != lib.GrB_SUCCESS:
+            raise _error_code_lookup[info](
+                "Failed to enable burble (has GraphBLAS been initialized?"
+            )
+
+    def disable(self):
+        """Disable diagnostic output"""
+        info = lib.GxB_Global_Option_set(lib.GxB_BURBLE, ffi.cast("int", 0))
+        if info != lib.GrB_SUCCESS:
+            raise _error_code_lookup[info](
+                "Failed to disable burble (has GraphBLAS been initialized?"
+            )
+
+    def __enter__(self):
+        is_enabled = self.is_enabled
+        if not is_enabled:
+            self.enable()
+        self._states.append(is_enabled)
+        return self
+
+    def __exit__(self, type_, value, traceback):
+        is_enabled = self._states.pop()
+        if not is_enabled:
+            self.disable()
+
+    def __reduce__(self):
+        return "burble"
+
+    def __repr__(self):
+        return f"<burble is_enabled={self.is_enabled}>"
+
+
+burble = burble()
+
+
 __version__ = _version.get_versions()["version"]
