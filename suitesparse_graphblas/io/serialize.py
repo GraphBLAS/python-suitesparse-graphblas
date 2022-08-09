@@ -22,7 +22,7 @@ def get_serialize_desc(compression=lib.GxB_COMPRESSION_DEFAULT, level=None, nthr
     if nthreads is not None:
         check_status(desc, lib.GxB_Desc_set(desc[0], lib.GxB_NTHREADS, ffi.cast("int", nthreads)))
     if compression is not None:
-        if level is not None and compression == lib.GxB_COMPRESSION_LZ4HC:
+        if level is not None and compression in {lib.GxB_COMPRESSION_LZ4HC, GxB_COMPRESSION_ZSTD}:
             compression += level
         check_status(
             desc, lib.GxB_Desc_set(desc[0], lib.GxB_COMPRESSION, ffi.cast("int", compression))
@@ -37,9 +37,11 @@ def serialize_matrix(A, compression=lib.GxB_COMPRESSION_DEFAULT, level=None, *, 
     ----------
     compression : int, optional
         One of None, GxB_COMPRESSION_NONE, GxB_COMPRESSION_DEFAULT,
-        GxB_COMPRESSION_LZ4, or GxB_COMPRESSION_LZ4HC
+        GxB_COMPRESSION_LZ4, GxB_COMPRESSION_LZ4HC, or GxB_COMPRESSION_ZSTD
     level : int, optional
-        Used by GxB_COMPRESSION_LZ4HC.  Should be between 1 and 9, where 9 is most compressed.
+        For GxB_COMPRESSION_LZ4HC, should be between 1 and 9, where 9 is most compressed.
+        For GxB_COMPRESSION_ZSTD, should be between 1 and 19, where 19 is most compressed.
+
     nthreads : int, optional
         The maximum number of OpenMP threads to use.
     """
@@ -59,9 +61,10 @@ def serialize_vector(v, compression=lib.GxB_COMPRESSION_DEFAULT, level=None, *, 
     ----------
     compression : int, optional
         One of None, GxB_COMPRESSION_NONE, GxB_COMPRESSION_DEFAULT,
-        GxB_COMPRESSION_LZ4, or GxB_COMPRESSION_LZ4HC
+        GxB_COMPRESSION_LZ4, GxB_COMPRESSION_LZ4HC, or GxB_COMPRESSION_ZSTD
     level : int, optional
-        Used by GxB_COMPRESSION_LZ4HC.  Should be between 1 and 9, where 9 is most compressed.
+        For GxB_COMPRESSION_LZ4HC, should be between 1 and 9, where 9 is most compressed.
+        For GxB_COMPRESSION_ZSTD, should be between 1 and 19, where 19 is most compressed.
     nthreads : int, optional
         The maximum number of OpenMP threads to use.
     """
