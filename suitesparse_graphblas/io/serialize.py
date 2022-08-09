@@ -22,7 +22,10 @@ def get_serialize_desc(compression=lib.GxB_COMPRESSION_DEFAULT, level=None, nthr
     if nthreads is not None:
         check_status(desc, lib.GxB_Desc_set(desc[0], lib.GxB_NTHREADS, ffi.cast("int", nthreads)))
     if compression is not None:
-        if level is not None and compression in {lib.GxB_COMPRESSION_LZ4HC, GxB_COMPRESSION_ZSTD}:
+        if level is not None and compression in {
+            lib.GxB_COMPRESSION_LZ4HC,
+            lib.GxB_COMPRESSION_ZSTD,
+        }:
             compression += level
         check_status(
             desc, lib.GxB_Desc_set(desc[0], lib.GxB_COMPRESSION, ffi.cast("int", compression))
