@@ -15,11 +15,11 @@ jobs:
       fail-fast: false
       matrix:
         os: ["ubuntu-latest", "macos-latest", "windows-latest"]
-        # os: ["ubuntu-latest"]
-        python-version: ["3.8", "3.9", "3.10"]
         source: ["conda-forge"]
+        # os: ["ubuntu-latest"]
         # source: ["source"]
-        graphblas-version: ["7.2.0"]
+        python-version: ["3.8", "3.9", "3.10"]
+        graphblas-version: ["7.3.0"]
     steps:
     - name: Checkout
       uses: actions/checkout@v2

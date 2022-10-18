@@ -3054,7 +3054,9 @@ extern GrB_Info GxB_Matrix_unpack_HyperCSR(GrB_Matrix A, GrB_Index **Ap, GrB_Ind
 extern GrB_Info GxB_Row_subassign(GrB_Matrix C, const GrB_Vector mask, const GrB_BinaryOp accum, const GrB_Vector u, GrB_Index i, const GrB_Index *J, GrB_Index nj, const GrB_Descriptor desc);
 extern GrB_Info GxB_Vector_diag(GrB_Vector v, const GrB_Matrix A, int64_t k, const GrB_Descriptor desc);
 extern GrB_Info GxB_colIterator_attach(GxB_Iterator iterator, GrB_Matrix A, GrB_Descriptor desc);
+extern GrB_Info GxB_pack_HyperHash(GrB_Matrix A, GrB_Matrix *Y, const GrB_Descriptor desc);
 extern GrB_Info GxB_rowIterator_attach(GxB_Iterator iterator, GrB_Matrix A, GrB_Descriptor desc);
+extern GrB_Info GxB_unpack_HyperHash(GrB_Matrix A, GrB_Matrix *Y, const GrB_Descriptor desc);
 
 /* monoid */
 extern GrB_Info GxB_Monoid_fprint(GrB_Monoid monoid, const char *name, GxB_Print_Level pr, FILE *f);
