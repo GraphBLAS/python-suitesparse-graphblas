@@ -14,10 +14,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # os: ["ubuntu-latest", "macos-latest", "windows-latest"]
-        # source: ["conda-forge"]
-        os: ["ubuntu-latest"]
-        source: ["source"]
+        os: ["ubuntu-latest", "macos-latest", "windows-latest"]
+        source: ["conda-forge"]
+        # os: ["ubuntu-latest"]
+        # source: ["source"]
         python-version: ["3.8", "3.9", "3.10"]
         graphblas-version: ["7.3.0"]
     steps:
