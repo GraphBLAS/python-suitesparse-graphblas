@@ -1,9 +1,11 @@
 import os
 import sys
+import platform
 
 from cffi import FFI
 
 is_win = sys.platform.startswith("win")
+is_arm64 = platform.machine() == "arm64"
 thisdir = os.path.dirname(__file__)
 
 ffibuilder = FFI()
@@ -28,6 +30,8 @@ ffibuilder.set_source(
 header = "suitesparse_graphblas.h"
 if is_win:
     header = "suitesparse_graphblas_no_complex.h"
+if is_arm64:
+    header = "suitesparse_graphblas_arm64.h"
 gb_cdef = open(os.path.join(thisdir, header))
 
 ffibuilder.cdef(gb_cdef.read())
