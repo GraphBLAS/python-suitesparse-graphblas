@@ -7,11 +7,12 @@ import struct
 import platform
 
 _is_osx_arm64 = platform.machine() == "arm64"
+_is_ppc64le = platform.machine() == "ppc64le"
 _c_float = ffi.typeof("float")
 _c_double = ffi.typeof("double")
 
 
-if _is_osx_arm64:
+if _is_osx_arm64 or _is_ppc64le:
 
     def vararg(val):
         # Interpret float as int32 and double as int64
@@ -25,6 +26,8 @@ if _is_osx_arm64:
             val = ffi.cast("int64_t", val)
         # Cast variadic argument as char * to force it onto the stack where ARM64 expects it
         # https://developer.apple.com/documentation/xcode/writing-arm64-code-for-apple-platforms
+        #
+        # The same fix *may* work for ppc64le
         return ffi.cast("char *", val)
 
 else:
