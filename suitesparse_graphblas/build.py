@@ -5,7 +5,7 @@ import platform
 from cffi import FFI
 
 is_win = sys.platform.startswith("win")
-is_arm64 = True or platform.machine() == "arm64"
+is_arm64 = platform.machine() == "arm64"
 is_ppc64le = platform.machine() == "ppc64le"  # Use same header as arm64, which *may* work
 thisdir = os.path.dirname(__file__)
 
