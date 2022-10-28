@@ -6,6 +6,7 @@ from cffi import FFI
 
 is_win = sys.platform.startswith("win")
 is_arm64 = platform.machine() == "arm64"
+is_ppc64le = platform.machine() == "ppc64le"  # Use same header as arm64, which *may* work
 thisdir = os.path.dirname(__file__)
 
 ffibuilder = FFI()
@@ -30,7 +31,7 @@ ffibuilder.set_source(
 header = "suitesparse_graphblas.h"
 if is_win:
     header = "suitesparse_graphblas_no_complex.h"
-if is_arm64:
+if is_arm64 or is_ppc64le:
     header = "suitesparse_graphblas_arm64.h"
 gb_cdef = open(os.path.join(thisdir, header))
 
