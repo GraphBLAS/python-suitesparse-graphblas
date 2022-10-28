@@ -124,7 +124,6 @@ def binwrite(A, filename, comments=None, opener=Path.open):
 
     typecode = ffinew("int32_t*")
     matrix_type = ffi.new("GrB_Type*")
-    sparsity_status = ffinew("int32_t*")
 
     nrows[0] = matrix.nrows(A)
     ncols[0] = matrix.ncols(A)

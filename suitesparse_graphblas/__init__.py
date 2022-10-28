@@ -3,10 +3,40 @@ from . import exceptions as ex
 from . import utils
 from ._graphblas import ffi, lib  # noqa
 
+import struct
+import platform
+
+_is_osx_arm64 = platform.machine() == "arm64"
+_c_float = ffi.typeof("float")
+_c_double = ffi.typeof("double")
+
+
+if _is_osx_arm64:
+
+    def vararg(val):
+        # Interpret float as int32 and double as int64
+        # https://devblogs.microsoft.com/oldnewthing/20220823-00/?p=107041
+        tov = ffi.typeof(val)
+        if tov == _c_float:
+            val = struct.unpack("l", struct.pack("f", val))[0]
+            val = ffi.cast("int64_t", val)
+        elif tov == _c_double:
+            val = struct.unpack("q", struct.pack("d", val))[0]
+            val = ffi.cast("int64_t", val)
+        # Cast variadic argument as char * to force it onto the stack where ARM64 expects it
+        # https://developer.apple.com/documentation/xcode/writing-arm64-code-for-apple-platforms
+        return ffi.cast("char *", val)
+
+else:
+
+    def vararg(val):
+        return val
+
 
 def is_initialized():
     """Is GraphBLAS initialized via GrB_init or GxB_init?"""
-    return lib.GxB_Global_Option_get(lib.GxB_MODE, ffi.new("GrB_Mode*")) != lib.GrB_PANIC
+    mode = ffi.new("GrB_Mode*")
+    return lib.GxB_Global_Option_get(lib.GxB_MODE, vararg(mode)) != lib.GrB_PANIC
 
 
 def supports_complex():
@@ -214,7 +244,7 @@ class burble:
     def is_enabled(self):
         """Is burble enabled?"""
         val_ptr = ffi.new("bool*")
-        info = lib.GxB_Global_Option_get(lib.GxB_BURBLE, val_ptr)
+        info = lib.GxB_Global_Option_get(lib.GxB_BURBLE, vararg(val_ptr))
         if info != lib.GrB_SUCCESS:
             raise _error_code_lookup[info](
                 "Failed to get burble status (has GraphBLAS been initialized?"
@@ -223,7 +253,7 @@ class burble:
 
     def enable(self):
         """Enable diagnostic output"""
-        info = lib.GxB_Global_Option_set(lib.GxB_BURBLE, ffi.cast("int", 1))
+        info = lib.GxB_Global_Option_set(lib.GxB_BURBLE, vararg(ffi.cast("int", 1)))
         if info != lib.GrB_SUCCESS:
             raise _error_code_lookup[info](
                 "Failed to enable burble (has GraphBLAS been initialized?"
@@ -231,7 +261,7 @@ class burble:
 
     def disable(self):
         """Disable diagnostic output"""
-        info = lib.GxB_Global_Option_set(lib.GxB_BURBLE, ffi.cast("int", 0))
+        info = lib.GxB_Global_Option_set(lib.GxB_BURBLE, vararg(ffi.cast("int", 0)))
         if info != lib.GrB_SUCCESS:
             raise _error_code_lookup[info](
                 "Failed to disable burble (has GraphBLAS been initialized?"

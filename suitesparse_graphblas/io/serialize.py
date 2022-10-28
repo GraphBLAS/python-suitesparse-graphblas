@@ -1,6 +1,6 @@
 import numpy as np
 
-from suitesparse_graphblas import check_status, ffi, lib
+from suitesparse_graphblas import check_status, ffi, lib, vararg
 from suitesparse_graphblas.utils import claim_buffer
 
 
@@ -20,7 +20,10 @@ def get_serialize_desc(compression=lib.GxB_COMPRESSION_DEFAULT, level=None, nthr
     check_status(desc, lib.GrB_Descriptor_new(desc))
     desc = ffi.gc(desc, free_desc)
     if nthreads is not None:
-        check_status(desc, lib.GxB_Desc_set(desc[0], lib.GxB_NTHREADS, ffi.cast("int", nthreads)))
+        check_status(
+            desc,
+            lib.GxB_Desc_set(desc[0], lib.GxB_NTHREADS, vararg(ffi.cast("int", nthreads))),
+        )
     if compression is not None:
         if level is not None and compression in {
             lib.GxB_COMPRESSION_LZ4HC,
@@ -28,7 +31,8 @@ def get_serialize_desc(compression=lib.GxB_COMPRESSION_DEFAULT, level=None, nthr
         }:
             compression += level
         check_status(
-            desc, lib.GxB_Desc_set(desc[0], lib.GxB_COMPRESSION, ffi.cast("int", compression))
+            desc,
+            lib.GxB_Desc_set(desc[0], lib.GxB_COMPRESSION, vararg(ffi.cast("int", compression))),
         )
     return desc
 

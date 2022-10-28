@@ -1,4 +1,4 @@
-from suitesparse_graphblas import check_status, ffi, lib
+from suitesparse_graphblas import check_status, ffi, lib, vararg
 
 from .io.serialize import deserialize_matrix as deserialize  # noqa
 from .io.serialize import serialize_matrix as serialize  # noqa
@@ -109,7 +109,7 @@ def format(A):
 
     """
     format = ffi.new("GxB_Format_Value*")
-    check_status(A, lib.GxB_Matrix_Option_get(A[0], lib.GxB_FORMAT, format))
+    check_status(A, lib.GxB_Matrix_Option_get(A[0], lib.GxB_FORMAT, vararg(format)))
     return format[0]
 
 
@@ -122,58 +122,60 @@ def set_format(A, format):
     True
 
     """
-    check_status(
-        A, lib.GxB_Matrix_Option_set(A[0], lib.GxB_FORMAT, ffi.cast("GxB_Format_Value", format))
-    )
+    format_val = ffi.cast("GxB_Format_Value", format)
+    check_status(A, lib.GxB_Matrix_Option_set(A[0], lib.GxB_FORMAT, vararg(format_val)))
 
 
 def sparsity_status(A):
     """Get the sparsity status of the matrix."""
     sparsity_status = ffi.new("int32_t*")
-    check_status(A, lib.GxB_Matrix_Option_get(A[0], lib.GxB_SPARSITY_STATUS, sparsity_status))
+    check_status(
+        A, lib.GxB_Matrix_Option_get(A[0], lib.GxB_SPARSITY_STATUS, vararg(sparsity_status))
+    )
     return sparsity_status[0]
 
 
 def sparsity_control(A):
     """Get the sparsity control of the matrix."""
     sparsity_control = ffi.new("int32_t*")
-    check_status(A, lib.GxB_Matrix_Option_get(A[0], lib.GxB_SPARSITY_CONTROL, sparsity_control))
+    check_status(
+        A, lib.GxB_Matrix_Option_get(A[0], lib.GxB_SPARSITY_CONTROL, vararg(sparsity_control))
+    )
     return sparsity_control[0]
 
 
 def set_sparsity_control(A, sparsity):
     """Set the sparsity control of the matrix."""
+    sparsity_control = ffi.cast("int32_t", sparsity)
     check_status(
-        A, lib.GxB_Matrix_Option_set(A[0], lib.GxB_SPARSITY_CONTROL, ffi.cast("int", sparsity))
+        A, lib.GxB_Matrix_Option_set(A[0], lib.GxB_SPARSITY_CONTROL, vararg(sparsity_control))
     )
 
 
 def hyper_switch(A):
     """Get the hyper switch of the matrix."""
     hyper_switch = ffi.new("double*")
-    check_status(A, lib.GxB_Matrix_Option_get(A[0], lib.GxB_HYPER_SWITCH, hyper_switch))
+    check_status(A, lib.GxB_Matrix_Option_get(A[0], lib.GxB_HYPER_SWITCH, vararg(hyper_switch)))
     return hyper_switch[0]
 
 
 def set_hyper_switch(A, hyper_switch):
     """Set the hyper switch of the matrix."""
-    check_status(
-        A, lib.GxB_Matrix_Option_set(A[0], lib.GxB_HYPER_SWITCH, ffi.cast("double", hyper_switch))
-    )
+    hyper_switch = ffi.cast("double", hyper_switch)
+    check_status(A, lib.GxB_Matrix_Option_set(A[0], lib.GxB_HYPER_SWITCH, vararg(hyper_switch)))
 
 
 def bitmap_switch(A):
     """Get the bitmap switch of the matrix."""
     bitmap_switch = ffi.new("double*")
-    check_status(A, lib.GxB_Matrix_Option_get(A[0], lib.GxB_BITMAP_SWITCH, bitmap_switch))
+    check_status(A, lib.GxB_Matrix_Option_get(A[0], lib.GxB_BITMAP_SWITCH, vararg(bitmap_switch)))
     return bitmap_switch[0]
 
 
 def set_bitmap_switch(A, bitmap_switch):
     """Set the bitmap switch of the matrix."""
-    check_status(
-        A, lib.GxB_Matrix_Option_set(A[0], lib.GxB_BITMAP_SWITCH, ffi.cast("double", bitmap_switch))
-    )
+    bitmap_switch = ffi.cast("double", bitmap_switch)
+    check_status(A, lib.GxB_Matrix_Option_set(A[0], lib.GxB_BITMAP_SWITCH, vararg(bitmap_switch)))
 
 
 def set_bool(A, value, i, j):
