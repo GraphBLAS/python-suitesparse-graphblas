@@ -323,6 +323,8 @@ IGNORE_DEFINES = {
     "GxB_SUITESPARSE_GRAPHBLAS",
     "NMACRO",
     "RMM_WRAP_H",
+    "GXB_COMPLEX_H",
+    "GxB_STATIC_INLINE_VOID",
     # deprecated
     "GxB_HYPER",
 }
