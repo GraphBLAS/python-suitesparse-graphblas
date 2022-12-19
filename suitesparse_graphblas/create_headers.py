@@ -824,7 +824,7 @@ def main():
     groups = parse_header(processed_h, skip_complex=False)
     text = create_header_text(groups)
     with open(final_h, "w") as f:
-        f.write("\n".join(text))
+        f.write("\n".join(text) + "\n")
 
     # Create final header file (arm64)
     # Replace all variadic arguments (...) with "char *"
@@ -833,20 +833,20 @@ def main():
     patt = re.compile(r"^(extern GrB_Info .*\(.*)(\.\.\.)(\);)$")
     text = [patt.sub(r"\1char *\3", line) for line in orig_text]
     with open(final_arm64_h, "w") as f:
-        f.write("\n".join(text))
+        f.write("\n".join(text) + "\n")
 
     # Create final header file (no complex)
     print(f"Step 5: parse header file to create {final_no_complex_h}")
     groups_no_complex = parse_header(processed_h, skip_complex=True)
     text = create_header_text(groups_no_complex)
     with open(final_no_complex_h, "w") as f:
-        f.write("\n".join(text))
+        f.write("\n".join(text) + "\n")
 
     # Create source
     print(f"Step 6: create {source_c}")
     text = create_source_text(groups)
     with open(source_c, "w") as f:
-        f.write("\n".join(text))
+        f.write("\n".join(text) + "\n")
 
     # Check defines
     print("Step 7: check #define definitions")
