@@ -24,7 +24,7 @@ from suitesparse_graphblas import (
 if platform.system() == "Windows":
     pytest.skip("skipping windows-only tests", allow_module_level=True)
 
-from suitesparse_graphblas.io import binary  # noqa isort:skip
+from suitesparse_graphblas.io import binary  # isort:skip
 
 NULL = ffi.NULL
 
