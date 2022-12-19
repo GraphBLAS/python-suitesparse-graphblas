@@ -1,7 +1,7 @@
 from . import _version
 from . import exceptions as ex
 from . import utils
-from ._graphblas import ffi, lib  # noqa
+from ._graphblas import ffi, lib
 
 import struct
 import platform

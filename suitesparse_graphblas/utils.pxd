@@ -38,4 +38,3 @@ cpdef ndarray claim_buffer_2d(
 )
 
 cpdef unclaim_buffer(ndarray array)
-

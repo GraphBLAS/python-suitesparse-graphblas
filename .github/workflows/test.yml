@@ -19,7 +19,7 @@ jobs:
         # os: ["ubuntu-latest"]
         # source: ["source"]
         python-version: ["3.8", "3.9", "3.10", "3.11"]
-        graphblas-version: ["7.3.2"]
+        graphblas-version: ["7.3.3"]
     steps:
     - name: Checkout
       uses: actions/checkout@v3
