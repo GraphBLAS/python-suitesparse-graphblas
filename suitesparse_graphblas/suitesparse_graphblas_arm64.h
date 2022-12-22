@@ -3099,7 +3099,17 @@ extern GrB_Info GxB_BinaryOp_ztype_name(char *type_name, const GrB_BinaryOp bina
 
 /* core */
 extern GrB_Info GxB_Global_Option_get(GxB_Option_Field field, char *);
+extern GrB_Info GxB_Global_Option_get_CHAR(GxB_Option_Field field, char **value);
+extern GrB_Info GxB_Global_Option_get_FP64(GxB_Option_Field field, double *value);
+extern GrB_Info GxB_Global_Option_get_FUNCTION(GxB_Option_Field field, void **value);
+extern GrB_Info GxB_Global_Option_get_INT32(GxB_Option_Field field, int32_t *value);
+extern GrB_Info GxB_Global_Option_get_INT64(GxB_Option_Field field, int64_t *value);
 extern GrB_Info GxB_Global_Option_set(GxB_Option_Field field, char *);
+extern GrB_Info GxB_Global_Option_set_FP64(GxB_Option_Field field, double value);
+extern GrB_Info GxB_Global_Option_set_FP64_ARRAY(GxB_Option_Field field, double *value);
+extern GrB_Info GxB_Global_Option_set_FUNCTION(GxB_Option_Field field, void *value);
+extern GrB_Info GxB_Global_Option_set_INT32(GxB_Option_Field field, int32_t value);
+extern GrB_Info GxB_Global_Option_set_INT64_ARRAY(GxB_Option_Field field, int64_t *value);
 extern GrB_Info GxB_deserialize_type_name(char *type_name, const void *blob, GrB_Index blob_size);
 extern GrB_Info GxB_init(GrB_Mode mode, void *(*user_malloc_function)(size_t), void *(*user_calloc_function)(size_t, size_t), void *(*user_realloc_function)(void *, size_t), void (*user_free_function)(void *));
 
