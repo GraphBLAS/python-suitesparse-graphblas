@@ -129,9 +129,7 @@ def set_format(A, format):
 def sparsity_status(A):
     """Get the sparsity status of the matrix."""
     sparsity_status = ffi.new("int32_t*")
-    check_status(
-        A, lib.GxB_Matrix_Option_get_INT32(A[0], lib.GxB_SPARSITY_STATUS, sparsity_status)
-    )
+    check_status(A, lib.GxB_Matrix_Option_get_INT32(A[0], lib.GxB_SPARSITY_STATUS, sparsity_status))
     return sparsity_status[0]
 
 
