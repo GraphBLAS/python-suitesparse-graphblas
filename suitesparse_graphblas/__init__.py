@@ -12,6 +12,9 @@ _c_float = ffi.typeof("float")
 _c_double = ffi.typeof("double")
 
 
+# It is strongly recommended to use the non-variadic version of functions to be
+# compatible with the most number of architectures. For example, you should use
+# GxB_Matrix_Option_get_INT32 instead of GxB_Matrix_Option_get.
 if _is_osx_arm64 or _is_ppc64le:
 
     def vararg(val):
@@ -38,8 +41,8 @@ else:
 
 def is_initialized():
     """Is GraphBLAS initialized via GrB_init or GxB_init?"""
-    mode = ffi.new("GrB_Mode*")
-    return lib.GxB_Global_Option_get(lib.GxB_MODE, vararg(mode)) != lib.GrB_PANIC
+    mode = ffi.new("int32_t*")
+    return lib.GxB_Global_Option_get_INT32(lib.GxB_MODE, mode) != lib.GrB_PANIC
 
 
 def supports_complex():
@@ -246,8 +249,8 @@ class burble:
     @property
     def is_enabled(self):
         """Is burble enabled?"""
-        val_ptr = ffi.new("bool*")
-        info = lib.GxB_Global_Option_get(lib.GxB_BURBLE, vararg(val_ptr))
+        val_ptr = ffi.new("int32_t*")
+        info = lib.GxB_Global_Option_get_INT32(lib.GxB_BURBLE, val_ptr)
         if info != lib.GrB_SUCCESS:
             raise _error_code_lookup[info](
                 "Failed to get burble status (has GraphBLAS been initialized?"
@@ -256,7 +259,7 @@ class burble:
 
     def enable(self):
         """Enable diagnostic output"""
-        info = lib.GxB_Global_Option_set(lib.GxB_BURBLE, vararg(ffi.cast("int", 1)))
+        info = lib.GxB_Global_Option_set_INT32(lib.GxB_BURBLE, ffi.cast("int32_t", 1))
         if info != lib.GrB_SUCCESS:
             raise _error_code_lookup[info](
                 "Failed to enable burble (has GraphBLAS been initialized?"
@@ -264,7 +267,7 @@ class burble:
 
     def disable(self):
         """Disable diagnostic output"""
-        info = lib.GxB_Global_Option_set(lib.GxB_BURBLE, vararg(ffi.cast("int", 0)))
+        info = lib.GxB_Global_Option_set_INT32(lib.GxB_BURBLE, ffi.cast("int32_t", 0))
         if info != lib.GrB_SUCCESS:
             raise _error_code_lookup[info](
                 "Failed to disable burble (has GraphBLAS been initialized?"
