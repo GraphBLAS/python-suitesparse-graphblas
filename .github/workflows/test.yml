@@ -48,7 +48,7 @@ jobs:
 
         # From branch
         curl -L https://github.com/DrTimothyAldenDavis/GraphBLAS/tarball/${{ matrix.graphblas-version }} | tar xzf -
-        pushd DrTim*
+        pushd DrTim*/build
 
         echo ${CONDA_PREFIX}
         cmake -DCMAKE_INSTALL_PREFIX=${CONDA_PREFIX} -DCMAKE_INSTALL_LIBDIR=lib -DCMAKE_BUILD_TYPE=Release ..
