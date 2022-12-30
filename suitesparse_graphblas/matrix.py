@@ -1,7 +1,7 @@
 from suitesparse_graphblas import check_status, ffi, lib
 
-from .io.serialize import deserialize_matrix as deserialize  # noqa
-from .io.serialize import serialize_matrix as serialize  # noqa
+from .io.serialize import deserialize_matrix as deserialize  # noqa: F401
+from .io.serialize import serialize_matrix as serialize  # noqa: F401
 
 
 def free(A):

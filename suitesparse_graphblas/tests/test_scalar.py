@@ -1,6 +1,6 @@
 import pytest
 
-from suitesparse_graphblas import ffi, lib, supports_complex  # noqa
+from suitesparse_graphblas import ffi, lib, supports_complex  # noqa: F401
 
 
 @pytest.mark.skipif("not supports_complex()")
