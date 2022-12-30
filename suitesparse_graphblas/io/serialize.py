@@ -140,4 +140,4 @@ def deserialize_vector(data, *, free=True, nthreads=None):
     return v
 
 
-from suitesparse_graphblas import matrix, vector  # noqa isort:skip
+from suitesparse_graphblas import matrix, vector  # noqa: E402 isort:skip

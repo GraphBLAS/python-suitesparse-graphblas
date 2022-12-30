@@ -242,7 +242,7 @@ def binwrite(A, filename, comments=None, opener=Path.open):
         f"{lib.GxB_IMPLEMENTATION_SUB}"
     )
 
-    vars = dict(
+    vars = dict(  # noqa: C408
         suitesparse_version=suitesparse_version,
         user_agent="pygraphblas-" + __version__,
         nrows=nrows[0],
