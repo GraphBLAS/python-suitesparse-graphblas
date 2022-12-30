@@ -24,7 +24,6 @@ Run `python create_headers.py --help` to see more help.
 import argparse
 import os
 import re
-import shutil
 import subprocess
 import sys
 
@@ -315,6 +314,7 @@ IGNORE_DEFINES = {
     "GxB",
     "CMPLX",
     "CMPLXF",
+    "GB_GLOBAL",
     "GB_PUBLIC",
     "GB_restrict",
     "GRAPHBLAS_H",
@@ -637,7 +637,7 @@ def get_group_info(groups, ast, *, skip_complex=False):
             "name": node.name,
             "group": group,
             "node": node,
-            "text": text,
+            "text": text.replace("extern ", ""),
         }
 
     generator = c_generator.CGenerator()
@@ -806,7 +806,11 @@ def main():
     print(f"Step 1: copy {args.graphblas} to {graphblas_h}")
     if not os.path.exists(args.graphblas):
         raise FileNotFoundError(f"File not found: {args.graphblas}")
-    shutil.copyfile(args.graphblas, graphblas_h)
+    # shutil.copyfile(args.graphblas, graphblas_h)
+    with open(args.graphblas) as f:
+        text = f.read()
+    with open(graphblas_h, "w") as f:
+        f.write(text.replace("#define GB_PUBLIC", "#define GB_PUBLIC extern", 1))
 
     # Run it through the preprocessor
     print(f"Step 2: run preprocessor to create {processed_h}")
