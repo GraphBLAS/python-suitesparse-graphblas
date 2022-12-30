@@ -24,6 +24,7 @@ Run `python create_headers.py --help` to see more help.
 import argparse
 import os
 import re
+import shutil
 import subprocess
 import sys
 
@@ -364,21 +365,21 @@ def get_groups(ast):
 
     seen = set()
     groups = {}
-    vals = {x for x in lines if "extern GrB_Info GxB" in x} - seen
-    vals |= {x for x in lines if "extern " in x and "GxB_Iterator" in x and "GB" not in x} - seen
+    vals = {x for x in lines if "GrB_Info GxB" in x} - seen
+    vals |= {x for x in lines if "GxB_Iterator" in x and "GB" not in x} - seen
     seen.update(vals)
     groups["GxB methods"] = sorted(vals, key=sort_key)
 
-    vals = {x for x in lines if "extern GrB_Info GrB" in x} - seen
+    vals = {x for x in lines if "GrB_Info GrB" in x} - seen
     seen.update(vals)
     groups["GrB methods"] = sorted(vals, key=sort_key)
 
-    vals = {x for x in lines if "extern GrB_Info GB" in x} - seen
-    vals |= {x for x in lines if "extern " in x and "GxB_Iterator" in x and "GB" in x} - seen
+    vals = {x for x in lines if "GrB_Info GB" in x} - seen
+    vals |= {x for x in lines if "GxB_Iterator" in x and "GB" in x and "typedef" not in x} - seen
     seen.update(vals)
     groups["GB methods"] = sorted(vals, key=sort_key)
 
-    missing_methods = {x for x in lines if "extern GrB_Info " in x} - seen
+    missing_methods = {x for x in lines if "GrB_Info " in x} - seen
     assert not missing_methods, ", ".join(sorted(missing_methods))
 
     vals = {x for x in lines if "extern GrB" in x} - seen
@@ -584,7 +585,7 @@ def get_group_info(groups, ast, *, skip_complex=False):
             self.functions = []
 
         def visit_Decl(self, node):
-            if isinstance(node.type, c_ast.FuncDecl) and node.storage == ["extern"]:
+            if isinstance(node.type, c_ast.FuncDecl) and node.storage == []:
                 self.functions.append(node)
 
     def handle_function_node(node):
@@ -637,7 +638,7 @@ def get_group_info(groups, ast, *, skip_complex=False):
             "name": node.name,
             "group": group,
             "node": node,
-            "text": text.replace("extern ", ""),
+            "text": text,
         }
 
     generator = c_generator.CGenerator()
@@ -806,11 +807,7 @@ def main():
     print(f"Step 1: copy {args.graphblas} to {graphblas_h}")
     if not os.path.exists(args.graphblas):
         raise FileNotFoundError(f"File not found: {args.graphblas}")
-    # shutil.copyfile(args.graphblas, graphblas_h)
-    with open(args.graphblas) as f:
-        text = f.read()
-    with open(graphblas_h, "w") as f:
-        f.write(text.replace("#define GB_PUBLIC", "#define GB_PUBLIC extern", 1))
+    shutil.copyfile(args.graphblas, graphblas_h)
 
     # Run it through the preprocessor
     print(f"Step 2: run preprocessor to create {processed_h}")
