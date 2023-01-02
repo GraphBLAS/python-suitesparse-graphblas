@@ -14,12 +14,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ["ubuntu-latest", "macos-latest", "windows-latest"]
-        source: ["conda-forge"]
-        # os: ["ubuntu-latest"]
-        # source: ["source"]
+        # os: ["ubuntu-latest", "macos-latest", "windows-latest"]
+        # source: ["conda-forge"]
+        os: ["ubuntu-latest"]
+        source: ["source"]
         python-version: ["3.8", "3.9", "3.10", "3.11"]
-        graphblas-version: ["7.4.0"]
+        graphblas-version: ["7.4.1.beta3"]
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -40,8 +40,15 @@ jobs:
       run: |
         # This isn't working!  Why not?
         # sh suitesparse.sh refs/tags/${{ matrix.graphblas-version }}
+
+        # From tag
         curl -L https://github.com/DrTimothyAldenDavis/GraphBLAS/archive/refs/tags/v${{ matrix.graphblas-version }}.tar.gz | tar xzf -
         pushd GraphBLAS-${{ matrix.graphblas-version }}/build
+
+        # From branch
+        # curl -L https://github.com/DrTimothyAldenDavis/GraphBLAS/tarball/${{ matrix.graphblas-version }} | tar xzf -
+        # pushd DrTim*/build
+
         echo ${CONDA_PREFIX}
         cmake -DCMAKE_INSTALL_PREFIX=${CONDA_PREFIX} -DCMAKE_INSTALL_LIBDIR=lib -DCMAKE_BUILD_TYPE=Release ..
         cat Makefile
