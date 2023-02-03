@@ -45,7 +45,7 @@ classifiers = [
 ]
 dependencies = [
     # These are super-old; can/should we update them?
-    "cffi>=1.0.0",
+    "cffi>=1.11",
     "numpy>=1.19",
 ]
 [project.urls]
