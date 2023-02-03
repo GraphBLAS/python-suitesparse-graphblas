@@ -140,7 +140,6 @@ def test_matrix_binfile_read_write(tmp_path):
         for format in (lib.GxB_BY_ROW, lib.GxB_BY_COL):
             for T in grb_types:
                 for sparsity in (lib.GxB_HYPERSPARSE, lib.GxB_SPARSE, lib.GxB_BITMAP, lib.GxB_FULL):
-
                     A = matrix.new(T, 2, 2)
 
                     if T is not lib.GxB_FULL:

@@ -20,6 +20,13 @@ if is_win:
     include_dirs.append(os.path.join(sys.prefix, "Library", "include"))
     library_dirs.append(os.path.join(sys.prefix, "Library", "lib"))
 
+    # suitesparse.sh installs GraphBLAS.h here
+    include_dirs.append(os.path.join("C:\\", "Program Files (x86)", "include"))
+    # graphblas.lib and graphblas.dll.a
+    library_dirs.append(os.path.join("C:\\", "Program Files (x86)", "lib"))
+    # graphblas.dll
+    library_dirs.append(os.path.join("C:\\", "Program Files (x86)", "bin"))
+
 ffibuilder.set_source(
     "suitesparse_graphblas._graphblas",
     source,

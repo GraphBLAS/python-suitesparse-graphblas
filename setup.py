@@ -45,6 +45,12 @@ ext_modules = [
         [name],
         include_dirs=include_dirs,
         define_macros=define_macros,
+        # /d2FH4- flag needed only for early Python 3.8 builds on Windows.
+        # See https://cibuildwheel.readthedocs.io/en/stable/faq/
+        # (Search for flag on page. Full link causes the linter to fail the tests.)
+        #
+        # The /std:c11 flag is because the MSVC default is C89.
+        extra_compile_args=["/d2FH4-", "/std:c11"] if sys.platform == "win32" else [],
     )
     for name in glob(f"suitesparse_graphblas/**/*{suffix}", recursive=True)
 ]
