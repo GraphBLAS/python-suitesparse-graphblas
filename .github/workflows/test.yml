@@ -23,6 +23,8 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
     - name: Conda
       uses: conda-incubator/setup-miniconda@v2
       with:
@@ -57,9 +59,7 @@ jobs:
         popd
     - name: Build
       run: |
-        # pip install -e . --no-deps
-        python setup.py build_ext --inplace
-        python setup.py develop
+        pip install -e . --no-deps
     - name: Test
       env:
         CYTHON_COVERAGE: true
