@@ -57,7 +57,9 @@ jobs:
         popd
     - name: Build
       run: |
-        pip install -e . --no-deps
+        # pip install -e . --no-deps
+        python setup.py build_ext --inplace
+        python setup.py develop
     - name: Test
       env:
         CYTHON_COVERAGE: true
