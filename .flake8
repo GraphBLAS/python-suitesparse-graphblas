@@ -1,0 +1,8 @@
+[flake8]
+max-line-length = 100
+inline-quotes = "
+extend-ignore =
+    E203,
+# E203 whitespace before ':' (to be compatible with black)
+per-file-ignores =
+    suitesparse_graphblas/io/binary.py:C408
