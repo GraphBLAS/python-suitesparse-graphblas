@@ -23,6 +23,8 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
     - name: Conda
       uses: conda-incubator/setup-miniconda@v2
       with:
@@ -57,18 +59,13 @@ jobs:
         popd
     - name: Build
       run: |
-        python setup.py build_ext --inplace
-        python setup.py develop
+        pip install -e . --no-deps
     - name: Test
       env:
         CYTHON_COVERAGE: true
       run: |
         coverage run --branch -m pytest
         coverage run -a --branch suitesparse_graphblas/tests/test_initialize.py
-    - name: Lint
-      run: |
-        black *py suitesparse_graphblas --check --diff
-        flake8 *py suitesparse_graphblas
     - name: create_headers.py check
       if: (! contains(matrix.os, 'windows'))
       run: |

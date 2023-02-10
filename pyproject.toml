@@ -1,5 +1,106 @@
 [build-system]
-requires = ["setuptools", "wheel", "numpy>=1.19", "cython"]
+build-backend = "setuptools.build_meta"
+requires = [
+    "setuptools >=64",
+    "setuptools-git-versioning",
+    "wheel",
+    "cffi",
+    "cython",
+    "oldest-supported-numpy",
+]
+
+[project]
+name = "suitesparse-graphblas"
+dynamic = ["version"]
+description = "SuiteSparse:GraphBLAS Python bindings."
+readme = "README.md"
+requires-python = ">=3.8"
+license = {file = "LICENSE"}
+authors = [
+    {name = "Erik Welch"},
+    {name = "Jim Kitchen"},
+    {name = "Michel Pelletier"},
+]
+maintainers = [
+    {name = "Erik Welch", email = "erik.n.welch@gmail.com"},
+    {name = "Jim Kitchen", email = "jim22k@gmail.com"},
+    {name = "Michel Pelletier", email = "michel@graphegon.com"},
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3 :: Only",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Mathematics",
+]
+dependencies = [
+    # These are super-old; can/should we update them?
+    "cffi>=1.0.0",
+    "numpy>=1.19",
+]
+[project.urls]
+homepage = "https://github.com/GraphBLAS/python-suitesparse-graphblas"
+repository = "https://github.com/GraphBLAS/python-suitesparse-graphblas"
+changelog = "https://github.com/GraphBLAS/python-suitesparse-graphblas/releases"
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+]
+
+[tool.setuptools]
+packages = [
+    'suitesparse_graphblas',
+    # 'suitesparse_graphblas.tests',
+    'suitesparse_graphblas.io',
+]
+
+[tool.setuptools-git-versioning]
+enabled = true
+dev_template = "{tag}+{ccount}.g{sha}"
+dirty_template = "{tag}+{ccount}.g{sha}.dirty"
 
 [tool.black]
 line-length = 100
+target-version = ["py38", "py39", "py310", "py311"]
+
+[tool.isort]
+sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
+profile = "black"
+skip_gitignore = true
+float_to_top = true
+default_section = "THIRDPARTY"
+known_first_party = "suitesparse_graphblas"
+line_length = 100
+skip_glob = ["*.pxd", "*.pyx"]
+
+[tool.coverage.run]
+branch = true
+source = ["suitesparse_graphblas"]
+omit = []
+plugins = ["Cython.Coverage"]
+
+[tool.coverage.report]
+ignore_errors = false
+precision = 1
+fail_under = 0
+skip_covered = true
+skip_empty = true
+exclude_lines = [
+    "pragma: no cover",
+    "raise AssertionError",
+    "raise NotImplementedError",
+]
+
+[tool.pytest]
+testpaths = ["suitesparse_graphblas/tests"]

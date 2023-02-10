@@ -1,0 +1,69 @@
+# https://pre-commit.com/
+#
+# Before first use: `pre-commit install`
+# To run: `pre-commit run --all-files`
+# To update: `pre-commit autoupdate`
+#  - &flake8_dependencies below needs updated manually
+fail_fast: true
+default_language_version:
+    python: python3
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: check-added-large-files
+      - id: check-ast
+      - id: check-toml
+      - id: check-yaml
+      - id: debug-statements
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+      # - id: trailing-whitespace
+  - repo: https://github.com/abravalheri/validate-pyproject
+    rev: v0.12.1
+    hooks:
+      - id: validate-pyproject
+        name: Validate pyproject.toml
+  - repo: https://github.com/myint/autoflake
+    rev: v2.0.1
+    hooks:
+      - id: autoflake
+        args: [--in-place]
+  - repo: https://github.com/pycqa/isort
+    rev: 5.12.0
+    hooks:
+      - id: isort
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.3.1
+    hooks:
+      - id: pyupgrade
+        args: [--py38-plus]
+  # - repo: https://github.com/MarcoGorelli/auto-walrus
+  #   rev: v0.2.2
+  #   hooks:
+  #     - id: auto-walrus
+  #       args: [--line-length, "100"]
+  - repo: https://github.com/psf/black
+    rev: 23.1.0
+    hooks:
+      - id: black
+      # - id: black-jupyter
+  - repo: https://github.com/PyCQA/flake8
+    rev: 6.0.0
+    hooks:
+      - id: flake8
+        additional_dependencies: &flake8_dependencies
+        # These versions need updated manually
+        - flake8==6.0.0
+        - flake8-comprehensions==3.10.1
+        - flake8-bugbear==23.1.20
+        # - flake8-simplify==0.19.3
+  - repo: https://github.com/asottile/yesqa
+    rev: v1.4.0
+    hooks:
+      - id: yesqa
+        additional_dependencies: *flake8_dependencies
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: no-commit-to-branch  # no commit directly to main

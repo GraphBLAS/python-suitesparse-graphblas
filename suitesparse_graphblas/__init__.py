@@ -1,16 +1,26 @@
-from . import _version
+import importlib.metadata
+import platform
+import struct as _struct
+
 from . import exceptions as ex
 from . import utils
 from ._graphblas import ffi, lib
-
-import struct
-import platform
 
 _is_osx_arm64 = platform.machine() == "arm64"
 _is_ppc64le = platform.machine() == "ppc64le"
 _c_float = ffi.typeof("float")
 _c_double = ffi.typeof("double")
 
+try:
+    __version__ = importlib.metadata.version("suitesparse-graphblas")
+except Exception as exc:  # pragma: no cover (safety)
+    raise AttributeError(
+        "`suitesparse_graphblas.__version__` not available. This may mean "
+        "suitesparse-graphblas was incorrectly installed or not installed at all. "
+        "For local development, you may want to do an editable install via "
+        "`python -m pip install -e path/to/suitesparse-graphblas`"
+    ) from exc
+del importlib, platform
 
 # It is strongly recommended to use the non-variadic version of functions to be
 # compatible with the most number of architectures. For example, you should use
@@ -22,10 +32,10 @@ if _is_osx_arm64 or _is_ppc64le:
         # https://devblogs.microsoft.com/oldnewthing/20220823-00/?p=107041
         tov = ffi.typeof(val)
         if tov == _c_float:
-            val = struct.unpack("l", struct.pack("f", val))[0]
+            val = _struct.unpack("l", _struct.pack("f", val))[0]
             val = ffi.cast("int64_t", val)
         elif tov == _c_double:
-            val = struct.unpack("q", struct.pack("d", val))[0]
+            val = _struct.unpack("q", _struct.pack("d", val))[0]
             val = ffi.cast("int64_t", val)
         # Cast variadic argument as char * to force it onto the stack where ARM64 expects it
         # https://developer.apple.com/documentation/xcode/writing-arm64-code-for-apple-platforms
@@ -293,6 +303,3 @@ class burble:
 
 
 burble = burble()
-
-
-__version__ = _version.get_versions()["version"]
