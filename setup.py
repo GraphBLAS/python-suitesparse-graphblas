@@ -1,12 +1,9 @@
-# Twiddle Dee (switch this between Dee and Dum to add meaningless git commits)
 import os
 import sys
 from glob import glob
 
 import numpy as np
-from setuptools import Extension, find_packages, setup
-
-import versioneer
+from setuptools import Extension, setup
 
 try:
     from Cython.Build import cythonize
@@ -16,8 +13,6 @@ try:
 except ImportError:
     use_cython = False
 
-
-is_win = sys.platform.startswith("win")
 define_macros = [("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")]
 
 if use_cython:
@@ -51,49 +46,7 @@ ext_modules = [
 if use_cython:
     ext_modules = cythonize(ext_modules, include_path=include_dirs)
 
-with open("README.md") as f:
-    long_description = f.read()
-
-package_data = {"suitesparse_graphblas": ["*.pyx", "*.pxd", "*.c", "*.h"]}
-if is_win:
-    package_data["suitesparse_graphblas"].append("*.dll")
-
 setup(
-    name="suitesparse-graphblas",
-    version=versioneer.get_version(),
-    cmdclass=versioneer.get_cmdclass(),
-    description="SuiteSparse:GraphBLAS Python bindings.",
-    long_description=long_description,
-    long_description_content_type="text/markdown",
-    packages=find_packages(),
-    author="Michel Pelletier, James Kitchen, Erik Welch",
-    author_email="michel@graphegon.com,jim22k@gmail.com,erik.n.welch@gmail.com",
-    url="https://github.com/GraphBLAS/python-suitesparse-graphblas",
     ext_modules=ext_modules,
     cffi_modules=["suitesparse_graphblas/build.py:ffibuilder"],
-    python_requires=">=3.8",
-    install_requires=["cffi>=1.0.0", "numpy>=1.19"],
-    setup_requires=["cffi>=1.0.0", "pytest-runner"],
-    tests_require=["pytest"],
-    license="Apache License 2.0",
-    package_data=package_data,
-    include_package_data=True,
-    classifiers=[
-        "Development Status :: 4 - Beta",
-        "License :: OSI Approved :: Apache Software License",
-        "Operating System :: MacOS :: MacOS X",
-        "Operating System :: POSIX :: Linux",
-        "Operating System :: Microsoft :: Windows",
-        "Programming Language :: Python",
-        "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
-        "Programming Language :: Python :: 3.10",
-        "Programming Language :: Python :: 3.11",
-        "Programming Language :: Python :: 3 :: Only",
-        "Intended Audience :: Science/Research",
-        "Topic :: Scientific/Engineering",
-        "Topic :: Scientific/Engineering :: Mathematics",
-    ],
-    zip_safe=False,
 )

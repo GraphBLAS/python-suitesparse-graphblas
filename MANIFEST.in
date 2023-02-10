@@ -5,5 +5,4 @@ include suitesparse_graphblas/*.pxd
 include suitesparse_graphblas/*.pyx
 include suitesparse_graphblas/*.c
 include suitesparse_graphblas/*.h
-include versioneer.py
-include suitesparse_graphblas/_version.py
+include suitesparse_graphblas/tests/*.py
