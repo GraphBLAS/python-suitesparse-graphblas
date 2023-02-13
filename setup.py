@@ -5,6 +5,10 @@ from glob import glob
 import numpy as np
 from setuptools import Extension, setup
 
+# Add current directory to the Python path because it's not present when running `pip install .`
+sys.path.append(os.path.dirname(__file__))
+import build_graphblas_cffi  # noqa: E402 # isort:skip
+
 try:
     from Cython.Build import cythonize
     from Cython.Compiler.Options import get_directive_defaults
@@ -14,6 +18,13 @@ except ImportError:
     use_cython = False
 
 define_macros = [("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")]
+
+# /d2FH4- flag needed only for early Python 3.8 builds on Windows.
+# See https://cibuildwheel.readthedocs.io/en/stable/faq/
+# (Search for flag on page. Full link is long and causes the linter to fail the tests.)
+#
+# The /std:c11 flag is because the MSVC default is C89.
+extra_compile_args = ["/d2FH4-", "/std:c11"] if sys.platform == "win32" else []
 
 if use_cython:
     suffix = ".pyx"
@@ -40,13 +51,15 @@ ext_modules = [
         [name],
         include_dirs=include_dirs,
         define_macros=define_macros,
+        extra_compile_args=extra_compile_args,
     )
     for name in glob(f"suitesparse_graphblas/**/*{suffix}", recursive=True)
 ]
 if use_cython:
     ext_modules = cythonize(ext_modules, include_path=include_dirs)
 
+ext_modules.append(build_graphblas_cffi.get_extension(extra_compile_args=extra_compile_args))
+
 setup(
     ext_modules=ext_modules,
-    cffi_modules=["suitesparse_graphblas/build.py:ffibuilder"],
 )
