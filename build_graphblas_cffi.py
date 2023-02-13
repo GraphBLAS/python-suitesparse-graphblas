@@ -32,7 +32,7 @@ def get_extension(apply_msvc_patch: bool = None, extra_compile_args=()):
     Get a setuptools.Extension version of this CFFI builder.
 
     In other words, enables `setup(ext_modules=[get_extension()])`
-    instead of `setup(cffi_modules=["build.py:ffibuilder"])`.
+    instead of `setup(cffi_modules=["build_graphblas_cffi.py:ffibuilder"])`.
 
     The main reason for this is to allow a patch for complex values when compiling on MSVC.
     MSVC famously lacks support for standard C complex types like `double _Complex` and

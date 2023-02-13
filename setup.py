@@ -7,7 +7,7 @@ from setuptools import Extension, setup
 
 # Add current directory to the Python path because it's not present when running `pip install .`
 sys.path.append(os.path.dirname(__file__))
-import build  # noqa: E402 # isort:skip
+import build_graphblas_cffi  # noqa: E402 # isort:skip
 
 try:
     from Cython.Build import cythonize
@@ -58,7 +58,7 @@ ext_modules = [
 if use_cython:
     ext_modules = cythonize(ext_modules, include_path=include_dirs)
 
-ext_modules.append(build.get_extension(extra_compile_args=extra_compile_args))
+ext_modules.append(build_graphblas_cffi.get_extension(extra_compile_args=extra_compile_args))
 
 setup(
     ext_modules=ext_modules,
