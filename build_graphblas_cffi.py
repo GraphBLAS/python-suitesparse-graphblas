@@ -16,12 +16,11 @@ if is_win:
     include_dirs.append(os.path.join(sys.prefix, "Library", "include"))
     library_dirs.append(os.path.join(sys.prefix, "Library", "lib"))
 
-    # suitesparse.sh installs GraphBLAS.h here
-    include_dirs.append(os.path.join("C:\\", "Program Files (x86)", "include"))
-    # graphblas.lib and graphblas.dll.a
-    library_dirs.append(os.path.join("C:\\", "Program Files (x86)", "lib"))
-    # graphblas.dll
-    library_dirs.append(os.path.join("C:\\", "Program Files (x86)", "bin"))
+    # wheels.yml configures suitesparse.sh to install GraphBLAS here.
+    prefix = "C:\\GraphBLAS"
+    include_dirs.append(os.path.join(prefix, "include"))
+    library_dirs.append(os.path.join(prefix, "lib"))
+    library_dirs.append(os.path.join(prefix, "bin"))
 
 ffibuilder.set_source(
     "suitesparse_graphblas._graphblas",

@@ -17,6 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Build SDist
         run: pipx run build --sdist
@@ -58,6 +60,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-python@v4
         with:
@@ -79,8 +83,8 @@ jobs:
           # Build SuiteSparse
           CIBW_BEFORE_ALL: bash suitesparse.sh ${{ github.ref }}
 
-          # Ask suitesparse.sh to build libraries in MSVC style on Windows.
-          CIBW_ENVIRONMENT_WINDOWS: CMAKE_GNUtoMS=ON
+          # CMAKE_GNUtoMS=ON asks suitesparse.sh to build libraries in MSVC style on Windows.
+          CIBW_ENVIRONMENT_WINDOWS: CMAKE_GNUtoMS=ON GRAPHBLAS_PREFIX="C:/GraphBLAS"
 
           # macOS libomp requires special configs. BREW_LIBOMP=1 asks suitesparse.sh to include them.
           CIBW_ENVIRONMENT_MACOS: BREW_LIBOMP="1"
@@ -101,7 +105,7 @@ jobs:
           # Note: Currently using a workaround: --no-mangle instead of stripping graphblas.dll
           # see https://github.com/adang1345/delvewheel/issues/33
           CIBW_BEFORE_BUILD_WINDOWS: "pip install delvewheel"
-          CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: "delvewheel repair --add-path \"C:\\Program Files (x86)\\bin\" --no-mangle \"libgomp-1.dll;libgcc_s_seh-1.dll\" -w {dest_dir} {wheel}"
+          CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: "delvewheel repair --add-path \"C:\\GraphBLAS\\bin\" --no-mangle \"libgomp-1.dll;libgcc_s_seh-1.dll\" -w {dest_dir} {wheel}"
 
           # make cibuildwheel install test dependencies from pyproject.toml
           CIBW_TEST_EXTRAS: "test"
@@ -118,9 +122,21 @@ jobs:
         shell: bash
 
       - uses: actions/upload-artifact@v3
+        id: uploadAttempt1
+        continue-on-error: true
         with:
           path: wheelhouse/*.whl
+          if-no-files-found: error
 
+      # Retry upload if first attempt failed. This happens somewhat randomly and for irregular reasons.
+      # Logic is a duplicate of previous step.
+      - uses: actions/upload-artifact@v3
+        id: uploadAttempt2
+        if: steps.uploadAttempt1.outcome == 'failure'
+        continue-on-error: false
+        with:
+          path: wheelhouse/*.whl
+          if-no-files-found: error
 
   upload_all:
     name: Upload to PyPI

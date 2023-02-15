@@ -34,6 +34,11 @@ if [ -n "${CMAKE_GNUtoMS}" ]; then
     cmake_params+=(-DCMAKE_STATIC_LIBRARY_PREFIX=)
 fi
 
+if [ -n "${GRAPHBLAS_PREFIX}" ]; then
+    echo "GRAPHBLAS_PREFIX=${GRAPHBLAS_PREFIX}"
+    cmake_params+=(-DCMAKE_INSTALL_PREFIX="${GRAPHBLAS_PREFIX}")
+fi
+
 curl -L https://github.com/DrTimothyAldenDavis/GraphBLAS/archive/refs/tags/v${VERSION}.tar.gz | tar xzf -
 cd GraphBLAS-${VERSION}/build
 
@@ -62,12 +67,17 @@ make -j$NPROC
 make install
 
 if [ -n "${CMAKE_GNUtoMS}" ]; then
+    if [ -z "${GRAPHBLAS_PREFIX}" ]; then
+        # Windows default
+        GRAPHBLAS_PREFIX="C:/Program Files (x86)"
+    fi
+
     # Windows:
     # CMAKE_STATIC_LIBRARY_PREFIX is sometimes ignored, possibly when the MinGW toolchain is selected.
     # Drop the 'lib' prefix manually.
     echo "manually removing lib prefix"
-    mv "C:/Program Files (x86)/lib/libgraphblas.lib" "C:/Program Files (x86)/lib/graphblas.lib"
-    mv "C:/Program Files (x86)/lib/libgraphblas.dll.a" "C:/Program Files (x86)/lib/graphblas.dll.a"
+    mv "${GRAPHBLAS_PREFIX}/lib/libgraphblas.lib" "${GRAPHBLAS_PREFIX}/lib/graphblas.lib"
+    mv "${GRAPHBLAS_PREFIX}/lib/libgraphblas.dll.a" "${GRAPHBLAS_PREFIX}/lib/graphblas.dll.a"
     # cp instead of mv because the GNU tools expect libgraphblas.dll and the MS tools expect graphblas.dll.
-    cp "C:/Program Files (x86)/bin/libgraphblas.dll" "C:/Program Files (x86)/bin/graphblas.dll"
+    cp "${GRAPHBLAS_PREFIX}/bin/libgraphblas.dll" "${GRAPHBLAS_PREFIX}/bin/graphblas.dll"
 fi
