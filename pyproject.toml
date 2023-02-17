@@ -11,7 +11,9 @@ requires = [
 
 [project]
 name = "suitesparse-graphblas"
-dynamic = ["version"]
+#dynamic = ["version"]
+# TODO
+version = "0.0.3"
 description = "SuiteSparse:GraphBLAS Python bindings."
 readme = "README.md"
 requires-python = ">=3.8"
