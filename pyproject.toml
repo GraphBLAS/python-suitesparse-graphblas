@@ -4,14 +4,16 @@ requires = [
     "setuptools >=64",
     "setuptools-git-versioning",
     "wheel",
-    "cffi",
+    "cffi>=1.11",
     "cython",
     "oldest-supported-numpy",
 ]
 
 [project]
 name = "suitesparse-graphblas"
-dynamic = ["version"]
+#dynamic = ["version"]
+# TODO
+version = "0.0.3"
 description = "SuiteSparse:GraphBLAS Python bindings."
 readme = "README.md"
 requires-python = ">=3.8"
@@ -45,7 +47,7 @@ classifiers = [
 ]
 dependencies = [
     # These are super-old; can/should we update them?
-    "cffi>=1.0.0",
+    "cffi>=1.11",
     "numpy>=1.19",
 ]
 [project.urls]

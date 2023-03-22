@@ -7,4 +7,4 @@ def test_matrix_existence():
 
 
 def test_version():
-    assert suitesparse_graphblas.__version__ > "7.4.2.0"
+    assert suitesparse_graphblas.__version__ >= "0.0.1"
