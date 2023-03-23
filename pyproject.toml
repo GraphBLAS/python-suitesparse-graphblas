@@ -13,7 +13,7 @@ requires = [
 name = "suitesparse-graphblas"
 #dynamic = ["version"]
 # TODO
-version = "0.0.4.1"
+version = "0.0.4.2"
 description = "SuiteSparse:GraphBLAS Python bindings."
 readme = "README.md"
 requires-python = ">=3.8"

@@ -98,8 +98,11 @@ jobs:
           # TODO
           CIBW_BUILD: "cp*"
 
+          # linux: build x86_64 and aarch64
+          CIBW_ARCHS_LINUX: "x86_64 aarch64"
+
           # macOS: build x86_64 and arm64
-          CIBW_ARCHS_MACOS: "x86_64 arm64"
+          #CIBW_ARCHS_MACOS: "x86_64 arm64"
 
           # No 32-bit builds
           # TODO
