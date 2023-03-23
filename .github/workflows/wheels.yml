@@ -40,23 +40,23 @@ jobs:
         # Loosely based on scikit-learn's config:
         # https://github.com/scikit-learn/scikit-learn/blob/main/.github/workflows/wheels.yml
         include:
-          - os: windows-latest
-            python-version: "3.8"
-            platform_id: win_amd64
+#          - os: windows-latest
+#            python-version: "3.8"
+#            platform_id: win_amd64
 
           - os: ubuntu-latest
             python-version: "3.8"
             platform_id: manylinux_x86_64
-            manylinux_image: manylinux2014
+            manylinux_image: manylinux2014_x86_64
           - os: ubuntu-latest
             python-version: "3.8"
             platform_id: manylinux_aarch64
-            manylinux_image: manylinux2014
+            manylinux_image: manylinux2014_aarch64
 
             # Use x86 macOS runner to build both x86 and ARM. GitHub does not offer M1/M2 yet (only self-hosted).
-          - os: macos-latest
-            python-version: "3.8"
-            platform_id: macosx_x86_64
+#          - os: macos-latest
+#            python-version: "3.8"
+#            platform_id: macosx_x86_64
 
     steps:
       - uses: actions/checkout@v3
