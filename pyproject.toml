@@ -13,7 +13,7 @@ requires = [
 name = "suitesparse-graphblas"
 #dynamic = ["version"]
 # TODO
-version = "0.0.3"
+version = "0.0.4"
 description = "SuiteSparse:GraphBLAS Python bindings."
 readme = "README.md"
 requires-python = ">=3.8"
@@ -29,7 +29,7 @@ maintainers = [
     {name = "Michel Pelletier", email = "michel@graphegon.com"},
 ]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "License :: OSI Approved :: Apache Software License",
     "Operating System :: MacOS :: MacOS X",
     "Operating System :: POSIX :: Linux",
