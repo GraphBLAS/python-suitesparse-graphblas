@@ -119,7 +119,6 @@ jobs:
           CIBW_TEST_SKIP: "*-macosx_arm64"
 
         run: |
-          sed -i '' 's/{tag}+{ccount}.g{sha}.dirty/{tag}/g' pyproject.toml
           python -m pip install cibuildwheel
           python -m cibuildwheel --output-dir wheelhouse .
         shell: bash
