@@ -40,9 +40,9 @@ jobs:
         # Loosely based on scikit-learn's config:
         # https://github.com/scikit-learn/scikit-learn/blob/main/.github/workflows/wheels.yml
         include:
-#          - os: windows-latest
-#            python-version: "3.8"
-#            platform_id: win_amd64
+          - os: windows-latest
+            python-version: "3.8"
+            platform_id: win_amd64
 
           # Linux 64 bit manylinux2014
           - os: ubuntu-latest
@@ -51,9 +51,9 @@ jobs:
             manylinux_image: manylinux2014
 
             # Use x86 macOS runner to build both x86 and ARM. GitHub does not offer M1/M2 yet (only self-hosted).
-#          - os: macos-latest
-#            python-version: "3.8"
-#            platform_id: macosx_x86_64
+          - os: macos-latest
+            python-version: "3.8"
+            platform_id: macosx_x86_64
 
     steps:
       - uses: actions/checkout@v3
@@ -92,14 +92,12 @@ jobs:
           CIBW_ENVIRONMENT_MACOS: BREW_LIBOMP="1"
 
           # Uncomment to only build CPython wheels
-          # TODO
           CIBW_BUILD: "cp*"
 
           # macOS: build x86_64 and arm64
           #CIBW_ARCHS_MACOS: "x86_64 arm64"
 
           # No 32-bit builds
-          # TODO
           CIBW_SKIP: "*-win32 *_i686 *musl*"
 
           # Use delvewheel on Windows.
@@ -121,11 +119,9 @@ jobs:
           CIBW_TEST_SKIP: "*-macosx_arm64"
 
         run: |
-          git status
+          sed -i '' 's/{tag}+{ccount}.g{sha}.dirty/{tag}/g' pyproject.toml
           python -m pip install cibuildwheel
           python -m cibuildwheel --output-dir wheelhouse .
-          git status
-          git diff .
         shell: bash
 
       - uses: actions/upload-artifact@v3
