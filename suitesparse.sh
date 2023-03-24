@@ -49,15 +49,15 @@ cd GraphBLAS-${VERSION}/build
 # Also the build with all types enabled sometimes stalls on GitHub Actions. Probably due to exceeded resource limits.
 # These can still be used, they'll just have reduced performance (AFAIK similar to UDTs).
 # TODO
-echo "#define GxB_NO_BOOL      1" >> ../Source/GB_control.h #
-echo "#define GxB_NO_FP32      1" >> ../Source/GB_control.h #
-echo "#define GxB_NO_FP64      1" >> ../Source/GB_control.h #
+# echo "#define GxB_NO_BOOL      1" >> ../Source/GB_control.h #
+# echo "#define GxB_NO_FP32      1" >> ../Source/GB_control.h #
+# echo "#define GxB_NO_FP64      1" >> ../Source/GB_control.h #
 echo "#define GxB_NO_FC32      1" >> ../Source/GB_control.h #
 echo "#define GxB_NO_FC64      1" >> ../Source/GB_control.h #
 echo "#define GxB_NO_INT16     1" >> ../Source/GB_control.h
 echo "#define GxB_NO_INT32     1" >> ../Source/GB_control.h
-echo "#define GxB_NO_INT64     1" >> ../Source/GB_control.h #
-echo "#define GxB_NO_INT8      1" >> ../Source/GB_control.h
+# echo "#define GxB_NO_INT64     1" >> ../Source/GB_control.h #
+# echo "#define GxB_NO_INT8      1" >> ../Source/GB_control.h
 echo "#define GxB_NO_UINT16    1" >> ../Source/GB_control.h
 echo "#define GxB_NO_UINT32    1" >> ../Source/GB_control.h
 echo "#define GxB_NO_UINT64    1" >> ../Source/GB_control.h
