@@ -14,3 +14,5 @@ tar -xzf $(brew --cache --bottle-tag=arm64_big_sur libomp) --strip-components 2 
 # merge
 lipo armlib/lib/libomp.dylib $(brew --prefix libomp)/lib/libomp.dylib -output libomp.dylib -create
 cp -f libomp.dylib $(brew --prefix libomp)/lib
+rm libomp.dylib
+rm -rf armlib

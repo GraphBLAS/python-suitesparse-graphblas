@@ -92,7 +92,7 @@ jobs:
           CIBW_ENVIRONMENT_MACOS: BREW_LIBOMP="1"
 
           # Uncomment to only build CPython wheels
-          CIBW_BUILD: "cp*"
+#          CIBW_BUILD: "cp*"
 
           # macOS: build x86_64 and arm64
           #CIBW_ARCHS_MACOS: "x86_64 arm64"
