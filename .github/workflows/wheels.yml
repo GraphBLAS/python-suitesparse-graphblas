@@ -64,16 +64,16 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install tools (macOS)
-        if: contains(matrix.os, 'macos')
-        # Install coreutils which includes `nproc` used by `make -j` in suitesparse.sh
-        #
-        # GitHub actions comes with libomp already installed, but for its native arch only. Must build universal one
-        # manually so that both x86 and arm builds can be built.
-        run: |
-          brew install coreutils
-          brew install libomp
-          sh add_arm_to_libomp_dylib.sh
+#      - name: Install tools (macOS)
+#        if: contains(matrix.os, 'macos')
+#        # Install coreutils which includes `nproc` used by `make -j` in suitesparse.sh
+#        #
+#        # GitHub actions comes with libomp already installed, but for its native arch only. Must build universal one
+#        # manually so that both x86 and arm builds can be built.
+#        run: |
+#          brew install coreutils
+#          brew install libomp
+#          sh add_arm_to_libomp_dylib.sh
 
       - name: Build Wheels
         env:

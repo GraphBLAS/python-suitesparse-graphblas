@@ -25,8 +25,9 @@ if [ -n "${BREW_LIBOMP}" ]; then
     cmake_params+=(-DOpenMP_libomp_LIBRARY="omp")
     export LDFLAGS="-L$(brew --prefix libomp)/lib"
 
-    # build both x86 and ARM
-    export CFLAGS="-arch x86_64 -arch arm64"
+    export CFLAGS="-arch x86_64"
+#    # build both x86 and ARM
+#    export CFLAGS="-arch x86_64 -arch arm64"
 fi
 
 if [ -n "${CMAKE_GNUtoMS}" ]; then
@@ -48,7 +49,6 @@ cd GraphBLAS-${VERSION}/build
 # Disable optimizing some rarely-used types for significantly faster builds and significantly smaller wheel size.
 # Also the build with all types enabled sometimes stalls on GitHub Actions. Probably due to exceeded resource limits.
 # These can still be used, they'll just have reduced performance (AFAIK similar to UDTs).
-# TODO
 # echo "#define GxB_NO_BOOL      1" >> ../Source/GB_control.h #
 # echo "#define GxB_NO_FP32      1" >> ../Source/GB_control.h #
 # echo "#define GxB_NO_FP64      1" >> ../Source/GB_control.h #
