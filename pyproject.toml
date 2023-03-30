@@ -4,7 +4,7 @@ requires = [
     "setuptools >=64",
     "setuptools-git-versioning",
     "wheel",
-    "cffi",
+    "cffi>=1.11",
     "cython",
     "oldest-supported-numpy",
 ]
@@ -27,7 +27,7 @@ maintainers = [
     {name = "Michel Pelletier", email = "michel@graphegon.com"},
 ]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "License :: OSI Approved :: Apache Software License",
     "Operating System :: MacOS :: MacOS X",
     "Operating System :: POSIX :: Linux",
@@ -45,7 +45,7 @@ classifiers = [
 ]
 dependencies = [
     # These are super-old; can/should we update them?
-    "cffi>=1.0.0",
+    "cffi>=1.11",
     "numpy>=1.19",
 ]
 [project.urls]

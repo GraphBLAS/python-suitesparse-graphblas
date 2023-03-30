@@ -58,8 +58,10 @@ ext_modules = [
 if use_cython:
     ext_modules = cythonize(ext_modules, include_path=include_dirs)
 
-ext_modules.append(build_graphblas_cffi.get_extension(extra_compile_args=extra_compile_args))
+if build_graphblas_cffi.is_win:
+    ext_modules.append(build_graphblas_cffi.get_extension(extra_compile_args=extra_compile_args))
 
 setup(
     ext_modules=ext_modules,
+    cffi_modules=None if build_graphblas_cffi.is_win else ["build_graphblas_cffi.py:ffibuilder"],
 )
