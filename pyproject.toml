@@ -61,7 +61,7 @@ test = [
 [tool.setuptools]
 packages = [
     'suitesparse_graphblas',
-    # 'suitesparse_graphblas.tests',
+    'suitesparse_graphblas.tests',
     'suitesparse_graphblas.io',
 ]
 

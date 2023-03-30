@@ -6,4 +6,3 @@ include suitesparse_graphblas/*.pxd
 include suitesparse_graphblas/*.pyx
 include suitesparse_graphblas/*.c
 include suitesparse_graphblas/*.h
-include suitesparse_graphblas/tests/*.py
