@@ -276,8 +276,7 @@ DEFINES = {
     "GRB_SUBVERSION",
     "GxB_NTHREADS",
     "GxB_CHUNK",
-    "GxB_GPU_CONTROL",
-    "GxB_GPU_CHUNK",
+    "GxB_GPU_ID",
     "GxB_HYPERSPARSE",
     "GxB_SPARSE",
     "GxB_BITMAP",
@@ -625,6 +624,7 @@ def get_group_info(groups, ast, *, skip_complex=False):
                 "UnaryOp": "unary",
                 "IndexUnaryOp": "indexunary",
                 "Iterator": "iterator",
+                "Context": "context",
                 # "everything else" is "core"
                 "getVersion": "core",
                 "Global": "core",
