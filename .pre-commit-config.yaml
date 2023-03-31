@@ -20,12 +20,12 @@ repos:
       - id: mixed-line-ending
       # - id: trailing-whitespace
   - repo: https://github.com/abravalheri/validate-pyproject
-    rev: v0.12.1
+    rev: v0.12.2
     hooks:
       - id: validate-pyproject
         name: Validate pyproject.toml
   - repo: https://github.com/myint/autoflake
-    rev: v2.0.1
+    rev: v2.0.2
     hooks:
       - id: autoflake
         args: [--in-place]
@@ -44,7 +44,7 @@ repos:
   #     - id: auto-walrus
   #       args: [--line-length, "100"]
   - repo: https://github.com/psf/black
-    rev: 23.1.0
+    rev: 23.3.0
     hooks:
       - id: black
       # - id: black-jupyter
@@ -55,14 +55,21 @@ repos:
         additional_dependencies: &flake8_dependencies
         # These versions need updated manually
         - flake8==6.0.0
-        - flake8-comprehensions==3.10.1
-        - flake8-bugbear==23.1.20
-        # - flake8-simplify==0.19.3
+        - flake8-comprehensions==3.11.1
+        - flake8-bugbear==23.3.23
+        # - flake8-simplify==0.20.0
   - repo: https://github.com/asottile/yesqa
     rev: v1.4.0
     hooks:
       - id: yesqa
         additional_dependencies: *flake8_dependencies
+  # `pyroma` may help keep our package standards up to date if best practices change.
+  # This is a "low value" check though and too slow to run as part of pre-commit.
+  # - repo: https://github.com/regebro/pyroma
+  #   rev: "4.2"
+  #   hooks:
+  #     - id: pyroma
+  #       args: [-n, "10", .]
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0
     hooks:

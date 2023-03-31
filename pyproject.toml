@@ -17,14 +17,29 @@ readme = "README.md"
 requires-python = ">=3.8"
 license = {file = "LICENSE"}
 authors = [
-    {name = "Erik Welch"},
+    {name = "Erik Welch", email = "erik.n.welch@gmail.com"},
     {name = "Jim Kitchen"},
     {name = "Michel Pelletier"},
+    {name = "suitesparse-graphblas contributors"},
 ]
 maintainers = [
     {name = "Erik Welch", email = "erik.n.welch@gmail.com"},
     {name = "Jim Kitchen", email = "jim22k@gmail.com"},
     {name = "Michel Pelletier", email = "michel@graphegon.com"},
+]
+keywords = [
+    "graphblas",
+    "graph",
+    "sparse",
+    "matrix",
+    "lagraph",
+    "suitesparse",
+    "Networks",
+    "Graph Theory",
+    "Mathematics",
+    "network",
+    "discrete mathematics",
+    "math",
 ]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -39,9 +54,13 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3 :: Only",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Other Audience",
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Information Analysis",
     "Topic :: Scientific/Engineering :: Mathematics",
+    "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
     # These are super-old; can/should we update them?
