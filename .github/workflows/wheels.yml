@@ -158,7 +158,7 @@ jobs:
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:
           # PyPI does not allow replacing a file. Without this flag the entire action fails if even a single duplicate exists.
-          skip_existing: true
+          skip-existing: true
           verbose: true
           # Real PyPI:
           password: ${{ secrets.PYPI_TOKEN }}
