@@ -10,17 +10,23 @@ ss_g = Path(__file__).parent / "suitesparse_graphblas"
 
 ffibuilder = FFI()
 
-include_dirs = [os.path.join(sys.prefix, "include")]
-library_dirs = [os.path.join(sys.prefix, "lib")]
+# GraphBLAS_ROOT env var can point to the root directory of GraphBLAS to link against.
+# Expected subdirectories: include/ (contains GraphBLAS.h), lib/, and bin/ (on Windows only)
+# Otherwise fallback to default system folders.
+graphblas_root = os.environ.get("GraphBLAS_ROOT", None)
+if not graphblas_root:
+    # Windows wheels.yml configures suitesparse.sh to install GraphBLAS to "C:\\GraphBLAS".
+    graphblas_root = "C:\\GraphBLAS" if is_win else sys.prefix
+
+include_dirs = [os.path.join(graphblas_root, "include")]
+library_dirs = [os.path.join(graphblas_root, "lib")]
 if is_win:
     include_dirs.append(os.path.join(sys.prefix, "Library", "include"))
     library_dirs.append(os.path.join(sys.prefix, "Library", "lib"))
 
-    # wheels.yml configures suitesparse.sh to install GraphBLAS here.
-    prefix = "C:\\GraphBLAS"
-    include_dirs.append(os.path.join(prefix, "include"))
-    library_dirs.append(os.path.join(prefix, "lib"))
-    library_dirs.append(os.path.join(prefix, "bin"))
+    include_dirs.append(os.path.join(graphblas_root, "include"))
+    library_dirs.append(os.path.join(graphblas_root, "lib"))
+    library_dirs.append(os.path.join(graphblas_root, "bin"))
 
 ffibuilder.set_source(
     "suitesparse_graphblas._graphblas",
