@@ -32,7 +32,7 @@ jobs:
 
 
   build_wheels:
-    name: Wheels on ${{ matrix.platform_id }} - ${{ matrix.os }}
+    name: Wheels - ${{ matrix.cibw_archs }} - ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -43,17 +43,30 @@ jobs:
           - os: windows-latest
             python-version: "3.8"
             platform_id: win_amd64
+            cibw_archs: "auto"
 
           # Linux 64 bit manylinux2014
           - os: ubuntu-latest
             python-version: "3.8"
             platform_id: manylinux_x86_64
             manylinux_image: manylinux2014
+            cibw_archs: "native"
 
-            # Use x86 macOS runner to build both x86 and ARM. GitHub does not offer M1/M2 yet (only self-hosted).
+          # Linux 64 bit manylinux2014 for aarch64
+          # Separate runner because this requires emulation (only x86 runners are available) and is very slow.
+          - os: ubuntu-latest
+            python-version: "3.8"
+            platform_id: manylinux_x86_64
+            manylinux_image: manylinux2014
+            cibw_archs: "aarch64"
+
+          # Use x86 macOS runner to build both x86 and ARM.
+          # GitHub does not offer Apple Silicon yet (only for self-hosted).
+          # See https://github.com/github/roadmap/issues/528
           - os: macos-latest
             python-version: "3.8"
             platform_id: macosx_x86_64
+            cibw_archs: "x86_64 arm64"
 
     steps:
       - uses: actions/checkout@v3
@@ -64,16 +77,31 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-#      - name: Install tools (macOS)
-#        if: contains(matrix.os, 'macos')
-#        # Install coreutils which includes `nproc` used by `make -j` in suitesparse.sh
-#        #
-#        # GitHub actions comes with libomp already installed, but for its native arch only. Must build universal one
-#        # manually so that both x86 and arm builds can be built.
-#        run: |
-#          brew install coreutils
-#          brew install libomp
-#          sh add_arm_to_libomp_dylib.sh
+      # aarch64 Linux builds are cross-compiled on x86 runners using emulation
+      # see https://cibuildwheel.readthedocs.io/en/stable/faq/#emulation
+      - name: Setup QEMU (for aarch64)
+        if: matrix.cibw_archs == 'aarch64'
+        uses: docker/setup-qemu-action@v2
+        with:
+          platforms: arm64
+
+      - name: Setup env (for aarch64)
+        if: matrix.cibw_archs == 'aarch64'
+        # Ask suitesparse.sh to compile faster by optimizing fewer types. Otherwise, the build takes too long to finish
+        # in 6 hour limit.
+        run: |
+          echo "SUITESPARSE_FAST_BUILD=1" >> $GITHUB_ENV
+
+      - name: Install tools (macOS)
+        if: contains(matrix.os, 'macos')
+        # Install coreutils which includes `nproc` used by `make -j` in suitesparse.sh
+        #
+        # GitHub actions comes with libomp already installed, but for its native arch only. Must build universal one
+        # manually so that both x86 and arm builds can be built.
+        run: |
+          brew install coreutils
+          brew install libomp
+          sh add_arm_to_libomp_dylib.sh
 
       - name: Build Wheels
         env:
@@ -82,6 +110,8 @@ jobs:
 
           # Build SuiteSparse
           CIBW_BEFORE_ALL: bash suitesparse.sh ${{ github.ref }}
+
+          CIBW_ENVIRONMENT_LINUX: SUITESPARSE_FAST_BUILD=${{ env.SUITESPARSE_FAST_BUILD }}
 
           # CMAKE_GNUtoMS=ON asks suitesparse.sh to build libraries in MSVC style on Windows.
           CIBW_ENVIRONMENT_WINDOWS: CMAKE_GNUtoMS=ON GRAPHBLAS_PREFIX="C:/GraphBLAS"
@@ -92,11 +122,11 @@ jobs:
           # Uncomment to only build CPython wheels
 #          CIBW_BUILD: "cp*"
 
-          # macOS: build x86_64 and arm64
-          #CIBW_ARCHS_MACOS: "x86_64 arm64"
+          # Architectures to build specified in matrix
+          CIBW_ARCHS: ${{ matrix.cibw_archs }}
 
-          # No 32-bit builds
-          CIBW_SKIP: "*-win32 *_i686 *musl*"
+          # No 32-bit builds, no musllinux, no PyPy aarch64 (only due to build speed, numpy does not ship aarch64 pypy wheels)
+          CIBW_SKIP: "*-win32 *_i686 *musl* pp*aarch64"
 
           # Use delvewheel on Windows.
           # This copies graphblas.dll into the wheel. "repair" in cibuildwheel parlance includes copying any shared

@@ -25,9 +25,8 @@ if [ -n "${BREW_LIBOMP}" ]; then
     cmake_params+=(-DOpenMP_libomp_LIBRARY="omp")
     export LDFLAGS="-L$(brew --prefix libomp)/lib"
 
-    export CFLAGS="-arch x86_64"
-#    # build both x86 and ARM
-#    export CFLAGS="-arch x86_64 -arch arm64"
+    # build both x86 and ARM
+    export CFLAGS="-arch x86_64 -arch arm64"
 fi
 
 if [ -n "${CMAKE_GNUtoMS}" ]; then
@@ -62,6 +61,26 @@ echo "#define GxB_NO_UINT16    1" >> ../Source/GB_control.h
 echo "#define GxB_NO_UINT32    1" >> ../Source/GB_control.h
 # echo "#define GxB_NO_UINT64    1" >> ../Source/GB_control.h #
 echo "#define GxB_NO_UINT8     1" >> ../Source/GB_control.h
+
+if [ -n "${SUITESPARSE_FAST_BUILD}" ]; then
+    echo "suitesparse.sh: Fast build requested."
+    # Disable optimizing even more types. This is for builds that don't finish in runner resource limits,
+    # such as emulated aarm64.
+
+    echo "#define GxB_NO_BOOL      1" >> ../Source/GB_control.h
+#    echo "#define GxB_NO_FP32      1" >> ../Source/GB_control.h
+#    echo "#define GxB_NO_FP64      1" >> ../Source/GB_control.h
+    echo "#define GxB_NO_FC32      1" >> ../Source/GB_control.h
+    echo "#define GxB_NO_FC64      1" >> ../Source/GB_control.h
+    echo "#define GxB_NO_INT16     1" >> ../Source/GB_control.h
+    echo "#define GxB_NO_INT32     1" >> ../Source/GB_control.h
+#    echo "#define GxB_NO_INT64     1" >> ../Source/GB_control.h
+#    echo "#define GxB_NO_INT8      1" >> ../Source/GB_control.h
+    echo "#define GxB_NO_UINT16    1" >> ../Source/GB_control.h
+    echo "#define GxB_NO_UINT32    1" >> ../Source/GB_control.h
+    echo "#define GxB_NO_UINT64    1" >> ../Source/GB_control.h
+    echo "#define GxB_NO_UINT8     1" >> ../Source/GB_control.h
+fi
 
 # Disable all Source/Generated2 kernels. For workflow development only.
 #cmake_params+=(-DCMAKE_CUDA_DEV=1)
