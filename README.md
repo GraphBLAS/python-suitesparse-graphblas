@@ -14,8 +14,8 @@ bindings and symbols.  This package is shared by the syntax bindings
 [python-graphblas](https://github.com/python-graphblas/python-graphblas).
 
 
-## Installation via pre-built wheels
-Pre-built wheels for common platforms are available via PyPI and conda. These bundle a compiled copy of SuiteSparse:GraphBLAS.
+## Installation from pre-built wheels
+Pre-built wheels for common platforms are available from PyPI and conda. These bundle a compiled copy of SuiteSparse:GraphBLAS.
 
 ```bash
 pip install suitesparse-graphblas
@@ -36,6 +36,7 @@ Specify the location of your SuiteSparse:GraphBLAS installation in the `GraphBLA
 export GraphBLAS_ROOT="/path/to/graphblas"
 pip install suitesparse-graphblas-*.tar.gz
 ```
+You may also have to appropriately set `LD_LIBRARY_PATH` to find `libgraphblas` at runtime.
 
 For example, to use Homebrew's SuiteSparse:GraphBLAS on macOS, with the sdist from PyPI, and with all dependencies using wheels:
 ```bash
