@@ -24,7 +24,7 @@ repos:
     hooks:
       - id: validate-pyproject
         name: Validate pyproject.toml
-  - repo: https://github.com/myint/autoflake
+  - repo: https://github.com/PyCQA/autoflake
     rev: v2.1.1
     hooks:
       - id: autoflake
@@ -34,7 +34,7 @@ repos:
     hooks:
       - id: isort
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.3.1
+    rev: v3.3.2
     hooks:
       - id: pyupgrade
         args: [--py38-plus]

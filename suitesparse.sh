@@ -67,7 +67,7 @@ if [ -n "${SUITESPARSE_FAST_BUILD}" ]; then
     # Disable optimizing even more types. This is for builds that don't finish in runner resource limits,
     # such as emulated aarm64.
 
-    echo "#define GxB_NO_BOOL      1" >> ../Source/GB_control.h
+#    echo "#define GxB_NO_BOOL      1" >> ../Source/GB_control.h
 #    echo "#define GxB_NO_FP32      1" >> ../Source/GB_control.h
 #    echo "#define GxB_NO_FP64      1" >> ../Source/GB_control.h
     echo "#define GxB_NO_FC32      1" >> ../Source/GB_control.h
@@ -75,7 +75,7 @@ if [ -n "${SUITESPARSE_FAST_BUILD}" ]; then
     echo "#define GxB_NO_INT16     1" >> ../Source/GB_control.h
     echo "#define GxB_NO_INT32     1" >> ../Source/GB_control.h
 #    echo "#define GxB_NO_INT64     1" >> ../Source/GB_control.h
-#    echo "#define GxB_NO_INT8      1" >> ../Source/GB_control.h
+    echo "#define GxB_NO_INT8      1" >> ../Source/GB_control.h
     echo "#define GxB_NO_UINT16    1" >> ../Source/GB_control.h
     echo "#define GxB_NO_UINT32    1" >> ../Source/GB_control.h
     echo "#define GxB_NO_UINT64    1" >> ../Source/GB_control.h
