@@ -25,8 +25,12 @@ if [ -n "${BREW_LIBOMP}" ]; then
     cmake_params+=(-DOpenMP_libomp_LIBRARY="omp")
     export LDFLAGS="-L$(brew --prefix libomp)/lib"
 
-    # build both x86 and ARM
-    export CFLAGS="-arch x86_64 -arch arm64"
+    if [ -n "${SUITESPARSE_MACOS_ARCH}" ]; then
+        export CFLAGS="-arch ${SUITESPARSE_MACOS_ARCH}"
+    else
+        # build both x86 and ARM
+        export CFLAGS="-arch x86_64 -arch arm64"
+    fi
 fi
 
 if [ -n "${CMAKE_GNUtoMS}" ]; then
