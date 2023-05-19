@@ -181,7 +181,6 @@ _error_func_lookup = {
     "struct GB_Type_opaque *": lib.GrB_Type_error,
     "struct GB_UnaryOp_opaque *": lib.GrB_UnaryOp_error,
     "struct GB_BinaryOp_opaque *": lib.GrB_BinaryOp_error,
-    "struct GB_SelectOp_opaque *": lib.GxB_SelectOp_error,
     "struct GB_Monoid_opaque *": lib.GrB_Monoid_error,
     "struct GB_Semiring_opaque *": lib.GrB_Semiring_error,
     "struct GB_Scalar_opaque *": lib.GxB_Scalar_error,

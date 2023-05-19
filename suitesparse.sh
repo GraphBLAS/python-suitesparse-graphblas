@@ -1,8 +1,7 @@
 #!/bin/bash
 
 # parse SuiteSparse version from first argument, a git tag that ends in the version (no leading v)
-if [[ $1 =~ refs/tags/([0-9]*\.[0-9]*\.[0-9]*)\..*$ ]];
-then
+if [[ $1 =~ refs/tags/([0-9]*\.[0-9]*\.[0-9]*)\..*$ ]]; then
     VERSION=${BASH_REMATCH[1]}
 else
     echo "Specify a SuiteSparse version, such as: $0 refs/tags/7.4.3.0"

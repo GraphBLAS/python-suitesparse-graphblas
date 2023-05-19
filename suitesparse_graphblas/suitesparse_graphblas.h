@@ -15,12 +15,12 @@ typedef uint64_t GrB_Index;
 /* GxB typedefs */
 typedef double _Complex GxB_FC64_t;
 typedef float _Complex GxB_FC32_t;
+typedef struct GB_Context_opaque *GxB_Context;
 typedef struct GB_Iterator_opaque *GxB_Iterator;
 typedef struct GB_Scalar_opaque *GxB_Scalar;
 typedef struct GB_SelectOp_opaque *GxB_SelectOp;
 
 /* GxB typedefs (functions) */
-typedef bool (*GxB_select_function)(GrB_Index i, GrB_Index j, const void *x, const void *thunk);
 typedef void (*GxB_binary_function)(void *, const void *, const void *);
 typedef void (*GxB_index_unary_function)(void *z, const void *x, GrB_Index i, GrB_Index j, const void *y);
 typedef void (*GxB_unary_function)(void *, const void *);
@@ -32,14 +32,10 @@ typedef enum
   GrB_MASK = 1,
   GrB_INP0 = 2,
   GrB_INP1 = 3,
-  GxB_DESCRIPTOR_NTHREADS = 5,
-  GxB_DESCRIPTOR_CHUNK = 7,
-  GxB_DESCRIPTOR_GPU_CONTROL = 21,
-  GxB_DESCRIPTOR_GPU_CHUNK = 22,
-  GxB_AxB_METHOD = 1000,
-  GxB_SORT = 35,
-  GxB_COMPRESSION = 36,
-  GxB_IMPORT = 37
+  GxB_AxB_METHOD = 7090,
+  GxB_SORT = 7091,
+  GxB_COMPRESSION = 7092,
+  GxB_IMPORT = 7093
 } GrB_Desc_Field;
 
 typedef enum
@@ -49,13 +45,11 @@ typedef enum
   GrB_COMP = 2,
   GrB_STRUCTURE = 4,
   GrB_TRAN = 3,
-  GxB_GPU_ALWAYS = 2001,
-  GxB_GPU_NEVER = 2002,
-  GxB_AxB_GUSTAVSON = 1001,
-  GxB_AxB_DOT = 1003,
-  GxB_AxB_HASH = 1004,
-  GxB_AxB_SAXPY = 1005,
-  GxB_SECURE_IMPORT = 502
+  GxB_AxB_GUSTAVSON = 7081,
+  GxB_AxB_DOT = 7083,
+  GxB_AxB_HASH = 7084,
+  GxB_AxB_SAXPY = 7085,
+  GxB_SECURE_IMPORT = 7080
 } GrB_Desc_Value;
 
 typedef enum
@@ -69,7 +63,7 @@ typedef enum
 {
   GrB_SUCCESS = 0,
   GrB_NO_VALUE = 1,
-  GxB_EXHAUSTED = 2,
+  GxB_EXHAUSTED = 7089,
   GrB_UNINITIALIZED_OBJECT = -1,
   GrB_NULL_POINTER = -2,
   GrB_INVALID_VALUE = -3,
@@ -90,8 +84,8 @@ typedef enum
 {
   GrB_NONBLOCKING = 0,
   GrB_BLOCKING = 1,
-  GxB_NONBLOCKING_GPU = 2,
-  GxB_BLOCKING_GPU = 3
+  GxB_NONBLOCKING_GPU = 7099,
+  GxB_BLOCKING_GPU = 7098
 } GrB_Mode;
 
 typedef enum
@@ -103,6 +97,13 @@ typedef enum
 /* GxB enums */
 typedef enum
 {
+  GxB_CONTEXT_NTHREADS = 7086,
+  GxB_CONTEXT_CHUNK = 7087,
+  GxB_CONTEXT_GPU_ID = 7088
+} GxB_Context_Field;
+
+typedef enum
+{
   GxB_BY_ROW = 0,
   GxB_BY_COL = 1,
   GxB_NO_FORMAT = -1
@@ -110,36 +111,58 @@ typedef enum
 
 typedef enum
 {
-  GxB_HYPER_SWITCH = 0,
-  GxB_BITMAP_SWITCH = 34,
-  GxB_FORMAT = 1,
-  GxB_MODE = 2,
-  GxB_LIBRARY_NAME = 8,
-  GxB_LIBRARY_VERSION = 9,
-  GxB_LIBRARY_DATE = 10,
-  GxB_LIBRARY_ABOUT = 11,
-  GxB_LIBRARY_URL = 12,
-  GxB_LIBRARY_LICENSE = 13,
-  GxB_LIBRARY_COMPILE_DATE = 14,
-  GxB_LIBRARY_COMPILE_TIME = 15,
-  GxB_API_VERSION = 16,
-  GxB_API_DATE = 17,
-  GxB_API_ABOUT = 18,
-  GxB_API_URL = 19,
-  GxB_COMPILER_VERSION = 23,
-  GxB_COMPILER_NAME = 24,
-  GxB_LIBRARY_OPENMP = 25,
-  GxB_GLOBAL_NTHREADS = 5,
-  GxB_GLOBAL_CHUNK = 7,
-  GxB_BURBLE = 99,
-  GxB_PRINTF = 101,
-  GxB_FLUSH = 102,
-  GxB_MEMORY_POOL = 103,
-  GxB_PRINT_1BASED = 104,
-  GxB_SPARSITY_STATUS = 33,
-  GxB_SPARSITY_CONTROL = 32,
-  GxB_GLOBAL_GPU_CONTROL = 21,
-  GxB_GLOBAL_GPU_CHUNK = 22
+  GxB_JIT_OFF = 0,
+  GxB_JIT_PAUSE = 1,
+  GxB_JIT_RUN = 2,
+  GxB_JIT_LOAD = 3,
+  GxB_JIT_ON = 4
+} GxB_JIT_Control;
+
+typedef enum
+{
+  GxB_HYPER_SWITCH = 7000,
+  GxB_BITMAP_SWITCH = 7001,
+  GxB_FORMAT = 7002,
+  GxB_MODE = 7003,
+  GxB_LIBRARY_NAME = 7004,
+  GxB_LIBRARY_VERSION = 7005,
+  GxB_LIBRARY_DATE = 7006,
+  GxB_LIBRARY_ABOUT = 7007,
+  GxB_LIBRARY_URL = 7008,
+  GxB_LIBRARY_LICENSE = 7009,
+  GxB_LIBRARY_COMPILE_DATE = 7010,
+  GxB_LIBRARY_COMPILE_TIME = 7011,
+  GxB_API_VERSION = 7012,
+  GxB_API_DATE = 7013,
+  GxB_API_ABOUT = 7014,
+  GxB_API_URL = 7015,
+  GxB_COMPILER_VERSION = 7016,
+  GxB_COMPILER_NAME = 7017,
+  GxB_LIBRARY_OPENMP = 7018,
+  GxB_GLOBAL_NTHREADS = 7086,
+  GxB_GLOBAL_CHUNK = 7087,
+  GxB_GLOBAL_GPU_ID = 7088,
+  GxB_BURBLE = 7019,
+  GxB_PRINTF = 7020,
+  GxB_FLUSH = 7021,
+  GxB_MEMORY_POOL = 7022,
+  GxB_PRINT_1BASED = 7023,
+  GxB_JIT_C_COMPILER_NAME = 7024,
+  GxB_JIT_C_COMPILER_FLAGS = 7025,
+  GxB_JIT_C_LINKER_FLAGS = 7026,
+  GxB_JIT_C_LIBRARIES = 7027,
+  GxB_JIT_C_PREFACE = 7028,
+  GxB_JIT_C_CONTROL = 7029,
+  GxB_JIT_CACHE_PATH = 7030,
+  GxB_JIT_C_CMAKE_LIBS = 7031,
+  GxB_JIT_USE_CMAKE = 7032,
+  GxB_JIT_ERROR_LOG = 7033,
+  GxB_SPARSITY_STATUS = 7034,
+  GxB_SPARSITY_CONTROL = 7036,
+  GxB_MALLOC_FUNCTION = 7037,
+  GxB_CALLOC_FUNCTION = 7038,
+  GxB_REALLOC_FUNCTION = 7039,
+  GxB_FREE_FUNCTION = 7040
 } GxB_Option_Field;
 
 typedef enum
@@ -2603,6 +2626,7 @@ extern GrB_UnaryOp GxB_TRUNC_FP32;
 extern GrB_UnaryOp GxB_TRUNC_FP64;
 
 /* GxB objects */
+extern GxB_Context GxB_CONTEXT_WORLD;
 extern GxB_SelectOp GxB_DIAG;
 extern GxB_SelectOp GxB_EQ_THUNK;
 extern GxB_SelectOp GxB_EQ_ZERO;
@@ -3063,9 +3087,6 @@ GrB_Info GrB_Vector_wait(GrB_Vector v, GrB_WaitMode waitmode);
 * GB functions *
 ***************/
 
-/* binary */
-GrB_Info GB_BinaryOp_new(GrB_BinaryOp *binaryop, GxB_binary_function function, GrB_Type ztype, GrB_Type xtype, GrB_Type ytype, const char *binop_name);
-
 /* iterator */
 GrB_Info GB_Iterator_rc_bitmap_next(GxB_Iterator iterator);
 GrB_Info GB_Iterator_rc_seek(GxB_Iterator iterator, GrB_Index j, bool jth_vector);
@@ -3073,15 +3094,6 @@ GrB_Info GB_Vector_Iterator_bitmap_seek(GxB_Iterator iterator, GrB_Index unused)
 
 /* matrix */
 GrB_Info GB_Iterator_attach(GxB_Iterator iterator, GrB_Matrix A, GxB_Format_Value format, GrB_Descriptor desc);
-
-/* selectop */
-GrB_Info GB_SelectOp_new(GxB_SelectOp *selectop, GxB_select_function function, GrB_Type xtype, GrB_Type ttype, const char *name);
-
-/* type */
-GrB_Info GB_Type_new(GrB_Type *type, size_t sizeof_ctype, const char *type_name);
-
-/* unary */
-GrB_Info GB_UnaryOp_new(GrB_UnaryOp *unaryop, GxB_unary_function function, GrB_Type ztype, GrB_Type xtype, const char *unop_name);
 
 /****************
 * GxB functions *
@@ -3097,14 +3109,28 @@ GrB_Info GxB_BinaryOp_ytype_name(char *type_name, const GrB_BinaryOp binaryop);
 GrB_Info GxB_BinaryOp_ztype(GrB_Type *ztype, GrB_BinaryOp binaryop);
 GrB_Info GxB_BinaryOp_ztype_name(char *type_name, const GrB_BinaryOp binaryop);
 
+/* context */
+GrB_Info GxB_Context_disengage(GxB_Context Context);
+GrB_Info GxB_Context_engage(GxB_Context Context);
+GrB_Info GxB_Context_fprint(GxB_Context Context, const char *name, GxB_Print_Level pr, FILE *f);
+GrB_Info GxB_Context_free(GxB_Context *Context);
+GrB_Info GxB_Context_get(GxB_Context Context, GxB_Context_Field field, ...);
+GrB_Info GxB_Context_get_FP64(GxB_Context Context, GxB_Context_Field field, double *value);
+GrB_Info GxB_Context_get_INT32(GxB_Context Context, GxB_Context_Field field, int32_t *value);
+GrB_Info GxB_Context_new(GxB_Context *Context);
+GrB_Info GxB_Context_set(GxB_Context Context, GxB_Context_Field field, ...);
+GrB_Info GxB_Context_set_FP64(GxB_Context Context, GxB_Context_Field field, double value);
+GrB_Info GxB_Context_set_INT32(GxB_Context Context, GxB_Context_Field field, int32_t value);
+
 /* core */
 GrB_Info GxB_Global_Option_get(GxB_Option_Field field, ...);
-GrB_Info GxB_Global_Option_get_CHAR(GxB_Option_Field field, char **value);
+GrB_Info GxB_Global_Option_get_CHAR(GxB_Option_Field field, const char **value);
 GrB_Info GxB_Global_Option_get_FP64(GxB_Option_Field field, double *value);
 GrB_Info GxB_Global_Option_get_FUNCTION(GxB_Option_Field field, void **value);
 GrB_Info GxB_Global_Option_get_INT32(GxB_Option_Field field, int32_t *value);
 GrB_Info GxB_Global_Option_get_INT64(GxB_Option_Field field, int64_t *value);
 GrB_Info GxB_Global_Option_set(GxB_Option_Field field, ...);
+GrB_Info GxB_Global_Option_set_CHAR(GxB_Option_Field field, const char *value);
 GrB_Info GxB_Global_Option_set_FP64(GxB_Option_Field field, double value);
 GrB_Info GxB_Global_Option_set_FP64_ARRAY(GxB_Option_Field field, double *value);
 GrB_Info GxB_Global_Option_set_FUNCTION(GxB_Option_Field field, void *value);
@@ -3343,12 +3369,8 @@ GrB_Info GxB_Scalar_type_name(char *type_name, const GrB_Scalar s);
 GrB_Info GxB_Scalar_wait(GrB_Scalar *s);
 
 /* selectop */
-GrB_Info GxB_SelectOp_error(const char **error, const GxB_SelectOp op);
-GrB_Info GxB_SelectOp_fprint(GxB_SelectOp selectop, const char *name, GxB_Print_Level pr, FILE *f);
-GrB_Info GxB_SelectOp_free(GxB_SelectOp *selectop);
-GrB_Info GxB_SelectOp_new(GxB_SelectOp *selectop, GxB_select_function function, GrB_Type xtype, GrB_Type ttype);
+GrB_Info GxB_SelectOp_fprint(GxB_SelectOp op, const char *name, GxB_Print_Level pr, FILE *f);
 GrB_Info GxB_SelectOp_ttype(GrB_Type *ttype, GxB_SelectOp selectop);
-GrB_Info GxB_SelectOp_wait(GxB_SelectOp op, GrB_WaitMode waitmode);
 GrB_Info GxB_SelectOp_xtype(GrB_Type *xtype, GxB_SelectOp selectop);
 
 /* semiring */
@@ -3453,7 +3475,6 @@ GrB_Info GxB_Vector_unpack_Full(GrB_Vector v, void **vx, GrB_Index *vx_size, boo
 #define GxB_BITMAP ...
 #define GxB_CHUNK ...
 #define GxB_COMPRESSION_DEFAULT ...
-#define GxB_COMPRESSION_INTEL ...
 #define GxB_COMPRESSION_LZ4 ...
 #define GxB_COMPRESSION_LZ4HC ...
 #define GxB_COMPRESSION_NONE ...
@@ -3461,8 +3482,7 @@ GrB_Info GxB_Vector_unpack_Full(GrB_Vector v, void **vx, GrB_Index *vx_size, boo
 #define GxB_END ...
 #define GxB_FAST_IMPORT ...
 #define GxB_FULL ...
-#define GxB_GPU_CHUNK ...
-#define GxB_GPU_CONTROL ...
+#define GxB_GPU_ID ...
 #define GxB_HYPERSPARSE ...
 #define GxB_IMPLEMENTATION ...
 #define GxB_IMPLEMENTATION_MAJOR ...
