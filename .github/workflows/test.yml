@@ -36,27 +36,27 @@ jobs:
     - name: GraphBLAS (from conda-forge)
       if: (contains(matrix.source, 'conda-forge'))
       run: |
-        conda install -c conda-forge graphblas=${{ matrix.graphblas-version }} pytest pytest-randomly
+        conda install -c conda-forge graphblas=${{ matrix.graphblas-version }} pytest-randomly
     - name: GraphBLAS (from source)
       if: (contains(matrix.source, 'source'))
       run: |
         # This isn't working!  Why not?
-        # sh suitesparse.sh refs/tags/${{ matrix.graphblas-version }}
+        GRAPHBLAS_PREFIX=${CONDA_PREFIX} bash suitesparse.sh refs/tags/${{ matrix.graphblas-version }}.0
 
         # From tag
-        curl -L https://github.com/DrTimothyAldenDavis/GraphBLAS/archive/refs/tags/v${{ matrix.graphblas-version }}.tar.gz | tar xzf -
-        pushd GraphBLAS-${{ matrix.graphblas-version }}/build
+        # curl -L https://github.com/DrTimothyAldenDavis/GraphBLAS/archive/refs/tags/v${{ matrix.graphblas-version }}.tar.gz | tar xzf -
+        # pushd GraphBLAS-${{ matrix.graphblas-version }}/build
 
         # From branch
         # curl -L https://github.com/DrTimothyAldenDavis/GraphBLAS/tarball/${{ matrix.graphblas-version }} | tar xzf -
         # pushd DrTim*/build
 
-        echo ${CONDA_PREFIX}
-        cmake -DCMAKE_INSTALL_PREFIX=${CONDA_PREFIX} -DCMAKE_INSTALL_LIBDIR=lib -DCMAKE_BUILD_TYPE=Release ..
-        cat Makefile
-        make all JOBS=16
-        make install
-        popd
+        # echo ${CONDA_PREFIX}
+        # cmake -DCMAKE_INSTALL_PREFIX=${CONDA_PREFIX} -DCMAKE_INSTALL_LIBDIR=lib -DCMAKE_BUILD_TYPE=Release ..
+        # cat Makefile
+        # make all JOBS=16
+        # make install
+        # popd
     - name: Build
       run: |
         pip install -e . --no-deps
