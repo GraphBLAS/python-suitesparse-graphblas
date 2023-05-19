@@ -828,9 +828,9 @@ def main():
     with open(final_h, "w") as f:
         f.write("\n".join(text) + "\n")
 
-    # Create final header file (arm64)
-    # NOTE: arm64 is now the same; SuiteSparse:GraphBLAS no longer uses variadic
-    # Replace all variadic arguments (...) with "char *"
+    # NOTE:suitesparse_graphblas.h and suitesparse_graphblas_arm64.h are the same now
+    # # Create final header file (arm64)
+    # # Replace all variadic arguments (...) with "char *"
     # print(f"Step 4: parse header file to create {final_arm64_h}")
     # orig_text = text
     # patt = re.compile(r"^(extern GrB_Info .*\(.*)(\.\.\.)(\);)$")
