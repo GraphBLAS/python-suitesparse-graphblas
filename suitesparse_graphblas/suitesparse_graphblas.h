@@ -32,10 +32,10 @@ typedef enum
   GrB_MASK = 1,
   GrB_INP0 = 2,
   GrB_INP1 = 3,
-  GxB_AxB_METHOD = 1000,
-  GxB_SORT = 35,
-  GxB_COMPRESSION = 36,
-  GxB_IMPORT = 37
+  GxB_AxB_METHOD = 7090,
+  GxB_SORT = 7091,
+  GxB_COMPRESSION = 7092,
+  GxB_IMPORT = 7093
 } GrB_Desc_Field;
 
 typedef enum
@@ -45,11 +45,11 @@ typedef enum
   GrB_COMP = 2,
   GrB_STRUCTURE = 4,
   GrB_TRAN = 3,
-  GxB_AxB_GUSTAVSON = 1001,
-  GxB_AxB_DOT = 1003,
-  GxB_AxB_HASH = 1004,
-  GxB_AxB_SAXPY = 1005,
-  GxB_SECURE_IMPORT = 502
+  GxB_AxB_GUSTAVSON = 7081,
+  GxB_AxB_DOT = 7083,
+  GxB_AxB_HASH = 7084,
+  GxB_AxB_SAXPY = 7085,
+  GxB_SECURE_IMPORT = 7080
 } GrB_Desc_Value;
 
 typedef enum
@@ -63,7 +63,7 @@ typedef enum
 {
   GrB_SUCCESS = 0,
   GrB_NO_VALUE = 1,
-  GxB_EXHAUSTED = 2,
+  GxB_EXHAUSTED = 7089,
   GrB_UNINITIALIZED_OBJECT = -1,
   GrB_NULL_POINTER = -2,
   GrB_INVALID_VALUE = -3,
@@ -84,8 +84,8 @@ typedef enum
 {
   GrB_NONBLOCKING = 0,
   GrB_BLOCKING = 1,
-  GxB_NONBLOCKING_GPU = 2,
-  GxB_BLOCKING_GPU = 3
+  GxB_NONBLOCKING_GPU = 7099,
+  GxB_BLOCKING_GPU = 7098
 } GrB_Mode;
 
 typedef enum
@@ -97,9 +97,9 @@ typedef enum
 /* GxB enums */
 typedef enum
 {
-  GxB_CONTEXT_NTHREADS = 5,
-  GxB_CONTEXT_CHUNK = 7,
-  GxB_CONTEXT_GPU_ID = 26
+  GxB_CONTEXT_NTHREADS = 7086,
+  GxB_CONTEXT_CHUNK = 7087,
+  GxB_CONTEXT_GPU_ID = 7088
 } GxB_Context_Field;
 
 typedef enum
@@ -111,7 +111,6 @@ typedef enum
 
 typedef enum
 {
-  GxB_JIT_NONE = -1,
   GxB_JIT_OFF = 0,
   GxB_JIT_PAUSE = 1,
   GxB_JIT_RUN = 2,
@@ -121,45 +120,49 @@ typedef enum
 
 typedef enum
 {
-  GxB_HYPER_SWITCH = 0,
-  GxB_BITMAP_SWITCH = 34,
-  GxB_FORMAT = 1,
-  GxB_MODE = 2,
-  GxB_LIBRARY_NAME = 8,
-  GxB_LIBRARY_VERSION = 9,
-  GxB_LIBRARY_DATE = 10,
-  GxB_LIBRARY_ABOUT = 11,
-  GxB_LIBRARY_URL = 12,
-  GxB_LIBRARY_LICENSE = 13,
-  GxB_LIBRARY_COMPILE_DATE = 14,
-  GxB_LIBRARY_COMPILE_TIME = 15,
-  GxB_API_VERSION = 16,
-  GxB_API_DATE = 17,
-  GxB_API_ABOUT = 18,
-  GxB_API_URL = 19,
-  GxB_COMPILER_VERSION = 23,
-  GxB_COMPILER_NAME = 24,
-  GxB_LIBRARY_OPENMP = 25,
-  GxB_GLOBAL_NTHREADS = 5,
-  GxB_GLOBAL_CHUNK = 7,
-  GxB_GLOBAL_GPU_ID = 26,
-  GxB_BURBLE = 99,
-  GxB_PRINTF = 101,
-  GxB_FLUSH = 102,
-  GxB_MEMORY_POOL = 103,
-  GxB_PRINT_1BASED = 104,
-  GxB_JIT_C_COMPILER_NAME = 110,
-  GxB_JIT_C_COMPILER_FLAGS = 111,
-  GxB_JIT_C_LINKER_FLAGS = 112,
-  GxB_JIT_CACHE_PATH = 113,
-  GxB_JIT_SOURCE_PATH = 114,
-  GxB_JIT_C_CONTROL = 115,
-  GxB_SPARSITY_STATUS = 33,
-  GxB_SPARSITY_CONTROL = 32,
-  GxB_MALLOC_FUNCTION = 105,
-  GxB_CALLOC_FUNCTION = 106,
-  GxB_REALLOC_FUNCTION = 107,
-  GxB_FREE_FUNCTION = 108
+  GxB_HYPER_SWITCH = 7000,
+  GxB_BITMAP_SWITCH = 7001,
+  GxB_FORMAT = 7002,
+  GxB_MODE = 7003,
+  GxB_LIBRARY_NAME = 7004,
+  GxB_LIBRARY_VERSION = 7005,
+  GxB_LIBRARY_DATE = 7006,
+  GxB_LIBRARY_ABOUT = 7007,
+  GxB_LIBRARY_URL = 7008,
+  GxB_LIBRARY_LICENSE = 7009,
+  GxB_LIBRARY_COMPILE_DATE = 7010,
+  GxB_LIBRARY_COMPILE_TIME = 7011,
+  GxB_API_VERSION = 7012,
+  GxB_API_DATE = 7013,
+  GxB_API_ABOUT = 7014,
+  GxB_API_URL = 7015,
+  GxB_COMPILER_VERSION = 7016,
+  GxB_COMPILER_NAME = 7017,
+  GxB_LIBRARY_OPENMP = 7018,
+  GxB_GLOBAL_NTHREADS = 7086,
+  GxB_GLOBAL_CHUNK = 7087,
+  GxB_GLOBAL_GPU_ID = 7088,
+  GxB_BURBLE = 7019,
+  GxB_PRINTF = 7020,
+  GxB_FLUSH = 7021,
+  GxB_MEMORY_POOL = 7022,
+  GxB_PRINT_1BASED = 7023,
+  GxB_JIT_C_COMPILER_NAME = 7024,
+  GxB_JIT_C_COMPILER_FLAGS = 7025,
+  GxB_JIT_C_LINKER_FLAGS = 7026,
+  GxB_JIT_C_LIBRARIES = 7027,
+  GxB_JIT_C_PREFACE = 7028,
+  GxB_JIT_C_CONTROL = 7029,
+  GxB_JIT_CACHE_PATH = 7030,
+  GxB_JIT_C_CMAKE_LIBS = 7031,
+  GxB_JIT_USE_CMAKE = 7032,
+  GxB_JIT_ERROR_LOG = 7033,
+  GxB_SPARSITY_STATUS = 7034,
+  GxB_SPARSITY_CONTROL = 7036,
+  GxB_MALLOC_FUNCTION = 7037,
+  GxB_CALLOC_FUNCTION = 7038,
+  GxB_REALLOC_FUNCTION = 7039,
+  GxB_FREE_FUNCTION = 7040
 } GxB_Option_Field;
 
 typedef enum
@@ -3366,7 +3369,7 @@ GrB_Info GxB_Scalar_type_name(char *type_name, const GrB_Scalar s);
 GrB_Info GxB_Scalar_wait(GrB_Scalar *s);
 
 /* selectop */
-GrB_Info GxB_SelectOp_fprint(GxB_SelectOp selectop, const char *name, GxB_Print_Level pr, FILE *f);
+GrB_Info GxB_SelectOp_fprint(GxB_SelectOp op, const char *name, GxB_Print_Level pr, FILE *f);
 GrB_Info GxB_SelectOp_ttype(GrB_Type *ttype, GxB_SelectOp selectop);
 GrB_Info GxB_SelectOp_xtype(GrB_Type *xtype, GxB_SelectOp selectop);
 

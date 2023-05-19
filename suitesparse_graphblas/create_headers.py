@@ -293,7 +293,7 @@ DEFINES = {
     "GxB_FAST_IMPORT",
     "GxB_MAX_NAME_LEN",
     "GxB_COMPRESSION_DEFAULT",
-    "GxB_COMPRESSION_INTEL",
+    # "GxB_COMPRESSION_INTEL",  # Removed in v8.0.0
     "GxB_COMPRESSION_LZ4",
     "GxB_COMPRESSION_LZ4HC",
     "GxB_COMPRESSION_ZSTD",
@@ -315,6 +315,7 @@ IGNORE_DEFINES = {
     "CMPLX",
     "CMPLXF",
     "GB_GLOBAL",
+    "GB_HAS_CMPLX_MACROS",
     "GB_PUBLIC",
     "GB_restrict",
     "GRAPHBLAS_H",
@@ -799,7 +800,7 @@ def main():
 
     # final files used by cffi (with and without complex numbers)
     final_h = os.path.join(thisdir, "suitesparse_graphblas.h")
-    final_arm64_h = os.path.join(thisdir, "suitesparse_graphblas_arm64.h")
+    # final_arm64_h = os.path.join(thisdir, "suitesparse_graphblas_arm64.h")
     final_no_complex_h = os.path.join(thisdir, "suitesparse_graphblas_no_complex.h")
     source_c = os.path.join(thisdir, "source.c")
 
@@ -828,29 +829,30 @@ def main():
         f.write("\n".join(text) + "\n")
 
     # Create final header file (arm64)
+    # NOTE: arm64 is now the same; SuiteSparse:GraphBLAS no longer uses variadic
     # Replace all variadic arguments (...) with "char *"
-    print(f"Step 4: parse header file to create {final_arm64_h}")
-    orig_text = text
-    patt = re.compile(r"^(extern GrB_Info .*\(.*)(\.\.\.)(\);)$")
-    text = [patt.sub(r"\1char *\3", line) for line in orig_text]
-    with open(final_arm64_h, "w") as f:
-        f.write("\n".join(text) + "\n")
+    # print(f"Step 4: parse header file to create {final_arm64_h}")
+    # orig_text = text
+    # patt = re.compile(r"^(extern GrB_Info .*\(.*)(\.\.\.)(\);)$")
+    # text = [patt.sub(r"\1char *\3", line) for line in orig_text]
+    # with open(final_arm64_h, "w") as f:
+    #     f.write("\n".join(text) + "\n")
 
     # Create final header file (no complex)
-    print(f"Step 5: parse header file to create {final_no_complex_h}")
+    print(f"Step 4: parse header file to create {final_no_complex_h}")
     groups_no_complex = parse_header(processed_h, skip_complex=True)
     text = create_header_text(groups_no_complex)
     with open(final_no_complex_h, "w") as f:
         f.write("\n".join(text) + "\n")
 
     # Create source
-    print(f"Step 6: create {source_c}")
+    print(f"Step 5: create {source_c}")
     text = create_source_text(groups)
     with open(source_c, "w") as f:
         f.write("\n".join(text) + "\n")
 
     # Check defines
-    print("Step 7: check #define definitions")
+    print("Step 6: check #define definitions")
     with open(graphblas_h) as f:
         text = f.read()
     define_lines = re.compile(r".*?#define\s+\w+\s+")
