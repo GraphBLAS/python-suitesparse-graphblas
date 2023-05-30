@@ -2938,6 +2938,7 @@ GrB_Info GxB_BinaryOp_ztype_name(char *type_name, const GrB_BinaryOp binaryop);
 /* context */
 GrB_Info GxB_Context_disengage(GxB_Context Context);
 GrB_Info GxB_Context_engage(GxB_Context Context);
+GrB_Info GxB_Context_error(const char **error, const GxB_Context Context);
 GrB_Info GxB_Context_fprint(GxB_Context Context, const char *name, GxB_Print_Level pr, FILE *f);
 GrB_Info GxB_Context_free(GxB_Context *Context);
 GrB_Info GxB_Context_get(GxB_Context Context, GxB_Context_Field field, ...);
@@ -2947,6 +2948,7 @@ GrB_Info GxB_Context_new(GxB_Context *Context);
 GrB_Info GxB_Context_set(GxB_Context Context, GxB_Context_Field field, ...);
 GrB_Info GxB_Context_set_FP64(GxB_Context Context, GxB_Context_Field field, double value);
 GrB_Info GxB_Context_set_INT32(GxB_Context Context, GxB_Context_Field field, int32_t value);
+GrB_Info GxB_Context_wait(GxB_Context Context, GrB_WaitMode waitmode);
 
 /* core */
 GrB_Info GxB_Global_Option_get(GxB_Option_Field field, ...);
