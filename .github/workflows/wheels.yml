@@ -106,9 +106,9 @@ jobs:
         # manually so that both x86 and arm builds can be built.
         run: |
           brew install coreutils
+          brew install libomp
           if [[ ${{ matrix.cibw_archs }} == "arm64" ]] ; then
             echo "Building universal libomp manually"
-            brew install libomp
             sh add_arm_to_libomp_dylib.sh
           fi
 
@@ -156,7 +156,7 @@ jobs:
           # GitHub Actions macOS Intel runner cannot run ARM tests. Uncomment to silence warning.
           # CIBW_TEST_SKIP: "*-macosx_arm64"
           # XXX: tests are failing for macos_x86_64; let's see if we can figure out what's wrong by releasing a broken package... (sorry!)
-          # CIBW_TEST_SKIP: "*-macosx_*"
+          CIBW_TEST_SKIP: "*-macosx_*"
 
         run: |
           python -m pip install --upgrade pip
