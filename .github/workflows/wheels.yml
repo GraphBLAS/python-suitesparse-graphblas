@@ -148,7 +148,7 @@ jobs:
           CIBW_TEST_EXTRAS: "test"
 
           # run tests
-          CIBW_TEST_COMMAND: "pytest -v --pyargs suitesparse_graphblas"
+          CIBW_TEST_COMMAND: "pytest --pyargs suitesparse_graphblas -s -k test_print_jit_config && pytest -v --pyargs suitesparse_graphblas"
 
           # GitHub Actions macOS Intel runner cannot run ARM tests. Uncomment to silence warning.
 #          CIBW_TEST_SKIP: "*-macosx_arm64"

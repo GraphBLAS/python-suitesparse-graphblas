@@ -64,6 +64,7 @@ jobs:
       env:
         CYTHON_COVERAGE: true
       run: |
+        pytest -s -k test_print_jit_config
         coverage run --branch -m pytest
         coverage run -a --branch suitesparse_graphblas/tests/test_initialize.py
     - name: create_headers.py check
