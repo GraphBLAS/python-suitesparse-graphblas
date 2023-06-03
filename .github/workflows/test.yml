@@ -19,7 +19,7 @@ jobs:
         # os: ["ubuntu-latest"]
         # source: ["source"]
         python-version: ["3.8", "3.9", "3.10", "3.11"]
-        graphblas-version: ["8.0.0"]
+        graphblas-version: ["8.0.1"]
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -40,6 +40,7 @@ jobs:
     - name: GraphBLAS (from source)
       if: (contains(matrix.source, 'source'))
       run: |
+        # From release (does not work with beta versions)
         GRAPHBLAS_PREFIX=${CONDA_PREFIX} bash suitesparse.sh refs/tags/${{ matrix.graphblas-version }}.0
 
         # From tag
@@ -63,6 +64,7 @@ jobs:
       env:
         CYTHON_COVERAGE: true
       run: |
+        pytest -s -k test_print_jit_config
         coverage run --branch -m pytest
         coverage run -a --branch suitesparse_graphblas/tests/test_initialize.py
     - name: create_headers.py check
