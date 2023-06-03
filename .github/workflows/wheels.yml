@@ -106,8 +106,11 @@ jobs:
         # manually so that both x86 and arm builds can be built.
         run: |
           brew install coreutils
-          brew install libomp
-          sh add_arm_to_libomp_dylib.sh
+          if [[ ${{ matrix.cibw_archs }} == "arm64" ]] ; then
+            echo "Building universal libomp manually"
+            brew install libomp
+            sh add_arm_to_libomp_dylib.sh
+          fi
 
       - name: Build Wheels
         env:
@@ -127,7 +130,7 @@ jobs:
           CIBW_ENVIRONMENT_MACOS: BREW_LIBOMP="1" SUITESPARSE_MACOS_ARCH=${{ matrix.cibw_archs }}
 
           # Uncomment to only build CPython wheels
-#          CIBW_BUILD: "cp*"
+          # CIBW_BUILD: "cp*"
 
           # Architectures to build specified in matrix
           CIBW_ARCHS: ${{ matrix.cibw_archs }}
@@ -151,7 +154,9 @@ jobs:
           CIBW_TEST_COMMAND: "pytest --pyargs suitesparse_graphblas -s -k test_print_jit_config && pytest -v --pyargs suitesparse_graphblas"
 
           # GitHub Actions macOS Intel runner cannot run ARM tests. Uncomment to silence warning.
-#          CIBW_TEST_SKIP: "*-macosx_arm64"
+          # CIBW_TEST_SKIP: "*-macosx_arm64"
+          # XXX: tests are failing for macos_x86_64; let's see if we can figure out what's wrong by releasing a broken package... (sorry!)
+          # CIBW_TEST_SKIP: "*-macosx_*"
 
         run: |
           python -m pip install --upgrade pip
@@ -181,7 +186,7 @@ jobs:
     needs: [build_wheels, build_sdist]
     runs-on: ubuntu-latest
     if: github.repository == 'GraphBLAS/python-suitesparse-graphblas'
-#    if: github.event_name == 'release' && github.event.action == 'published'
+    # if: github.event_name == 'release' && github.event.action == 'published'
 
     steps:
       - uses: actions/setup-python@v4
@@ -202,5 +207,5 @@ jobs:
           password: ${{ secrets.PYPI_TOKEN }}
 
           # Test PyPI:
-#          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
-#          repository_url: https://test.pypi.org/legacy/
+          # password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+          # repository_url: https://test.pypi.org/legacy/
