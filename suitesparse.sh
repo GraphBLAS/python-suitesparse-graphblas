@@ -88,7 +88,9 @@ fi
 # Disable all Source/Generated2 kernels. For workflow development only.
 #cmake_params+=(-DCMAKE_CUDA_DEV=1)
 
-cmake .. -DCMAKE_BUILD_TYPE=Release -G 'Unix Makefiles' "${cmake_params[@]}"
+# Use `-DJITINIT=2` so that the JIT functionality is available, but disabled by default.
+# Level 2, "run", means that pre-JIT kernels may be used, which does not require a compiler at runtime.
+cmake .. -DJITINIT=2 -DCMAKE_BUILD_TYPE=Release -G 'Unix Makefiles' "${cmake_params[@]}"
 make -j$NPROC
 make install
 
