@@ -31,12 +31,14 @@ jobs:
         auto-update-conda: true
         python-version: ${{ matrix.python-version }}
         environment-file: continuous_integration/environment.yml
-        channels: conda-forge
+        channels: conda-forge,nodefaults
+        channel-priority: strict
         activate-environment: suitesparse-graphblas
+        auto-activate-base: false
     - name: GraphBLAS (from conda-forge)
       if: (contains(matrix.source, 'conda-forge'))
       run: |
-        conda install -c conda-forge graphblas=${{ matrix.graphblas-version }} pytest-randomly
+        conda install graphblas=${{ matrix.graphblas-version }}
     - name: GraphBLAS (from source)
       if: (contains(matrix.source, 'source'))
       run: |
