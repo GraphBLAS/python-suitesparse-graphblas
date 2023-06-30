@@ -19,7 +19,7 @@ jobs:
         # os: ["ubuntu-latest"]
         # source: ["source"]
         python-version: ["3.8", "3.9", "3.10", "3.11"]
-        graphblas-version: ["8.0.1"]
+        graphblas-version: ["8.0.2"]
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -52,7 +52,7 @@ jobs:
         # pushd DrTim*/build
 
         # echo ${CONDA_PREFIX}
-        # cmake -DCMAKE_INSTALL_PREFIX=${CONDA_PREFIX} -DCMAKE_INSTALL_LIBDIR=lib -DCMAKE_BUILD_TYPE=Release ..
+        # cmake -DJITINIT=2 -DCMAKE_INSTALL_PREFIX=${CONDA_PREFIX} -DCMAKE_INSTALL_LIBDIR=lib -DCMAKE_BUILD_TYPE=Release ..
         # cat Makefile
         # make all JOBS=16
         # make install
