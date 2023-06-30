@@ -8,4 +8,5 @@ dependencies:
   - cython
   - numpy
   - pytest
+  - pytest-randomly
   - coverage
