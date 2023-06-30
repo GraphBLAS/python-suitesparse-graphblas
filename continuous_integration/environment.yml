@@ -1,7 +1,7 @@
 name: suitesparse-graphblas
 channels:
   - conda-forge
-  - defaults
+  - nodefaults  # Only install packages from conda-forge for faster solving
 dependencies:
   # - graphblas=6.0.2
   - cffi
@@ -9,5 +9,3 @@ dependencies:
   - numpy
   - pytest
   - coverage
-  - black
-  - flake8
