@@ -5,4 +5,5 @@ extend-ignore =
     E203,
 # E203 whitespace before ':' (to be compatible with black)
 per-file-ignores =
-    suitesparse_graphblas/io/binary.py:C408
+    suitesparse_graphblas/io/binary.py:C408,
+    suitesparse_graphblas/tests/test_io.py:E721,
