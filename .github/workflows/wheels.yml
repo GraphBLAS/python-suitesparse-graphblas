@@ -120,6 +120,9 @@ jobs:
           # Build SuiteSparse
           CIBW_BEFORE_ALL: bash suitesparse.sh ${{ github.ref }}
 
+          # Install FFI dev library, needed for Python 3.12
+          CIBW_BEFORE_BUILD_LINUX: yum install -y libffi-devel
+
           CIBW_ENVIRONMENT_LINUX: SUITESPARSE_FAST_BUILD=${{ env.SUITESPARSE_FAST_BUILD }}
 
           # CMAKE_GNUtoMS=ON asks suitesparse.sh to build libraries in MSVC style on Windows.
