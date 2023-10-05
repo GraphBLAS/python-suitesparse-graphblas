@@ -138,8 +138,11 @@ jobs:
           # Architectures to build specified in matrix
           CIBW_ARCHS: ${{ matrix.cibw_archs }}
 
-          # No 32-bit builds, no musllinux, no PyPy aarch64 (only due to build speed, numpy does not ship aarch64 pypy wheels)
-          CIBW_SKIP: "*-win32 *_i686 *musl* pp*aarch64"
+          # No 32-bit builds
+          # no musllinux
+          # no PyPy aarch64 (only due to build speed, numpy does not ship aarch64 pypy wheels)
+          # as of writing numpy does not support pypy 3.10
+          CIBW_SKIP: "*-win32 *_i686 *musl* pp*aarch64 pp310*"
 
           # Use delvewheel on Windows.
           # This copies graphblas.dll into the wheel. "repair" in cibuildwheel parlance includes copying any shared

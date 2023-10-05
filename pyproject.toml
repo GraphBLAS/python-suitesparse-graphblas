@@ -6,7 +6,10 @@ requires = [
     "wheel",
     "cffi>=1.11,<1.16",
     "cython",
-    "oldest-supported-numpy",
+    "oldest-supported-numpy; platform_python_implementation != 'PyPy'",
+    # Inspired by SciPy: unpin numpy version for PyPy builds,
+    # as oldest-supported-numpy does not take PyPy into account.
+    "numpy; platform_python_implementation=='PyPy'",
 ]
 
 [project]
