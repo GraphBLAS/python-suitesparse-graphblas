@@ -7,6 +7,9 @@ on:
   # Enable Run Workflow button in GitHub UI
   workflow_dispatch:
 
+  push:
+  pull_request:
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -98,6 +101,20 @@ jobs:
         run: |
           echo "SUITESPARSE_FAST_BUILD=1" >> $GITHUB_ENV
 
+      - name: Setup for testing
+        if: github.event_name == 'push' || github.event_name == 'pull_request'
+        # Ask suitesparse.sh to compile in the fastest way possible and provide a GB version to build
+        run: |
+          echo "SUITESPARSE_FASTEST_BUILD=1" >> $GITHUB_ENV
+          echo "GB_VERSION_REF=refs/tags/8.2.0.0" >> $GITHUB_ENV
+        shell: bash
+
+      - name: Setup GraphBLAS version from tag
+        if: ${{ startsWith(github.ref, 'refs/tags/') }}
+        # If this is a tagged ref, like a release, then use the tag for the graphblas version
+        run: echo "GB_VERSION_REF=${{ github.ref }}" >> $GITHUB_ENV
+        shell: bash
+
       - name: Install tools (macOS)
         if: contains(matrix.os, 'macos')
         # Install coreutils which includes `nproc` used by `make -j` in suitesparse.sh
@@ -118,12 +135,12 @@ jobs:
           CIBW_BUILD_VERBOSITY: 3
 
           # Build SuiteSparse
-          CIBW_BEFORE_ALL: bash suitesparse.sh ${{ github.ref }}
+          CIBW_BEFORE_ALL: bash suitesparse.sh ${{ env.GB_VERSION_REF }}
 
           # Install FFI dev library, needed for Python 3.12
           CIBW_BEFORE_BUILD_LINUX: yum install -y libffi-devel
 
-          CIBW_ENVIRONMENT_LINUX: SUITESPARSE_FAST_BUILD=${{ env.SUITESPARSE_FAST_BUILD }}
+          CIBW_ENVIRONMENT_PASS_LINUX: SUITESPARSE_FAST_BUILD SUITESPARSE_FASTEST_BUILD
 
           # CMAKE_GNUtoMS=ON asks suitesparse.sh to build libraries in MSVC style on Windows.
           CIBW_ENVIRONMENT_WINDOWS: CMAKE_GNUtoMS=ON GRAPHBLAS_PREFIX="C:/GraphBLAS"
@@ -189,8 +206,8 @@ jobs:
     name: Upload to PyPI
     needs: [build_wheels, build_sdist]
     runs-on: ubuntu-latest
-    if: github.repository == 'GraphBLAS/python-suitesparse-graphblas'
-    # if: github.event_name == 'release' && github.event.action == 'published'
+    # only upload releases to PyPI
+    if: github.repository == 'GraphBLAS/python-suitesparse-graphblas' && github.event_name == 'release' && github.event.action == 'published'
 
     steps:
       - uses: actions/setup-python@v4
@@ -212,4 +229,4 @@ jobs:
 
           # Test PyPI:
           # password: ${{ secrets.TEST_PYPI_API_TOKEN }}
-          # repository_url: https://test.pypi.org/legacy/
+          # repository-url: https://test.pypi.org/legacy/
