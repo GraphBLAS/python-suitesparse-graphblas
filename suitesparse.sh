@@ -87,8 +87,27 @@ if [ -n "${SUITESPARSE_FAST_BUILD}" ]; then
     echo "#define GxB_NO_UINT8     1" >> ../Source/GB_control.h
 fi
 
-# Disable all Source/Generated2 kernels. For workflow development only.
-#cmake_params+=(-DCMAKE_CUDA_DEV=1)
+if [ -n "${SUITESPARSE_FASTEST_BUILD}" ]; then
+    echo "suitesparse.sh: Fastest build requested."
+    # Fastest build possible. For use in development and automated tests that do not depend on performance.
+
+    echo "#define GxB_NO_BOOL      1" >> ../Source/GB_control.h
+    echo "#define GxB_NO_FP32      1" >> ../Source/GB_control.h
+    echo "#define GxB_NO_FP64      1" >> ../Source/GB_control.h
+    echo "#define GxB_NO_FC32      1" >> ../Source/GB_control.h
+    echo "#define GxB_NO_FC64      1" >> ../Source/GB_control.h
+    echo "#define GxB_NO_INT16     1" >> ../Source/GB_control.h
+    echo "#define GxB_NO_INT32     1" >> ../Source/GB_control.h
+    echo "#define GxB_NO_INT64     1" >> ../Source/GB_control.h
+    echo "#define GxB_NO_INT8      1" >> ../Source/GB_control.h
+    echo "#define GxB_NO_UINT16    1" >> ../Source/GB_control.h
+    echo "#define GxB_NO_UINT32    1" >> ../Source/GB_control.h
+    echo "#define GxB_NO_UINT64    1" >> ../Source/GB_control.h
+    echo "#define GxB_NO_UINT8     1" >> ../Source/GB_control.h
+
+    # Disable all Source/Generated2 kernels. For workflow development only.
+    cmake_params+=(-DCMAKE_CUDA_DEV=1)
+fi
 
 # Use `-DJITINIT=2` so that the JIT functionality is available, but disabled by default.
 # Level 2, "run", means that pre-JIT kernels may be used, which does not require a compiler at runtime.
