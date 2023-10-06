@@ -105,6 +105,10 @@ if [ -n "${SUITESPARSE_FASTEST_BUILD}" ]; then
     echo "#define GxB_NO_UINT64    1" >> ../Source/GB_control.h
     echo "#define GxB_NO_UINT8     1" >> ../Source/GB_control.h
 
+    # Setting COMPACT probably makes setting config in GB_control.h above unnecessary
+    cmake_params+=(-DCOMPACT=1)
+    # Also no JIT for the fastest possible build
+    cmake_params+=(-DNJIT=1)
     # Disable all Source/Generated2 kernels. For workflow development only.
     cmake_params+=(-DCMAKE_CUDA_DEV=1)
 fi
