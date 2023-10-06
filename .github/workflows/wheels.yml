@@ -37,7 +37,7 @@ jobs:
 
 
   build_wheels:
-    name: Wheels - ${{ matrix.cibw_archs }} - ${{ matrix.os }}
+    name: Wheels - ${{ matrix.cibw_archs }} ${{ matrix.arch_note}} - ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     env:
       # graphblas version to use if another one is not provided
@@ -50,11 +50,21 @@ jobs:
           - os: windows-latest
             cibw_archs: "auto64"
 
-          # Linux x86
+          # Linux x86 manylinux
           - os: ubuntu-latest
             cibw_archs: "x86_64"
+            # Python 3.12 wheel requires libffi-devel to be installed. manylinux container uses yum
+            cibw_before_build_linux: "yum install -y libffi-devel"
             # skip musllinux
             cibw_skip: "*musl*"
+
+          # Linux x86 musllinux
+          # Separate runner for a Musl build of graphblas. The glibc build is not guaranteed to be compatible.
+          - os: ubuntu-latest
+            cibw_archs: "x86_64"
+            arch_note: "musl"
+            # skip manylinux (built elsewhere), PyPy (no musl numpy wheels), CPython 3.8 (no musl numpy wheels)
+            cibw_skip: "*many* pp* cp38*"
 
           # Linux aarch64
           # Separate runner because this requires emulation (only x86 runners are available) and is very slow.
@@ -133,8 +143,7 @@ jobs:
           # Build SuiteSparse
           CIBW_BEFORE_ALL: bash suitesparse.sh ${{ env.GB_VERSION_REF }}
 
-          # Install FFI dev library, needed for Python 3.12
-          CIBW_BEFORE_BUILD_LINUX: yum install -y libffi-devel
+          CIBW_BEFORE_BUILD_LINUX: ${{ matrix.cibw_before_build_linux }}
 
           CIBW_ENVIRONMENT_PASS_LINUX: SUITESPARSE_FAST_BUILD SUITESPARSE_FASTEST_BUILD
 
