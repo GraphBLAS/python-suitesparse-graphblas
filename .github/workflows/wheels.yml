@@ -2,7 +2,7 @@ name: Python wheel package build and publish
 
 on:
   release:
-    types: [created]
+    types: [published]
 
   # Enable Run Workflow button in GitHub UI
   workflow_dispatch:
@@ -41,7 +41,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       # graphblas version to use if another one is not provided
-      default-graphblas-version: "8.2.0"
+      default-graphblas-version: "8.2.1"
 
     strategy:
       fail-fast: false
