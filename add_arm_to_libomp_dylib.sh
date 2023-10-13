@@ -19,6 +19,8 @@ if [ "$(arch)" != "x86_64" ] && [ "$(arch)" != "i386" ]; then
     exit 1;
 fi
 
+set -x  # echo on
+
 #mkdir x86lib
 mkdir armlib
 
