@@ -6,6 +6,15 @@ on:
 
   # Enable Run Workflow button in GitHub UI
   workflow_dispatch:
+    inputs:
+      # Manual dispatch allows optional upload of wheels to PyPI
+      upload_dest:
+        type: choice
+        description: Upload wheels to
+        options:
+          - No Upload
+          - PyPI
+          - Test PyPI
 
   push:
     branches: [ main ]
@@ -202,7 +211,7 @@ jobs:
     needs: [build_wheels, build_sdist]
     runs-on: ubuntu-latest
     # only upload releases to PyPI
-    if: github.repository == 'GraphBLAS/python-suitesparse-graphblas' && github.event_name == 'release' && github.event.action == 'published'
+    if: github.repository == 'GraphBLAS/python-suitesparse-graphblas' && ((github.event_name == 'release' && github.event.action == 'published') || (github.event_name == 'workflow_dispatch' && github.event.inputs.upload_dest != 'No Upload'))
 
     steps:
       - uses: actions/setup-python@v4
@@ -214,14 +223,21 @@ jobs:
           name: artifact
           path: dist
 
+      # Upload to PyPI
       - uses: pypa/gh-action-pypi-publish@release/v1
+        if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && github.event.inputs.upload_dest == 'PyPI')
         with:
           # PyPI does not allow replacing a file. Without this flag the entire action fails if even a single duplicate exists.
           skip-existing: true
           verbose: true
-          # Real PyPI:
-          password: ${{ secrets.PYPI_TOKEN }}
+          password: ${{ secrets.PYPI_API_TOKEN }}
 
-          # Test PyPI:
-          # password: ${{ secrets.TEST_PYPI_API_TOKEN }}
-          # repository-url: https://test.pypi.org/legacy/
+      # Upload to Test PyPI
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.upload_dest == 'Test PyPI'
+        with:
+          # PyPI does not allow replacing a file. Without this flag the entire action fails if even a single duplicate exists.
+          skip-existing: true
+          verbose: true
+          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+          repository-url: https://test.pypi.org/legacy/
