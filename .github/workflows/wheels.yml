@@ -126,11 +126,11 @@ jobs:
         # GitHub actions comes with libomp already installed, but for its native arch only. Must build universal one
         # manually so that both x86 and arm builds can be built.
         run: |
-          brew install coreutils
-          brew install libomp
+          brew fetch --retry coreutils && brew install coreutils
+          brew fetch --retry libomp && brew install libomp
           if [[ ${{ matrix.cibw_archs }} == "arm64" ]] ; then
             echo "Building universal libomp manually"
-            sh add_arm_to_libomp_dylib.sh
+            sh add_arm_to_libomp_dylib.sh || exit 1
           fi
 
       - uses: pypa/cibuildwheel@v2.16
