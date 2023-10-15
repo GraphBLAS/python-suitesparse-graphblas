@@ -230,7 +230,7 @@ jobs:
           # PyPI does not allow replacing a file. Without this flag the entire action fails if even a single duplicate exists.
           skip-existing: true
           verbose: true
-          password: ${{ secrets.PYPI_API_TOKEN }}
+          password: ${{ secrets.PYPI_TOKEN }}
 
       # Upload to Test PyPI
       - uses: pypa/gh-action-pypi-publish@release/v1
@@ -239,5 +239,5 @@ jobs:
           # PyPI does not allow replacing a file. Without this flag the entire action fails if even a single duplicate exists.
           skip-existing: true
           verbose: true
-          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+          password: ${{ secrets.TEST_PYPI_TOKEN }}
           repository-url: https://test.pypi.org/legacy/
