@@ -19,7 +19,6 @@ jobs:
         # os: ["ubuntu-latest"]
         # source: ["source"]
         python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
-        graphblas-version: ["8.2.1"]
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -38,19 +37,19 @@ jobs:
     - name: GraphBLAS (from conda-forge)
       if: (contains(matrix.source, 'conda-forge'))
       run: |
-        conda install graphblas=${{ matrix.graphblas-version }}
+        conda install graphblas=$(cat GB_VERSION.txt)
     - name: GraphBLAS (from source)
       if: (contains(matrix.source, 'source'))
       run: |
         # From release (does not work with beta versions)
-        GRAPHBLAS_PREFIX=${CONDA_PREFIX} bash suitesparse.sh refs/tags/${{ matrix.graphblas-version }}.0
+        GRAPHBLAS_PREFIX=${CONDA_PREFIX} bash suitesparse.sh refs/tags/$(cat GB_VERSION.txt).0
 
         # From tag
-        # curl -L https://github.com/DrTimothyAldenDavis/GraphBLAS/archive/refs/tags/v${{ matrix.graphblas-version }}.tar.gz | tar xzf -
-        # pushd GraphBLAS-${{ matrix.graphblas-version }}/build
+        # curl -L https://github.com/DrTimothyAldenDavis/GraphBLAS/archive/refs/tags/v$(cat GB_VERSION.txt).tar.gz | tar xzf -
+        # pushd GraphBLAS-$(cat GB_VERSION.txt)/build
 
         # From branch
-        # curl -L https://github.com/DrTimothyAldenDavis/GraphBLAS/tarball/${{ matrix.graphblas-version }} | tar xzf -
+        # curl -L https://github.com/DrTimothyAldenDavis/GraphBLAS/tarball/$(cat GB_VERSION.txt) | tar xzf -
         # pushd DrTim*/build
 
         # echo ${CONDA_PREFIX}

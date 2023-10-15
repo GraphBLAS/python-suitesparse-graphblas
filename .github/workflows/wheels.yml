@@ -119,7 +119,13 @@ jobs:
         # Ask suitesparse.sh to compile in the fastest way possible and provide a GB version to build
         run: |
           echo "SUITESPARSE_FASTEST_BUILD=1" >> $GITHUB_ENV
-          echo "GB_VERSION_REF=refs/tags/${{ env.default-graphblas-version }}.0" >> $GITHUB_ENV
+        shell: bash
+
+      - name: Setup GraphBLAS version from GB_VERSION.txt
+        # Use GraphBLAS version specified in GB_VERSION.txt unless specified in a git tag (next workflow step).
+        # Git tag method required for uploads to PyPI.
+        if: github.event_name != 'release' && github.event.inputs.upload_dest != 'PyPI'
+        run: echo "GB_VERSION_REF=refs/tags/$(cat GB_VERSION.txt).0" >> $GITHUB_ENV
         shell: bash
 
       - name: Setup GraphBLAS version from git tag
