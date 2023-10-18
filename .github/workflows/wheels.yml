@@ -48,10 +48,6 @@ jobs:
   build_wheels:
     name: Wheels - ${{ matrix.cibw_archs }} ${{ matrix.arch_note}} - ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
-    env:
-      # graphblas version to use if another one is not provided
-      default-graphblas-version: "8.2.1"
-
     strategy:
       fail-fast: false
       matrix:

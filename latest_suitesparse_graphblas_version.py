@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """
 Find and print the latest version of SuiteSparse:GraphBLAS as published in this repo:
 https://github.com/DrTimothyAldenDavis/GraphBLAS
