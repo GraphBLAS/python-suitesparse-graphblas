@@ -27,11 +27,11 @@ mkdir armlib
 
 # download and unzip both x86 and arm libomp tarballs
 #brew fetch --retry --force --bottle-tag=x86_64_monterey libomp
-brew fetch --retry --force --bottle-tag=arm64_big_sur libomp
+brew fetch --retry --force --bottle-tag=arm64_monterey libomp
 
 # untar
 #tar -xzf $(brew --cache --bottle-tag=x86_64_monterey libomp) --strip-components 2 -C x86lib
-tar -xzf $(brew --cache --bottle-tag=arm64_big_sur libomp) --strip-components 2 -C armlib
+tar -xzf $(brew --cache --bottle-tag=arm64_monterey libomp) --strip-components 2 -C armlib
 
 # ARM and x86 dylibs have different install names due to different brew install directories.
 # The x86 install name will be expected so make the ARM install name match.
