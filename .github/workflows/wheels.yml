@@ -220,7 +220,7 @@ jobs:
     if: github.repository == 'GraphBLAS/python-suitesparse-graphblas' && ((github.event_name == 'release' && github.event.action == 'published') || (github.event_name == 'workflow_dispatch' && github.event.inputs.upload_dest != 'No Upload'))
 
     steps:
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.x"
 
