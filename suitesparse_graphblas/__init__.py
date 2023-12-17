@@ -60,7 +60,7 @@ def supports_complex():
     return hasattr(lib, "GrB_FC64") or hasattr(lib, "GxB_FC64")
 
 
-def initialize(*, blocking=False, memory_manager="numpy"):
+def initialize(*, blocking=False, memory_manager="numpy", jit_config="python"):
     """Initialize GraphBLAS via GrB_init or GxB_init.
 
     This must be called before any other GraphBLAS functions are called.
@@ -76,12 +76,24 @@ def initialize(*, blocking=False, memory_manager="numpy"):
         allocators, which makes it safe to perform zero-copy to and from numpy,
         and allows Python to track memory usage via tracemalloc (if enabled).
         'c' uses the default allocators.  Default is 'numpy'.
+    jit_config : {'python', 'suitesparse', 'disable'}, optional
+        Choose how to configure the SuiteSparse:GraphBLAS JIT, or disable the JIT.
+        'python' uses config from the builtin ``sysconfig`` module, which is what
+        Python uses to enable compiling with C. 'suitesparse' uses config from when
+        SuiteSparse:GraphBLAS was compiled. 'disable' completely turns off the JIT.
+        If you are using a distributed binary of SuiteSparse:GraphBLAS, then you
+        probably want to use 'python', otherwise you may want to use 'suitesparse'
+        if SuiteSparse:GraphBLAS was compiled locally. Default is 'python'.
 
     The global variable `suitesparse_graphblas.is_initialized` indicates whether
     GraphBLAS has been initialized.
     """
     if is_initialized():
         raise RuntimeError("GraphBLAS is already initialized!  Unable to initialize again.")
+    if jit_config not in {"python", "suitesparse", "disable"}:
+        raise ValueError(
+            f"jit_config must be 'python', 'suitesparse', or 'disable'; got: {jit_config!r}"
+        )
     blocking = lib.GrB_BLOCKING if blocking else lib.GrB_NONBLOCKING
     memory_manager = memory_manager.lower()
     if memory_manager == "numpy":
@@ -93,6 +105,13 @@ def initialize(*, blocking=False, memory_manager="numpy"):
     # See: https://github.com/GraphBLAS/python-suitesparse-graphblas/issues/40
     for attr in dir(lib):
         getattr(lib, attr)
+    jit._get_suitesparse_original_configs()
+    if jit_config == "python":
+        jit.set_python_defaults()
+    elif jit_config == "suitesparse":
+        jit.set_suitesparse_defaults()
+    else:
+        jit.disable()
 
 
 def libget(name):
@@ -302,3 +321,5 @@ class burble:
 
 
 burble = burble()
+
+from . import jit  # noqa: E402 isort:skip
