@@ -83,7 +83,8 @@ def initialize(*, blocking=False, memory_manager="numpy", jit_config="python"):
         SuiteSparse:GraphBLAS was compiled. 'disable' completely turns off the JIT.
         If you are using a distributed binary of SuiteSparse:GraphBLAS, then you
         probably want to use 'python', otherwise you may want to use 'suitesparse'
-        if SuiteSparse:GraphBLAS was compiled locally. Default is 'python'.
+        if SuiteSparse:GraphBLAS was compiled locally. Using the
+        SuiteSparse:GraphBLAS JIT requires a C compiler. Default is 'python'.
 
     The global variable `suitesparse_graphblas.is_initialized` indicates whether
     GraphBLAS has been initialized.

@@ -78,6 +78,8 @@ def _set_defaults_common(**override):
 def set_suitesparse_defaults():
     """Enable the JIT and set all JIT configs to the SuiteSparse:GraphBLAS defaults.
 
+    Using the SuiteSparse:GraphBLAS JIT requires a C compiler.
+
     This sets values for:
     - GxB_JIT_C_CONTROL
     - GxB_JIT_USE_CMAKE
@@ -99,6 +101,8 @@ def set_suitesparse_defaults():
 
 def set_python_defaults():
     """Enable the JIT and set configs with compiler configs from ``sysconfig`` module.
+
+    Using the SuiteSparse:GraphBLAS JIT requires a C compiler.
 
     This uses ``sysconfig`` to set the values for:
     - GxB_JIT_C_COMPILER_NAME
