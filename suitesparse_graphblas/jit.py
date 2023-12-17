@@ -121,10 +121,16 @@ def set_python_defaults():
     --------
     set_suitesparse_defaults : reset JIT config with SuiteSparse:GraphBLAS defaults.
     """
+    cc = sysconfig.get_config_var("CC")
+    cflags = sysconfig.get_config_var("CFLAGS")
+    include = sysconfig.get_path("include")
+    libs = sysconfig.get_config_var("LIBS")
+    if cc is None or cflags is None or include is None or libs is None:
+        raise RuntimeError("C compiler configuration not found by `sysconfig` module")
     _set_defaults_common(
-        C_COMPILER_NAME=sysconfig.get_config_var("CC"),
-        C_COMPILER_FLAGS=sysconfig.get_config_var("CFLAGS") + f" -I{sysconfig.get_path('include')}",
-        C_LIBRARIES=sysconfig.get_config_var("LIBS"),
+        C_COMPILER_NAME=cc,
+        C_COMPILER_FLAGS=f"{cflags} -I{include}",
+        C_LIBRARIES=libs,
     )
 
 
@@ -135,5 +141,16 @@ def disable():
     """
     set_config = lib.GxB_Global_Option_set_INT32
     info = set_config(lib.GxB_JIT_C_CONTROL, ffi.cast("int32_t", lib.GxB_JIT_OFF))
+    if info != lib.GrB_SUCCESS:
+        raise _error_code_lookup[info]("Failed to set config for GxB_JIT_C_CONTROL")
+
+
+def load():
+    """Allow the SuiteSparse:GraphBLAS JIT to load JIT kernels, but don't compile.
+
+    This sets GxB_JIT_C_CONTROL to GxB_JIT_LOAD.
+    """
+    set_config = lib.GxB_Global_Option_set_INT32
+    info = set_config(lib.GxB_JIT_C_CONTROL, ffi.cast("int32_t", lib.GxB_JIT_LOAD))
     if info != lib.GrB_SUCCESS:
         raise _error_code_lookup[info]("Failed to set config for GxB_JIT_C_CONTROL")

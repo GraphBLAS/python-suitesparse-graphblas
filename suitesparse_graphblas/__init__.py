@@ -60,7 +60,7 @@ def supports_complex():
     return hasattr(lib, "GrB_FC64") or hasattr(lib, "GxB_FC64")
 
 
-def initialize(*, blocking=False, memory_manager="numpy", jit_config="python"):
+def initialize(*, blocking=False, memory_manager="numpy", jit_config="default"):
     """Initialize GraphBLAS via GrB_init or GxB_init.
 
     This must be called before any other GraphBLAS functions are called.
@@ -76,25 +76,25 @@ def initialize(*, blocking=False, memory_manager="numpy", jit_config="python"):
         allocators, which makes it safe to perform zero-copy to and from numpy,
         and allows Python to track memory usage via tracemalloc (if enabled).
         'c' uses the default allocators.  Default is 'numpy'.
-    jit_config : {'python', 'suitesparse', 'disable'}, optional
+    jit_config : {'default', 'python', 'suitesparse', 'load', 'disable'}, optional
         Choose how to configure the SuiteSparse:GraphBLAS JIT, or disable the JIT.
         'python' uses config from the builtin ``sysconfig`` module, which is what
         Python uses to enable compiling with C. 'suitesparse' uses config from when
         SuiteSparse:GraphBLAS was compiled. 'disable' completely turns off the JIT.
+        'load' allows pre-compiled JIT kernels to be loaded, but does not compile.
+        'default' tries to use 'python', but uses 'load' if no compiler was found.
         If you are using a distributed binary of SuiteSparse:GraphBLAS, then you
         probably want to use 'python', otherwise you may want to use 'suitesparse'
         if SuiteSparse:GraphBLAS was compiled locally. Using the
-        SuiteSparse:GraphBLAS JIT requires a C compiler. Default is 'python'.
+        SuiteSparse:GraphBLAS JIT requires a C compiler. Default is 'default'.
 
     The global variable `suitesparse_graphblas.is_initialized` indicates whether
     GraphBLAS has been initialized.
     """
     if is_initialized():
         raise RuntimeError("GraphBLAS is already initialized!  Unable to initialize again.")
-    if jit_config not in {"python", "suitesparse", "disable"}:
-        raise ValueError(
-            f"jit_config must be 'python', 'suitesparse', or 'disable'; got: {jit_config!r}"
-        )
+    if jit_config not in (allowed := {"default", "python", "suitesparse", "load", "disable"}):
+        raise ValueError(f"jit_config must be one of {allowed}; got: {jit_config!r}")
     blocking = lib.GrB_BLOCKING if blocking else lib.GrB_NONBLOCKING
     memory_manager = memory_manager.lower()
     if memory_manager == "numpy":
@@ -107,10 +107,17 @@ def initialize(*, blocking=False, memory_manager="numpy", jit_config="python"):
     for attr in dir(lib):
         getattr(lib, attr)
     jit._get_suitesparse_original_configs()
-    if jit_config == "python":
+    if jit_config == "default":
+        try:
+            jit.set_python_defaults()
+        except RuntimeError:
+            jit.load()
+    elif jit_config == "python":
         jit.set_python_defaults()
     elif jit_config == "suitesparse":
         jit.set_suitesparse_defaults()
+    elif jit_config == "load":
+        jit.load()
     else:
         jit.disable()
 
