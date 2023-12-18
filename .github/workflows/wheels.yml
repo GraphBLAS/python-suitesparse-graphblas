@@ -44,7 +44,7 @@ jobs:
       - name: Check metadata
         run: pipx run twine check dist/*
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           path: dist/*.tar.gz
 
@@ -195,7 +195,7 @@ jobs:
 
           CIBW_TEST_SKIP: ${{ matrix.cibw_test_skip }}
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         id: uploadAttempt1
         continue-on-error: true
         with:
@@ -204,7 +204,7 @@ jobs:
 
       # Retry upload if first attempt failed. This happens somewhat randomly and for irregular reasons.
       # Logic is a duplicate of previous step.
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         id: uploadAttempt2
         if: steps.uploadAttempt1.outcome == 'failure'
         continue-on-error: false
