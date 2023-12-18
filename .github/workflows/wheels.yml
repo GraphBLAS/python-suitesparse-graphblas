@@ -44,8 +44,9 @@ jobs:
       - name: Check metadata
         run: pipx run twine check dist/*
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
+          name: sdist
           path: dist/*.tar.gz
 
 
@@ -195,22 +196,12 @@ jobs:
 
           CIBW_TEST_SKIP: ${{ matrix.cibw_test_skip }}
 
-      - uses: actions/upload-artifact@v3
-        id: uploadAttempt1
-        continue-on-error: true
+      - uses: actions/upload-artifact@v4
         with:
+          name: wheels-${{ matrix.os }}-${{ matrix.cibw_archs }}${{ matrix.arch_note}}
           path: wheelhouse/*.whl
           if-no-files-found: error
 
-      # Retry upload if first attempt failed. This happens somewhat randomly and for irregular reasons.
-      # Logic is a duplicate of previous step.
-      - uses: actions/upload-artifact@v3
-        id: uploadAttempt2
-        if: steps.uploadAttempt1.outcome == 'failure'
-        continue-on-error: false
-        with:
-          path: wheelhouse/*.whl
-          if-no-files-found: error
 
   upload_all:
     name: Upload to PyPI
@@ -224,10 +215,12 @@ jobs:
         with:
           python-version: "3.x"
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
-          name: artifact
-          path: dist
+          path: dist_artifacts
+
+      - name: Flatten artifacts to dist/
+        run: mkdir dist && find dist_artifacts -type f -exec mv {} dist \;
 
       # Upload to PyPI
       - uses: pypa/gh-action-pypi-publish@release/v1
