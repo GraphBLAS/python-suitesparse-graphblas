@@ -298,7 +298,6 @@ DEFINES = {
     "GxB_COMPRESSION_LZ4HC",
     "GxB_COMPRESSION_ZSTD",
     "GxB_COMPRESSION_NONE",
-    # "GxB_HAVE_COMPLEX_C99",  # Added in 9.2.0
 }
 
 CHAR_DEFINES = {
@@ -327,6 +326,7 @@ IGNORE_DEFINES = {
     "RMM_WRAP_H",
     "GXB_COMPLEX_H",
     "GxB_STATIC_INLINE_VOID",
+    "GxB_HAVE_COMPLEX_C99",
     # deprecated
     "GxB_HYPER",
 }
