@@ -21,6 +21,7 @@ things that may need to change are:
 Run `python create_headers.py --help` to see more help.
 
 """
+
 import argparse
 import os
 import re
@@ -297,6 +298,7 @@ DEFINES = {
     "GxB_COMPRESSION_LZ4HC",
     "GxB_COMPRESSION_ZSTD",
     "GxB_COMPRESSION_NONE",
+    "GxB_HAVE_COMPLEX_C99",  # Added in 9.2.0
 }
 
 CHAR_DEFINES = {
@@ -633,6 +635,7 @@ def get_group_info(groups, ast, *, skip_complex=False):
                 "init": "core",
                 "wait": "core",
                 "deserialize": "core",
+                "Serialized": "core",  # Added in version 9
             }[group]
         return {
             "name": node.name,
