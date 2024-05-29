@@ -144,10 +144,6 @@ jobs:
         run: |
           brew fetch --retry coreutils && brew install coreutils
           brew fetch --retry libomp && brew install libomp
-          if [[ ${{ matrix.cibw_archs }} == "arm64" ]] ; then
-            echo "Building universal libomp manually"
-            sh add_arm_to_libomp_dylib.sh || exit 1
-          fi
 
       - uses: pypa/cibuildwheel@v2.16
         with:
