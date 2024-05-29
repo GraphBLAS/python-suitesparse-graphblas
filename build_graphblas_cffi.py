@@ -19,12 +19,15 @@ if not graphblas_root:
     graphblas_root = "C:\\GraphBLAS" if is_win else sys.prefix
 
 include_dirs = [os.path.join(graphblas_root, "include")]
+include_dirs.append(os.path.join(graphblas_root, "include", "suitesparse"))
 library_dirs = [os.path.join(graphblas_root, "lib")]
 if is_win:
     include_dirs.append(os.path.join(sys.prefix, "Library", "include"))
+    include_dirs.append(os.path.join(sys.prefix, "Library", "include", "suitesparse"))
     library_dirs.append(os.path.join(sys.prefix, "Library", "lib"))
 
     include_dirs.append(os.path.join(graphblas_root, "include"))
+    include_dirs.append(os.path.join(graphblas_root, "include", "suitesparse"))
     library_dirs.append(os.path.join(graphblas_root, "lib"))
     library_dirs.append(os.path.join(graphblas_root, "bin"))
 

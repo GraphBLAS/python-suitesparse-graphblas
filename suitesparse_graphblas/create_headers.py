@@ -298,7 +298,7 @@ DEFINES = {
     "GxB_COMPRESSION_LZ4HC",
     "GxB_COMPRESSION_ZSTD",
     "GxB_COMPRESSION_NONE",
-    "GxB_HAVE_COMPLEX_C99",  # Added in 9.2.0
+    # "GxB_HAVE_COMPLEX_C99",  # Added in 9.2.0
 }
 
 CHAR_DEFINES = {
