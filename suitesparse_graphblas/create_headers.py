@@ -785,7 +785,7 @@ def main():
     parser.add_argument(
         "--graphblas",
         help="Path to GraphBLAS.h of SuiteSparse.  Default will look in Python prefix path.",
-        default=os.path.join(sys.prefix, "include", "GraphBLAS.h"),
+        default=os.path.join(sys.prefix, "include", "suitesparse", "GraphBLAS.h"),
     )
     parser.add_argument(
         "--show-skipped",
