@@ -84,16 +84,12 @@ jobs:
             cibw_skip: "pp* *musl*"
 
           # macOS x86
-          - os: macos-latest
+          - os: macos-12
             cibw_archs: "x86_64"
 
-          # macOS Apple Silicon cross-compiled on x86 macOS runner.
-          # GitHub does not offer Apple Silicon yet (only for self-hosted).
-          # See https://github.com/github/roadmap/issues/528
+          # macOS Apple Silicon
           - os: macos-latest
             cibw_archs: "arm64"
-            # Skip macOS ARM tests on Intel runner.
-            cibw_test_skip: "*-macosx_arm64"
 
     steps:
       - uses: actions/checkout@v4
@@ -139,13 +135,12 @@ jobs:
         if: contains(matrix.os, 'macos')
         # Install coreutils which includes `nproc` used by `make -j` in suitesparse.sh
         #
-        # GitHub actions comes with libomp already installed, but for its native arch only. Must build universal one
-        # manually so that both x86 and arm builds can be built.
+        # Explicitly install libomp to be clear about the dependency.
         run: |
           brew fetch --retry coreutils && brew install coreutils
           brew fetch --retry libomp && brew install libomp
 
-      - uses: pypa/cibuildwheel@v2.16
+      - uses: pypa/cibuildwheel@v2.18
         with:
           output-dir: wheelhouse
         env:
