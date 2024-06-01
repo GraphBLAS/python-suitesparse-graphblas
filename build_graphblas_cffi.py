@@ -5,6 +5,33 @@ from pathlib import Path
 from cffi import FFI
 from setuptools import Extension
 
+###### TEST
+from pathlib import Path
+
+# prefix components:
+space =  '    '
+branch = '│   '
+# pointers:
+tee =    '├── '
+last =   '└── '
+
+
+def tree(dir_path: Path, prefix: str=''):
+    """A recursive generator, given a directory Path object
+    will yield a visual tree structure line by line
+    with each line prefixed by the same characters
+    """
+    contents = list(dir_path.iterdir())
+    # contents each get pointers that are ├── with a final └── :
+    pointers = [tee] * (len(contents) - 1) + [last]
+    for pointer, path in zip(pointers, contents):
+        yield prefix + pointer + path.name
+        if path.is_dir(): # extend the prefix and recurse:
+            extension = branch if pointer == tee else space
+            # i.e. space because last, └── , above so no more |
+            yield from tree(path, prefix=prefix+extension)
+#####
+
 is_win = sys.platform.startswith("win")
 ss_g = Path(__file__).parent / "suitesparse_graphblas"
 
@@ -19,6 +46,10 @@ if not graphblas_root:
     graphblas_root = "C:\\GraphBLAS" if is_win else sys.prefix
 
 include_dirs = [os.path.join(graphblas_root, "include")]
+#### TEST
+for line in tree(Path(include_dirs[0])):
+    print(line)
+#### TEST
 include_dirs.append(os.path.join(graphblas_root, "include", "suitesparse"))
 library_dirs = [os.path.join(graphblas_root, "lib")]
 if is_win:
