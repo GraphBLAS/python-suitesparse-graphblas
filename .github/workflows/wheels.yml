@@ -162,9 +162,9 @@ jobs:
 
           # macOS libomp requires special configs. BREW_LIBOMP=1 asks suitesparse.sh to include them.
           # SUITESPARSE_MACOS_ARCH asks to build a particular architecture. Either x86 or arm64.
-          CIBW_ENVIRONMENT_MACOS: GRAPHBLAS_PREFIX="./graphblas" BREW_LIBOMP="1" SUITESPARSE_MACOS_ARCH=${{ matrix.cibw_archs }}
+          CIBW_ENVIRONMENT_MACOS: GRAPHBLAS_PREFIX="/usr/local/graphblas" BREW_LIBOMP="1" SUITESPARSE_MACOS_ARCH=${{ matrix.cibw_archs }}
 
-          CIBW_ENVIRONMENT_LINUX: GRAPHBLAS_PREFIX="./graphblas"
+          CIBW_ENVIRONMENT_LINUX: GRAPHBLAS_PREFIX="/usr/local/graphblas"
 
           # Uncomment to only build CPython wheels
           # CIBW_BUILD: "cp*"
