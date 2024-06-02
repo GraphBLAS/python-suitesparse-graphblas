@@ -136,9 +136,12 @@ jobs:
         # Install coreutils which includes `nproc` used by `make -j` in suitesparse.sh
         #
         # Explicitly install libomp to be clear about the dependency.
+        #
+        # libomp determines the minimum macOS version that we can build for
         run: |
           brew fetch --retry coreutils && brew install coreutils
           brew fetch --retry libomp && brew install libomp
+          echo MACOSX_DEPLOYMENT_TARGET=$(otool -l $(brew --prefix libomp)/lib/libomp.dylib | grep minos | awk '{print $2}') >> $GITHUB_ENV
 
       - uses: pypa/cibuildwheel@v2.18
         with:
