@@ -117,7 +117,8 @@ fi
 # Level 2, "run", means that pre-JIT kernels may be used, which does not require a compiler at runtime.
 cmake .. -DJITINIT=2 -DCMAKE_BUILD_TYPE=Release -G 'Unix Makefiles' "${cmake_params[@]}"
 make -j$NPROC
-make install
+#make install
+cmake --install build --prefix ${GRAPHBLAS_PREFIX}
 
 if [ -n "${CMAKE_GNUtoMS}" ]; then
     if [ -z "${GRAPHBLAS_PREFIX}" ]; then

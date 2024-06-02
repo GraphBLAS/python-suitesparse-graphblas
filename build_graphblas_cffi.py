@@ -42,6 +42,9 @@ ffibuilder = FFI()
 # Otherwise fallback to default system folders.
 graphblas_root = os.environ.get("GraphBLAS_ROOT", None)
 if not graphblas_root:
+    graphblas_root = os.environ.get("GRAPHBLAS_PREFIX", None)
+
+if not graphblas_root:
     # Windows wheels.yml configures suitesparse.sh to install GraphBLAS to "C:\\GraphBLAS".
     graphblas_root = "C:\\GraphBLAS" if is_win else sys.prefix
 
