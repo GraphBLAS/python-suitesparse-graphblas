@@ -21,7 +21,7 @@ if not graphblas_root:
 
 include_dirs = [
     os.path.join(graphblas_root, "include"),
-    os.path.join(graphblas_root, "include", "suitesparse")
+    os.path.join(graphblas_root, "include", "suitesparse"),
 ]
 library_dirs = [os.path.join(graphblas_root, "lib"), os.path.join(graphblas_root, "lib64")]
 if is_win:
