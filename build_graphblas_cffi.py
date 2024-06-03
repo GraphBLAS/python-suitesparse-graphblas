@@ -19,7 +19,10 @@ if not graphblas_root:
     # Windows wheels.yml configures suitesparse.sh to install GraphBLAS to "C:\\GraphBLAS".
     graphblas_root = "C:\\GraphBLAS" if is_win else "/usr/local"
 
-include_dirs = [os.path.join(graphblas_root, "include"), os.path.join(graphblas_root, "include", "suitesparse")]
+include_dirs = [
+    os.path.join(graphblas_root, "include"),
+    os.path.join(graphblas_root, "include", "suitesparse")
+]
 library_dirs = [os.path.join(graphblas_root, "lib"), os.path.join(graphblas_root, "lib64")]
 if is_win:
     include_dirs.append(os.path.join(sys.prefix, "Library", "include"))
