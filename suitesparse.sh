@@ -122,9 +122,16 @@ else
     cmake_params+=(-DJITINIT=2)
 fi
 
+# some platforms require sudo for installation, some don't have sudo at all
+if command -v sudo; then
+    SUDO=sudo
+else
+    SUDO=""
+fi
+
 cmake .. -DCMAKE_BUILD_TYPE=Release -G 'Unix Makefiles' "${cmake_params[@]}"
 make -j$NPROC
-sudo make install
+$SUDO make install
 #cmake --install . --prefix ${GRAPHBLAS_PREFIX}
 
 if [ -n "${CMAKE_GNUtoMS}" ]; then
