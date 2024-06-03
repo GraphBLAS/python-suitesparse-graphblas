@@ -114,7 +114,7 @@ if [ -n "${SUITESPARSE_FASTEST_BUILD}" ]; then
 fi
 
 if [ -n "${CMAKE_GNUtoMS}" ]; then
-    # Windows JIT options
+    # Windows options
     echo "Skipping JIT on Windows for now because it fails to build."
     cmake_params+=(-DGRAPHBLAS_USE_JIT=OFF)
 else
@@ -136,7 +136,6 @@ fi
 cmake .. -DCMAKE_BUILD_TYPE=Release -G 'Unix Makefiles' "${cmake_params[@]}"
 make -j$NPROC
 $SUDO make install
-#cmake --install . --prefix ${GRAPHBLAS_PREFIX}
 
 if [ -n "${CMAKE_GNUtoMS}" ]; then
     if [ -z "${GRAPHBLAS_PREFIX}" ]; then

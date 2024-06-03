@@ -113,6 +113,9 @@ def get_extension(apply_msvc_patch: bool = None, extra_compile_args=()):
         msvc_code = msvc_code.replace("double _Complex", "_Dcomplex")
         code_path.write_text(msvc_code)
 
+        # tell GraphBLAS.h that we need MSVC-style complex values
+        extra_compile_args = list(extra_compile_args) + ["-DGxB_HAVE_COMPLEX_MSVC"]
+
     return Extension(
         "suitesparse_graphblas._graphblas",
         [os.path.join("suitesparse_graphblas", "_graphblas.c")],
