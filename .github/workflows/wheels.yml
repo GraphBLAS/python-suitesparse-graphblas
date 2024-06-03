@@ -153,7 +153,7 @@ jobs:
           CIBW_BUILD_VERBOSITY: 3
 
           # Build SuiteSparse
-          CIBW_BEFORE_ALL: GRAPHBLAS_PREFIX="{package}/graphblas" bash suitesparse.sh ${{ env.GB_VERSION_REF }}
+          CIBW_BEFORE_ALL: GRAPHBLAS_PREFIX="{package}" bash suitesparse.sh ${{ env.GB_VERSION_REF }}
 
           CIBW_BEFORE_BUILD_LINUX: ${{ matrix.cibw_before_build_linux }}
 
@@ -164,9 +164,9 @@ jobs:
 
           # macOS libomp requires special configs. BREW_LIBOMP=1 asks suitesparse.sh to include them.
           # SUITESPARSE_MACOS_ARCH asks to build a particular architecture. Either x86 or arm64.
-          CIBW_ENVIRONMENT_MACOS: GRAPHBLAS_PREFIX="graphblas" BREW_LIBOMP="1" SUITESPARSE_MACOS_ARCH=${{ matrix.cibw_archs }}
+          CIBW_ENVIRONMENT_MACOS: BREW_LIBOMP="1" SUITESPARSE_MACOS_ARCH=${{ matrix.cibw_archs }}
 
-          CIBW_ENVIRONMENT_LINUX: GRAPHBLAS_PREFIX="graphblas"
+#          CIBW_ENVIRONMENT_LINUX: GRAPHBLAS_PREFIX="graphblas"
 
           #### TEST:
           CIBW_REPAIR_WHEEL_COMMAND_MACOS: >
