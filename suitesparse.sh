@@ -116,6 +116,7 @@ fi
 if [ -n "${CMAKE_GNUtoMS}" ]; then
     # Windows JIT options
     echo "Skipping JIT on Windows for now because it fails to build."
+    cmake_params+=(-DGRAPHBLAS_USE_JIT=OFF)
 else
     # Use `-DJITINIT=2` so that the JIT functionality is available, but disabled by default.
     # Level 2, "run", means that pre-JIT kernels may be used, which does not require a compiler at runtime.
