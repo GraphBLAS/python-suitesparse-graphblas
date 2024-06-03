@@ -17,7 +17,14 @@ graphblas_root = os.environ.get("GraphBLAS_ROOT", None)
 
 if not graphblas_root:
     # Windows wheels.yml configures suitesparse.sh to install GraphBLAS to "C:\\GraphBLAS".
-    graphblas_root = "C:\\GraphBLAS" if is_win else "/usr/local"
+    if is_win:
+        graphblas_root = "C:\\GraphBLAS"
+    elif Path("/usr/local/include/suitesparse").exists():
+        # SuiteSparse:GraphBLAS 9.1+ built by suitesparse.sh
+        graphblas_root = "/usr/local"
+    else:
+        # Conda install
+        graphblas_root = sys.prefix
 
 include_dirs = [
     os.path.join(graphblas_root, "include"),
