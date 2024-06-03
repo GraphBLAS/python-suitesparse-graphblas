@@ -44,15 +44,15 @@ graphblas_root = os.environ.get("GraphBLAS_ROOT", None)
 if not graphblas_root:
     graphblas_root = os.environ.get("GRAPHBLAS_PREFIX", None)
 
+# if not graphblas_root:
+#     graphblas_root = Path(__file__).parent
+#
 # if "{package}" in graphblas_root:
 #     graphblas_root = graphblas_root.replace("{package}", str(Path(__file__).parent))
 
 if not graphblas_root:
-    graphblas_root = Path(__file__).parent
-
-if not graphblas_root:
     # Windows wheels.yml configures suitesparse.sh to install GraphBLAS to "C:\\GraphBLAS".
-    graphblas_root = "C:\\GraphBLAS" if is_win else sys.prefix
+    graphblas_root = "C:\\GraphBLAS" if is_win else "/usr/local"
 
 include_dirs = [os.path.join(graphblas_root, "include")]
 #### TEST

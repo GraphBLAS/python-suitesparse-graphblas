@@ -124,7 +124,8 @@ fi
 
 cmake .. -DCMAKE_BUILD_TYPE=Release -G 'Unix Makefiles' "${cmake_params[@]}"
 make -j$NPROC
-cmake --install . --prefix ${GRAPHBLAS_PREFIX}
+sudo make install
+#cmake --install . --prefix ${GRAPHBLAS_PREFIX}
 
 if [ -n "${CMAKE_GNUtoMS}" ]; then
     if [ -z "${GRAPHBLAS_PREFIX}" ]; then

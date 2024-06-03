@@ -153,7 +153,7 @@ jobs:
           CIBW_BUILD_VERBOSITY: 3
 
           # Build SuiteSparse
-          CIBW_BEFORE_ALL: GRAPHBLAS_PREFIX="{package}" bash suitesparse.sh ${{ env.GB_VERSION_REF }}
+          CIBW_BEFORE_ALL: bash suitesparse.sh ${{ env.GB_VERSION_REF }}
 
           CIBW_BEFORE_BUILD_LINUX: ${{ matrix.cibw_before_build_linux }}
 
@@ -168,12 +168,12 @@ jobs:
 
 #          CIBW_ENVIRONMENT_LINUX: GRAPHBLAS_PREFIX="graphblas"
 
-          #### TEST:
-          CIBW_REPAIR_WHEEL_COMMAND_MACOS: >
-            pwd &&
-            ls -lh &&
-            find . -type d &&
-            delocate-wheel --require-archs {delocate_archs} -w {dest_dir} -v {wheel}
+          #### TEST:    GRAPHBLAS_PREFIX="{package}"
+#          CIBW_REPAIR_WHEEL_COMMAND_MACOS: >
+#            pwd &&
+#            ls -lh &&
+#            find . -type d &&
+#            delocate-wheel --require-archs {delocate_archs} -w {dest_dir} -v {wheel}
 
           # Uncomment to only build CPython wheels
           # CIBW_BUILD: "cp*"
