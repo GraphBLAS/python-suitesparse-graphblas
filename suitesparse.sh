@@ -121,10 +121,13 @@ else
     # Use `-DJITINIT=2` so that the JIT functionality is available, but disabled by default.
     # Level 2, "run", means that pre-JIT kernels may be used, which does not require a compiler at runtime.
     cmake_params+=(-DJITINIT=2)
+
+    # Disable JIT here too to not segfault in tests
+    cmake_params+=(-DGRAPHBLAS_USE_JIT=OFF)
 fi
 
 # some platforms require sudo for installation, some don't have sudo at all
-if command -v sudo; then
+if [ "$(uname)" == "Darwin" ]; then
     SUDO=sudo
 else
     SUDO=""

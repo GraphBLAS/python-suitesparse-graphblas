@@ -56,10 +56,10 @@ if not graphblas_root:
 
 include_dirs = [os.path.join(graphblas_root, "include")]
 #### TEST
-for i, line in enumerate(tree(Path(graphblas_root))):
-    print(line)
-    if i > 30:
-        break
+# for i, line in enumerate(tree(Path(graphblas_root))):
+#     print(line)
+#     if i > 30:
+#         break
 #### TEST
 include_dirs.append(os.path.join(graphblas_root, "include", "suitesparse"))
 library_dirs = [os.path.join(graphblas_root, "lib"), os.path.join(graphblas_root, "lib64")]
