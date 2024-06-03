@@ -92,6 +92,8 @@ jobs:
           # Note: keep as old as possible as due to libomp this will be the oldest supported macOS version.
           - os: macos-14
             cibw_archs: "arm64"
+            # Silence warning for only Python 3.8, as per https://github.com/pypa/cibuildwheel/pull/1169
+            cibw_skip: "cp38-macosx_*:arm64"
 
     steps:
       - uses: actions/checkout@v4
@@ -142,7 +144,7 @@ jobs:
         # libomp determines the minimum macOS version that we can build for
         run: |
           brew fetch --retry coreutils && brew install coreutils
-          brew fetch --retry libomp && brew install libomp
+          brew fetch --retry libomp && brew reinstall libomp
           echo MACOSX_DEPLOYMENT_TARGET=$(otool -l $(brew --prefix libomp)/lib/libomp.dylib | grep minos | awk '{print $2}') >> $GITHUB_ENV
 
       - uses: pypa/cibuildwheel@v2.18
