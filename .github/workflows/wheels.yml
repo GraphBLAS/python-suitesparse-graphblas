@@ -84,11 +84,13 @@ jobs:
             cibw_skip: "pp* *musl*"
 
           # macOS x86
+          # Note: keep as old as possible as due to libomp this will be the oldest supported macOS version.
           - os: macos-12
             cibw_archs: "x86_64"
 
           # macOS Apple Silicon
-          - os: macos-latest
+          # Note: keep as old as possible as due to libomp this will be the oldest supported macOS version.
+          - os: macos-14
             cibw_archs: "arm64"
 
     steps:
@@ -162,9 +164,9 @@ jobs:
 
           # macOS libomp requires special configs. BREW_LIBOMP=1 asks suitesparse.sh to include them.
           # SUITESPARSE_MACOS_ARCH asks to build a particular architecture. Either x86 or arm64.
-          CIBW_ENVIRONMENT_MACOS: GRAPHBLAS_PREFIX="/usr/local/graphblas" BREW_LIBOMP="1" SUITESPARSE_MACOS_ARCH=${{ matrix.cibw_archs }}
+          CIBW_ENVIRONMENT_MACOS: GRAPHBLAS_PREFIX="{package}/graphblas" BREW_LIBOMP="1" SUITESPARSE_MACOS_ARCH=${{ matrix.cibw_archs }}
 
-          CIBW_ENVIRONMENT_LINUX: GRAPHBLAS_PREFIX="/usr/local/graphblas"
+          CIBW_ENVIRONMENT_LINUX: GRAPHBLAS_PREFIX="{package}/graphblas"
 
           # Uncomment to only build CPython wheels
           # CIBW_BUILD: "cp*"
