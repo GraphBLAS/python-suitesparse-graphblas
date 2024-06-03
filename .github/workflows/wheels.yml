@@ -171,6 +171,7 @@ jobs:
           #### TEST:
           CIBW_REPAIR_WHEEL_COMMAND_MACOS: >
             pwd &&
+            ls -lh &&
             find graphblas &&
             find . -type d &&
             delocate-wheel --require-archs {delocate_archs} -w {dest_dir} -v {wheel}
