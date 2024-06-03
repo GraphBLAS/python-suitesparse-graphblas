@@ -113,11 +113,16 @@ if [ -n "${SUITESPARSE_FASTEST_BUILD}" ]; then
     cmake_params+=(-DCMAKE_CUDA_DEV=1)
 fi
 
-# Use `-DJITINIT=2` so that the JIT functionality is available, but disabled by default.
-# Level 2, "run", means that pre-JIT kernels may be used, which does not require a compiler at runtime.
-cmake .. -DJITINIT=2 -DCMAKE_BUILD_TYPE=Release -G 'Unix Makefiles' "${cmake_params[@]}"
+if [ -z "${CMAKE_GNUtoMS}" ]; then
+    # Windows JIT options
+    # Does not build, skip JIT on Windows for now.
+else
+    # Use `-DJITINIT=2` so that the JIT functionality is available, but disabled by default.
+    # Level 2, "run", means that pre-JIT kernels may be used, which does not require a compiler at runtime.
+    cmake_params+=(-DJITINIT=2)
+fi
+cmake .. -DCMAKE_BUILD_TYPE=Release -G 'Unix Makefiles' "${cmake_params[@]}"
 make -j$NPROC
-#make install
 cmake --install . --prefix ${GRAPHBLAS_PREFIX}
 
 if [ -n "${CMAKE_GNUtoMS}" ]; then
