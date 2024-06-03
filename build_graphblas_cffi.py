@@ -5,33 +5,6 @@ from pathlib import Path
 from cffi import FFI
 from setuptools import Extension
 
-###### TEST
-from pathlib import Path
-
-# prefix components:
-space =  '    '
-branch = '│   '
-# pointers:
-tee =    '├── '
-last =   '└── '
-
-
-def tree(dir_path: Path, prefix: str=''):
-    """A recursive generator, given a directory Path object
-    will yield a visual tree structure line by line
-    with each line prefixed by the same characters
-    """
-    contents = list(dir_path.iterdir())
-    # contents each get pointers that are ├── with a final └── :
-    pointers = [tee] * (len(contents) - 1) + [last]
-    for pointer, path in zip(pointers, contents):
-        yield prefix + pointer + path.name
-        if path.is_dir(): # extend the prefix and recurse:
-            extension = branch if pointer == tee else space
-            # i.e. space because last, └── , above so no more |
-            yield from tree(path, prefix=prefix+extension)
-#####
-
 is_win = sys.platform.startswith("win")
 ss_g = Path(__file__).parent / "suitesparse_graphblas"
 
@@ -41,27 +14,12 @@ ffibuilder = FFI()
 # Expected subdirectories: include/ (contains GraphBLAS.h), lib/, and bin/ (on Windows only)
 # Otherwise fallback to default system folders.
 graphblas_root = os.environ.get("GraphBLAS_ROOT", None)
-if not graphblas_root:
-    graphblas_root = os.environ.get("GRAPHBLAS_PREFIX", None)
-
-# if not graphblas_root:
-#     graphblas_root = Path(__file__).parent
-#
-# if "{package}" in graphblas_root:
-#     graphblas_root = graphblas_root.replace("{package}", str(Path(__file__).parent))
 
 if not graphblas_root:
     # Windows wheels.yml configures suitesparse.sh to install GraphBLAS to "C:\\GraphBLAS".
     graphblas_root = "C:\\GraphBLAS" if is_win else "/usr/local"
 
-include_dirs = [os.path.join(graphblas_root, "include")]
-#### TEST
-# for i, line in enumerate(tree(Path(graphblas_root))):
-#     print(line)
-#     if i > 30:
-#         break
-#### TEST
-include_dirs.append(os.path.join(graphblas_root, "include", "suitesparse"))
+include_dirs = [os.path.join(graphblas_root, "include"), os.path.join(graphblas_root, "include", "suitesparse")]
 library_dirs = [os.path.join(graphblas_root, "lib"), os.path.join(graphblas_root, "lib64")]
 if is_win:
     include_dirs.append(os.path.join(sys.prefix, "Library", "include"))
@@ -113,7 +71,7 @@ def get_extension(apply_msvc_patch: bool = None, extra_compile_args=()):
         msvc_code = msvc_code.replace("double _Complex", "_Dcomplex")
         code_path.write_text(msvc_code)
 
-        # tell GraphBLAS.h that we need MSVC-style complex values
+        # Hack: tell GraphBLAS.h that we need MSVC-style complex values
         extra_compile_args = list(extra_compile_args) + ["-DGxB_HAVE_COMPLEX_MSVC"]
 
     return Extension(

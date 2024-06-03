@@ -160,20 +160,11 @@ jobs:
           CIBW_ENVIRONMENT_PASS_LINUX: SUITESPARSE_FAST_BUILD SUITESPARSE_FASTEST_BUILD
 
           # CMAKE_GNUtoMS=ON asks suitesparse.sh to build libraries in MSVC style on Windows.
-          CIBW_ENVIRONMENT_WINDOWS: GRAPHBLAS_PREFIX="C:/GraphBLAS" CMAKE_GNUtoMS=ON
+          CIBW_ENVIRONMENT_WINDOWS: CMAKE_GNUtoMS=ON GRAPHBLAS_PREFIX="C:/GraphBLAS"
 
           # macOS libomp requires special configs. BREW_LIBOMP=1 asks suitesparse.sh to include them.
           # SUITESPARSE_MACOS_ARCH asks to build a particular architecture. Either x86 or arm64.
           CIBW_ENVIRONMENT_MACOS: BREW_LIBOMP="1" SUITESPARSE_MACOS_ARCH=${{ matrix.cibw_archs }}
-
-#          CIBW_ENVIRONMENT_LINUX: GRAPHBLAS_PREFIX="graphblas"
-
-          #### TEST:    GRAPHBLAS_PREFIX="{package}"
-#          CIBW_REPAIR_WHEEL_COMMAND_MACOS: >
-#            pwd &&
-#            ls -lh &&
-#            find . -type d &&
-#            delocate-wheel --require-archs {delocate_archs} -w {dest_dir} -v {wheel}
 
           # Uncomment to only build CPython wheels
           # CIBW_BUILD: "cp*"
