@@ -44,8 +44,8 @@ graphblas_root = os.environ.get("GraphBLAS_ROOT", None)
 if not graphblas_root:
     graphblas_root = os.environ.get("GRAPHBLAS_PREFIX", None)
 
-if "{package}" in graphblas_root:
-    graphblas_root = graphblas_root.replace("{package}", str(Path(__file__).parent))
+# if "{package}" in graphblas_root:
+#     graphblas_root = graphblas_root.replace("{package}", str(Path(__file__).parent))
 
 if not graphblas_root:
     graphblas_root = Path(__file__).parent
