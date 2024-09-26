@@ -170,6 +170,9 @@ jobs:
           # SUITESPARSE_MACOS_ARCH asks to build a particular architecture. Either x86 or arm64.
           CIBW_ENVIRONMENT_MACOS: BREW_LIBOMP="1" SUITESPARSE_MACOS_ARCH=${{ matrix.cibw_archs }}
 
+          # Select CPython and PyPy for 3.9, 3.10, 3.11, 3.12
+          CIBW_BUILD: "{c,p}p3{9,10,11,12}-*"
+
           # Uncomment to only build CPython wheels
           # CIBW_BUILD: "cp*"
 
