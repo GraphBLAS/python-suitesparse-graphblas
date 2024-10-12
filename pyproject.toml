@@ -65,6 +65,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
+    "setuptools >=64, <74",  # XXX: experimenting
     "cffi>=1.15",
     "numpy>=1.23",
 ]
