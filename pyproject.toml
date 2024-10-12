@@ -65,9 +65,8 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
-    # These are super-old; can/should we update them?
-    "cffi>=1.11",
-    "numpy>=1.19",
+    "cffi>=1.15",
+    "numpy>=1.23",
 ]
 [project.urls]
 homepage = "https://github.com/GraphBLAS/python-suitesparse-graphblas"
