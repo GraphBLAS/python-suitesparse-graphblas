@@ -6,10 +6,7 @@ requires = [
     "wheel",
     "cffi>=1.11",
     "cython",
-    "oldest-supported-numpy; platform_python_implementation != 'PyPy'",
-    # Inspired by SciPy: unpin numpy version for PyPy builds,
-    # as oldest-supported-numpy does not take PyPy into account.
-    "numpy; platform_python_implementation=='PyPy'",
+    "numpy>=2.0",
 ]
 
 [project]
@@ -17,7 +14,7 @@ name = "suitesparse-graphblas"
 dynamic = ["version"]
 description = "SuiteSparse:GraphBLAS Python bindings."
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 license = {file = "LICENSE"}
 authors = [
     {name = "Erik Welch", email = "erik.n.welch@gmail.com"},
@@ -53,11 +50,11 @@ classifiers = [
     "Operating System :: Microsoft :: Windows",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3 :: Only",
     "Intended Audience :: Developers",
     "Intended Audience :: Other Audience",
@@ -96,7 +93,7 @@ dirty_template = "{tag}+{ccount}.g{sha}.dirty"
 
 [tool.black]
 line-length = 100
-target-version = ["py38", "py39", "py310", "py311", "py312"]
+target-version = ["py39", "py310", "py311", "py312", "py313"]
 
 [tool.isort]
 sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
