@@ -92,8 +92,6 @@ jobs:
           # Note: keep as old as possible as due to libomp this will be the oldest supported macOS version.
           - os: macos-14
             cibw_archs: "arm64"
-            # Silence warning for only Python 3.8, as per https://github.com/pypa/cibuildwheel/pull/1169
-            cibw_test_skip: "cp38-macosx_*:arm64"
 
     steps:
       - uses: actions/checkout@v4
