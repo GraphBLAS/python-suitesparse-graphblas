@@ -1,6 +1,7 @@
 [build-system]
 build-backend = "setuptools.build_meta"
 requires = [
+    # setuptools<74 until PyPy vendors cffi 1.15.1
     "setuptools >=64, <74",
     "setuptools-git-versioning",
     "wheel",
