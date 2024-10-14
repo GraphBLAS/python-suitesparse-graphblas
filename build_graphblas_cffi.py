@@ -14,17 +14,30 @@ ffibuilder = FFI()
 # Expected subdirectories: include/ (contains GraphBLAS.h), lib/, and bin/ (on Windows only)
 # Otherwise fallback to default system folders.
 graphblas_root = os.environ.get("GraphBLAS_ROOT", None)
+
 if not graphblas_root:
     # Windows wheels.yml configures suitesparse.sh to install GraphBLAS to "C:\\GraphBLAS".
-    graphblas_root = "C:\\GraphBLAS" if is_win else sys.prefix
+    if is_win:
+        graphblas_root = "C:\\GraphBLAS"
+    elif Path("/usr/local/include/suitesparse").exists():
+        # SuiteSparse:GraphBLAS 9.1+ built by suitesparse.sh
+        graphblas_root = "/usr/local"
+    else:
+        # Conda install
+        graphblas_root = sys.prefix
 
-include_dirs = [os.path.join(graphblas_root, "include")]
-library_dirs = [os.path.join(graphblas_root, "lib")]
+include_dirs = [
+    os.path.join(graphblas_root, "include"),
+    os.path.join(graphblas_root, "include", "suitesparse"),
+]
+library_dirs = [os.path.join(graphblas_root, "lib"), os.path.join(graphblas_root, "lib64")]
 if is_win:
     include_dirs.append(os.path.join(sys.prefix, "Library", "include"))
+    include_dirs.append(os.path.join(sys.prefix, "Library", "include", "suitesparse"))
     library_dirs.append(os.path.join(sys.prefix, "Library", "lib"))
 
     include_dirs.append(os.path.join(graphblas_root, "include"))
+    include_dirs.append(os.path.join(graphblas_root, "include", "suitesparse"))
     library_dirs.append(os.path.join(graphblas_root, "lib"))
     library_dirs.append(os.path.join(graphblas_root, "bin"))
 
@@ -67,6 +80,9 @@ def get_extension(apply_msvc_patch: bool = None, extra_compile_args=()):
         msvc_code = msvc_code.replace("float _Complex", "_Fcomplex")
         msvc_code = msvc_code.replace("double _Complex", "_Dcomplex")
         code_path.write_text(msvc_code)
+
+        # Hack: tell GraphBLAS.h that we need MSVC-style complex values
+        extra_compile_args = list(extra_compile_args) + ["-DGxB_HAVE_COMPLEX_MSVC"]
 
     return Extension(
         "suitesparse_graphblas._graphblas",

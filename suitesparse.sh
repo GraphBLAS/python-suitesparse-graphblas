@@ -113,11 +113,29 @@ if [ -n "${SUITESPARSE_FASTEST_BUILD}" ]; then
     cmake_params+=(-DCMAKE_CUDA_DEV=1)
 fi
 
-# Use `-DJITINIT=2` so that the JIT functionality is available, but disabled by default.
-# Level 2, "run", means that pre-JIT kernels may be used, which does not require a compiler at runtime.
-cmake .. -DJITINIT=2 -DCMAKE_BUILD_TYPE=Release -G 'Unix Makefiles' "${cmake_params[@]}"
+if [ -n "${CMAKE_GNUtoMS}" ]; then
+    # Windows options
+    echo "Skipping JIT on Windows for now because it fails to build."
+    cmake_params+=(-DGRAPHBLAS_USE_JIT=OFF)
+else
+    # Use `-DJITINIT=2` so that the JIT functionality is available, but disabled by default.
+    # Level 2, "run", means that pre-JIT kernels may be used, which does not require a compiler at runtime.
+    cmake_params+=(-DJITINIT=2)
+
+    # Disable JIT here too to not segfault in tests
+    cmake_params+=(-DGRAPHBLAS_USE_JIT=OFF)
+fi
+
+# some platforms require sudo for installation, some don't have sudo at all
+if [ "$(uname)" == "Darwin" ]; then
+    SUDO=sudo
+else
+    SUDO=""
+fi
+
+cmake .. -DCMAKE_BUILD_TYPE=Release -G 'Unix Makefiles' "${cmake_params[@]}"
 make -j$NPROC
-make install
+$SUDO make install
 
 if [ -n "${CMAKE_GNUtoMS}" ]; then
     if [ -z "${GRAPHBLAS_PREFIX}" ]; then

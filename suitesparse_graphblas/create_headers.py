@@ -21,6 +21,7 @@ things that may need to change are:
 Run `python create_headers.py --help` to see more help.
 
 """
+
 import argparse
 import os
 import re
@@ -325,6 +326,7 @@ IGNORE_DEFINES = {
     "RMM_WRAP_H",
     "GXB_COMPLEX_H",
     "GxB_STATIC_INLINE_VOID",
+    "GxB_HAVE_COMPLEX_C99",
     # deprecated
     "GxB_HYPER",
 }
@@ -633,6 +635,7 @@ def get_group_info(groups, ast, *, skip_complex=False):
                 "init": "core",
                 "wait": "core",
                 "deserialize": "core",
+                "Serialized": "core",  # Added in version 9
             }[group]
         return {
             "name": node.name,
@@ -782,7 +785,7 @@ def main():
     parser.add_argument(
         "--graphblas",
         help="Path to GraphBLAS.h of SuiteSparse.  Default will look in Python prefix path.",
-        default=os.path.join(sys.prefix, "include", "GraphBLAS.h"),
+        default=os.path.join(sys.prefix, "include", "suitesparse", "GraphBLAS.h"),
     )
     parser.add_argument(
         "--show-skipped",

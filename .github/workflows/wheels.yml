@@ -84,16 +84,14 @@ jobs:
             cibw_skip: "pp* *musl*"
 
           # macOS x86
-          - os: macos-latest
+          # Note: keep as old as possible as due to libomp this will be the oldest supported macOS version.
+          - os: macos-12
             cibw_archs: "x86_64"
 
-          # macOS Apple Silicon cross-compiled on x86 macOS runner.
-          # GitHub does not offer Apple Silicon yet (only for self-hosted).
-          # See https://github.com/github/roadmap/issues/528
-          - os: macos-latest
+          # macOS Apple Silicon
+          # Note: keep as old as possible as due to libomp this will be the oldest supported macOS version.
+          - os: macos-14
             cibw_archs: "arm64"
-            # Skip macOS ARM tests on Intel runner.
-            cibw_test_skip: "*-macosx_arm64"
 
     steps:
       - uses: actions/checkout@v4
@@ -139,17 +137,15 @@ jobs:
         if: contains(matrix.os, 'macos')
         # Install coreutils which includes `nproc` used by `make -j` in suitesparse.sh
         #
-        # GitHub actions comes with libomp already installed, but for its native arch only. Must build universal one
-        # manually so that both x86 and arm builds can be built.
+        # Explicitly install libomp to be clear about the dependency.
+        #
+        # libomp determines the minimum macOS version that we can build for
         run: |
           brew fetch --retry coreutils && brew install coreutils
-          brew fetch --retry libomp && brew install libomp
-          if [[ ${{ matrix.cibw_archs }} == "arm64" ]] ; then
-            echo "Building universal libomp manually"
-            sh add_arm_to_libomp_dylib.sh || exit 1
-          fi
+          brew fetch --retry libomp && brew reinstall libomp
+          echo MACOSX_DEPLOYMENT_TARGET=$(otool -l $(brew --prefix libomp)/lib/libomp.dylib | grep minos | awk '{print $2}') >> $GITHUB_ENV
 
-      - uses: pypa/cibuildwheel@v2.16
+      - uses: pypa/cibuildwheel@v2.21
         with:
           output-dir: wheelhouse
         env:
