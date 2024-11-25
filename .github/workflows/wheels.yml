@@ -145,7 +145,7 @@ jobs:
           brew fetch --retry libomp && brew reinstall libomp
           echo MACOSX_DEPLOYMENT_TARGET=$(otool -l $(brew --prefix libomp)/lib/libomp.dylib | grep minos | awk '{print $2}') >> $GITHUB_ENV
 
-      - uses: pypa/cibuildwheel@v2.21
+      - uses: pypa/cibuildwheel@v2.22
         with:
           output-dir: wheelhouse
         env:
