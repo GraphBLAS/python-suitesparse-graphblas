@@ -172,6 +172,7 @@ _error_code_lookup = {
     lib.GrB_NOT_IMPLEMENTED: ex.NotImplementedException,
     # GxB Errors
     lib.GxB_EXHAUSTED: StopIteration,
+    lib.GxB_JIT_ERROR: ex.JitError,
 }
 GrB_SUCCESS = lib.GrB_SUCCESS
 GrB_NO_VALUE = lib.GrB_NO_VALUE
