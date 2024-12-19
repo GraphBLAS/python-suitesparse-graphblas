@@ -60,3 +60,7 @@ class Panic(GraphBLASException):
 
 class NotImplementedException(GraphBLASException):
     pass
+
+
+class JitError(GraphBLASException):
+    pass
