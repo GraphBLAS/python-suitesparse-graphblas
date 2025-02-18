@@ -117,7 +117,7 @@ jobs:
         if: github.event_name == 'push' || github.event_name == 'pull_request'
         # Ask suitesparse.sh to compile in the fastest way possible and provide a GB version to build
         run: |
-          echo "SUITESPARSE_FAST_BUILD=1" >> $GITHUB_ENV
+          echo "SUITESPARSE_FASTEST_BUILD=1" >> $GITHUB_ENV
         shell: bash
 
       - name: Setup GraphBLAS version from GB_VERSION.txt

@@ -97,7 +97,7 @@ if [ -n "${SUITESPARSE_FASTEST_BUILD}" ]; then
     echo "#define GxB_NO_FC32      1" >> ../Source/GB_control.h
     echo "#define GxB_NO_FC64      1" >> ../Source/GB_control.h
     echo "#define GxB_NO_INT16     1" >> ../Source/GB_control.h
-    echo "#define GxB_NO_INT32     1" >> ../Source/GB_control.h
+    # echo "#define GxB_NO_INT32     1" >> ../Source/GB_control.h
     echo "#define GxB_NO_INT64     1" >> ../Source/GB_control.h
     echo "#define GxB_NO_INT8      1" >> ../Source/GB_control.h
     echo "#define GxB_NO_UINT16    1" >> ../Source/GB_control.h
