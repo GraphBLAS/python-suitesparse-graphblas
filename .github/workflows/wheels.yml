@@ -85,7 +85,7 @@ jobs:
 
           # macOS x86
           # Note: keep as old as possible as due to libomp this will be the oldest supported macOS version.
-          - os: macos-12
+          - os: macos-13
             cibw_archs: "x86_64"
 
           # macOS Apple Silicon
