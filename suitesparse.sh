@@ -3,7 +3,10 @@
 set -x  # echo on
 
 # parse SuiteSparse version from first argument, a git tag that ends in the version (no leading v)
-if [[ $1 =~ refs/tags/([0-9]*\.[0-9]*\.[0-9]*)\..*$ ]]; then
+if [[ $1 =~ refs/tags/([0-9]*\.[0-9]*\.[0-9]*\.beta[0-9]*).*$ ]]; then
+    echo "Beta version detected"
+    VERSION=${BASH_REMATCH[1]}
+elif [[ $1 =~ refs/tags/([0-9]*\.[0-9]*\.[0-9]*)\..*$ ]]; then
     VERSION=${BASH_REMATCH[1]}
 else
     echo "Specify a SuiteSparse version, such as: $0 refs/tags/7.4.3.0 (got: $1)"
@@ -78,7 +81,7 @@ if [ -n "${SUITESPARSE_FAST_BUILD}" ]; then
     echo "#define GxB_NO_FC32      1" >> ../Source/GB_control.h
     echo "#define GxB_NO_FC64      1" >> ../Source/GB_control.h
     echo "#define GxB_NO_INT16     1" >> ../Source/GB_control.h
-#    echo "#define GxB_NO_INT32     1" >> ../Source/GB_control.h
+    echo "#define GxB_NO_INT32     1" >> ../Source/GB_control.h
 #    echo "#define GxB_NO_INT64     1" >> ../Source/GB_control.h
     echo "#define GxB_NO_INT8      1" >> ../Source/GB_control.h
     echo "#define GxB_NO_UINT16    1" >> ../Source/GB_control.h
@@ -97,8 +100,8 @@ if [ -n "${SUITESPARSE_FASTEST_BUILD}" ]; then
     echo "#define GxB_NO_FC32      1" >> ../Source/GB_control.h
     echo "#define GxB_NO_FC64      1" >> ../Source/GB_control.h
     echo "#define GxB_NO_INT16     1" >> ../Source/GB_control.h
-#    echo "#define GxB_NO_INT32     1" >> ../Source/GB_control.h
-#    echo "#define GxB_NO_INT64     1" >> ../Source/GB_control.h
+    echo "#define GxB_NO_INT32     1" >> ../Source/GB_control.h
+    echo "#define GxB_NO_INT64     1" >> ../Source/GB_control.h
     echo "#define GxB_NO_INT8      1" >> ../Source/GB_control.h
     echo "#define GxB_NO_UINT16    1" >> ../Source/GB_control.h
     echo "#define GxB_NO_UINT32    1" >> ../Source/GB_control.h

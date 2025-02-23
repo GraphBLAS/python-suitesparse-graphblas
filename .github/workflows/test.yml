@@ -14,10 +14,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ["ubuntu-latest", "macos-latest", "windows-latest"]
-        source: ["conda-forge"]
-        # os: ["ubuntu-latest"]
-        # source: ["source"]
+        # os: ["ubuntu-latest", "macos-latest", "windows-latest"]
+        # source: ["conda-forge"]
+        os: ["ubuntu-latest"]
+        source: ["source"]
         python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
     steps:
     - name: Checkout
@@ -41,7 +41,7 @@ jobs:
     - name: GraphBLAS (from source)
       if: (contains(matrix.source, 'source'))
       run: |
-        # From release (does not work with beta versions)
+        # From release (also works with beta versions)
         GRAPHBLAS_PREFIX=${CONDA_PREFIX} bash suitesparse.sh refs/tags/$(cat GB_VERSION.txt).0
 
         # From tag
