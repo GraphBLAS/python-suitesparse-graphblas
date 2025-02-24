@@ -625,6 +625,7 @@ def get_group_info(groups, ast, *, skip_complex=False):
                 "Type": "type",
                 "UnaryOp": "unary",
                 "IndexUnaryOp": "indexunary",
+                "IndexBinaryOp": "indexbinary",
                 "Iterator": "iterator",
                 "Context": "context",
                 # "everything else" is "core"

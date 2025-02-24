@@ -41,7 +41,7 @@ jobs:
     - name: GraphBLAS (from source)
       if: (contains(matrix.source, 'source'))
       run: |
-        # From release (does not work with beta versions)
+        # From release (also works with beta versions)
         GRAPHBLAS_PREFIX=${CONDA_PREFIX} bash suitesparse.sh refs/tags/$(cat GB_VERSION.txt).0
 
         # From tag
