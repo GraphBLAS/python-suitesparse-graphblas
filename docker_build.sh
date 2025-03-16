@@ -4,7 +4,7 @@ if [ $# -eq 0 ]
 
 Example: ./docker_build.sh v5.1.3 5.1.3.1 main clone push
 
-If location is clone then a fresh git clone will be used.  
+If location is clone then a fresh git clone will be used.
 If push is provided then the script will attempt to push to dockerhub."
         exit 1
 fi
@@ -27,7 +27,7 @@ then
     fi
     trap "exit 1"           HUP INT PIPE QUIT TERM
     trap 'rm -rf "$TMPDIR"' EXIT
-    
+
     cd $TMPDIR
     git clone --branch $BRANCH https://github.com/GraphBLAS/python-suitesparse-graphblas.git
     cd python-suitesparse-graphblas
