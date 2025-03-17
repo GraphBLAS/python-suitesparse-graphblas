@@ -28,7 +28,7 @@ COPY --from=suitesparse /build/pycparser/utils/fake_libc_include/* /usr/local/li
 
 RUN apt-get update && apt-get install -yq build-essential git
 RUN pip3 install numpy cffi pytest cython
-    
+
 RUN mkdir -p /psg
 ADD . /psg
 
