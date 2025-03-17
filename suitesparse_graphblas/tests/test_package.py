@@ -7,4 +7,8 @@ def test_matrix_existence():
 
 
 def test_version():
-    assert suitesparse_graphblas.__version__ > "7.4.2.0"
+    # Example dev version: 9.4.5.0+2.g5590dba8.dirty
+    # Example reslease version: 9.4.5.0
+    version = suitesparse_graphblas.__version__
+    version = [int(x) for x in version.split("+")[0].split(".")]
+    assert version > [9, 4, 5, 0]
