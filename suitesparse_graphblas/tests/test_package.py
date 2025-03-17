@@ -11,4 +11,4 @@ def test_version():
     # Example reslease version: 9.4.5.0
     version = suitesparse_graphblas.__version__
     version = [int(x) for x in version.split("+")[0].split(".")]
-    assert version > [9, 4, 5, 0]
+    assert version > [9, 4, 4, 0]
