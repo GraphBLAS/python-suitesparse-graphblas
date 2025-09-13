@@ -9,25 +9,27 @@ default_language_version:
   python: python3
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: check-added-large-files
       - id: check-case-conflict
+      - id: check-illegal-windows-names
       - id: check-merge-conflict
       - id: check-ast
       - id: check-toml
       - id: check-yaml
       # - id: check-executables-have-shebangs
       - id: check-vcs-permalinks
+      - id: debug-statements
       - id: destroyed-symlinks
       - id: detect-private-key
-      - id: debug-statements
+      - id: forbid-submodules
       - id: end-of-file-fixer
       - id: mixed-line-ending
         args: [--fix=lf]
       - id: trailing-whitespace
   - repo: https://github.com/abravalheri/validate-pyproject
-    rev: v0.24
+    rev: v0.24.1
     hooks:
       - id: validate-pyproject
         name: Validate pyproject.toml
@@ -41,23 +43,23 @@ repos:
     hooks:
       - id: isort
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.19.1
+    rev: v3.20.0
     hooks:
       - id: pyupgrade
         args: [--py39-plus]
-  - repo: https://github.com/psf/black
+  - repo: https://github.com/psf/black-pre-commit-mirror
     rev: 25.1.0
     hooks:
       - id: black
   - repo: https://github.com/PyCQA/flake8
-    rev: 7.1.2
+    rev: 7.3.0
     hooks:
       - id: flake8
         args: ["--config=.flake8"]
         additional_dependencies: &flake8_dependencies
         # These versions need updated manually
-        - flake8==7.1.2
-        - flake8-comprehensions==3.16.0
+        - flake8==7.3.0
+        - flake8-comprehensions==3.17.0
         - flake8-bugbear==24.12.12
         # - flake8-simplify==0.21.0
   - repo: https://github.com/asottile/yesqa
@@ -73,7 +75,7 @@ repos:
   #     - id: pyroma
   #       args: [-n, "10", .]
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.31.3
+    rev: 0.33.3
     hooks:
       - id: check-dependabot
       - id: check-github-workflows
@@ -82,6 +84,6 @@ repos:
       - id: check-hooks-apply
       - id: check-useless-excludes
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: no-commit-to-branch  # no commit directly to main
