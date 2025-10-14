@@ -28,6 +28,8 @@ repos:
       - id: mixed-line-ending
         args: [--fix=lf]
       - id: trailing-whitespace
+      - id: name-tests-test
+        args: ["--pytest-test-first"]
   - repo: https://github.com/abravalheri/validate-pyproject
     rev: v0.24.1
     hooks:
@@ -39,16 +41,16 @@ repos:
       - id: autoflake
         args: [--in-place]
   - repo: https://github.com/pycqa/isort
-    rev: 6.0.1
+    rev: 7.0.0
     hooks:
       - id: isort
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.20.0
+    rev: v3.21.0
     hooks:
       - id: pyupgrade
-        args: [--py39-plus]
+        args: [--py310-plus]
   - repo: https://github.com/psf/black-pre-commit-mirror
-    rev: 25.1.0
+    rev: 25.9.0
     hooks:
       - id: black
   - repo: https://github.com/PyCQA/flake8
@@ -61,7 +63,7 @@ repos:
         - flake8==7.3.0
         - flake8-comprehensions==3.17.0
         - flake8-bugbear==24.12.12
-        # - flake8-simplify==0.21.0
+        # - flake8-simplify==0.22.0
   - repo: https://github.com/asottile/yesqa
     rev: v1.5.0
     hooks:
@@ -69,13 +71,13 @@ repos:
         additional_dependencies: *flake8_dependencies
   # `pyroma` may help keep our package standards up to date if best practices change.
   # This is a "low value" check though and too slow to run as part of pre-commit.
-  # - repo: https://github.com/regebro/pyroma
-  #   rev: "4.2"
-  #   hooks:
-  #     - id: pyroma
-  #       args: [-n, "10", .]
+  - repo: https://github.com/regebro/pyroma
+    rev: "5.0"
+    hooks:
+      - id: pyroma
+        args: [-n, "10", .]
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.33.3
+    rev: 0.34.1
     hooks:
       - id: check-dependabot
       - id: check-github-workflows

@@ -1,3 +1,9 @@
+# cython: freethreading_compatible=True
+#
+# We don't do anything special to support free-threading, but GraphBLAS C
+# libraries are required to be thread-safe, so things should "just work".
+# Of course, users writing multithreaded code can find many creative ways
+# to fail, but python-suitesparse-graphblas shouldn't crash.
 import numpy as np
 from cpython.ref cimport Py_INCREF
 from libc.stdint cimport uintptr_t

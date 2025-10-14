@@ -6,7 +6,8 @@ requires = [
     "setuptools-git-versioning",
     "wheel",
     "cffi>=1.11",
-    "cython",
+    "cython; python_version<'3.14'",
+    "cython>=3.1; python_version>='3.14'",
     "numpy>=2.0",
 ]
 
@@ -15,7 +16,7 @@ name = "suitesparse-graphblas"
 dynamic = ["version"]
 description = "SuiteSparse:GraphBLAS Python bindings."
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = {file = "LICENSE"}
 authors = [
     {name = "Erik Welch", email = "erik.n.welch@gmail.com"},
@@ -51,12 +52,13 @@ classifiers = [
     "Operating System :: Microsoft :: Windows",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: Free Threading :: 2 - Beta",
     "Intended Audience :: Developers",
     "Intended Audience :: Other Audience",
     "Intended Audience :: Science/Research",
@@ -93,7 +95,7 @@ dirty_template = "{tag}+{ccount}.g{sha}.dirty"
 
 [tool.black]
 line-length = 100
-target-version = ["py39", "py310", "py311", "py312", "py313"]
+target-version = ["py310", "py311", "py312", "py313", "py314"]
 
 [tool.isort]
 sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]

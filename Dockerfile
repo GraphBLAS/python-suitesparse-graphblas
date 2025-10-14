@@ -1,4 +1,4 @@
-ARG BASE_CONTAINER=python:3.9-slim-buster
+ARG BASE_CONTAINER=python:3.10-slim-buster
 FROM ${BASE_CONTAINER} as suitesparse
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -24,7 +24,7 @@ ENV PYTHONUNBUFFERED 1
 
 COPY --from=suitesparse  /usr/include/GraphBLAS.h /usr/local/include/
 COPY --from=suitesparse /usr/lib/x86_64-linux-gnu/libgraphblas* /usr/lib/x86_64-linux-gnu/
-COPY --from=suitesparse /build/pycparser/utils/fake_libc_include/* /usr/local/lib/python3.9/site-packages/pycparser/utils/fake_libc_include/
+COPY --from=suitesparse /build/pycparser/utils/fake_libc_include/* /usr/local/lib/python3.10/site-packages/pycparser/utils/fake_libc_include/
 
 RUN apt-get update && apt-get install -yq build-essential git
 RUN pip3 install numpy cffi pytest cython
@@ -44,4 +44,4 @@ RUN apt-get -y --purge remove git python3-pip && apt-get clean
 FROM ${BASE_CONTAINER}
 COPY --from=suitesparse /usr/lib/x86_64-linux-gnu/libgraphblas* /usr/lib/x86_64-linux-gnu/
 COPY --from=suitesparse /usr/lib/x86_64-linux-gnu/libgomp* /usr/lib/x86_64-linux-gnu/
-COPY --from=psg /usr/local/lib/python3.9/site-packages /usr/local/lib/python3.9/site-packages
+COPY --from=psg /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
