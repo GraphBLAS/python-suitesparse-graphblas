@@ -6,6 +6,7 @@ requires = [
     "setuptools-git-versioning",
     "wheel",
     "cffi>=1.11",
+    # Free-threading in Python 3.14 requires Cython >=3.1
     "cython; python_version<'3.14'",
     "cython>=3.1; python_version>='3.14'",
     "numpy>=2.0",

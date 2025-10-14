@@ -34,7 +34,7 @@ jobs:
     name: Build SDist
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -94,7 +94,7 @@ jobs:
             cibw_archs: "arm64"
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -145,7 +145,7 @@ jobs:
           brew fetch --retry libomp && brew reinstall libomp
           echo MACOSX_DEPLOYMENT_TARGET=$(otool -l $(brew --prefix libomp)/lib/libomp.dylib | grep minos | awk '{print $2}') >> $GITHUB_ENV
 
-      - uses: pypa/cibuildwheel@v2.22
+      - uses: pypa/cibuildwheel@v3.2.1
         with:
           output-dir: wheelhouse
         env:
@@ -207,11 +207,11 @@ jobs:
     if: github.repository == 'GraphBLAS/python-suitesparse-graphblas' && ((github.event_name == 'release' && github.event.action == 'published') || (github.event_name == 'workflow_dispatch' && github.event.inputs.upload_dest != 'No Upload'))
 
     steps:
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.x"
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           path: dist
           merge-multiple: true
