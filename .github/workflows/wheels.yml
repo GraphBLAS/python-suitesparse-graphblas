@@ -37,6 +37,7 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Build SDist
         run: pipx run build --sdist
@@ -97,6 +98,7 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       # aarch64 Linux builds are cross-compiled on x86 runners using emulation
       # see https://cibuildwheel.readthedocs.io/en/stable/faq/#emulation
