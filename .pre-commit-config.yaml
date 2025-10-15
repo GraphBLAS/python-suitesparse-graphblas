@@ -71,11 +71,11 @@ repos:
         additional_dependencies: *flake8_dependencies
   # `pyroma` may help keep our package standards up to date if best practices change.
   # This is a "low value" check though and too slow to run as part of pre-commit.
-  - repo: https://github.com/regebro/pyroma
-    rev: "5.0"
-    hooks:
-      - id: pyroma
-        args: [-n, "10", .]
+  # - repo: https://github.com/regebro/pyroma
+  #   rev: "5.0"
+  #   hooks:
+  #     - id: pyroma
+  #       args: [-n, "10", .]
   - repo: https://github.com/python-jsonschema/check-jsonschema
     rev: 0.34.1
     hooks:
