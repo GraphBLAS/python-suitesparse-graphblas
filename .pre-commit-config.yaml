@@ -13,12 +13,12 @@ repos:
     hooks:
       - id: check-added-large-files
       - id: check-case-conflict
+      - id: check-executables-have-shebangs
       - id: check-illegal-windows-names
       - id: check-merge-conflict
       - id: check-ast
       - id: check-toml
       - id: check-yaml
-      # - id: check-executables-have-shebangs
       - id: check-vcs-permalinks
       - id: debug-statements
       - id: destroyed-symlinks
@@ -28,27 +28,29 @@ repos:
       - id: mixed-line-ending
         args: [--fix=lf]
       - id: trailing-whitespace
+      - id: name-tests-test
+        args: ["--pytest-test-first"]
   - repo: https://github.com/abravalheri/validate-pyproject
-    rev: v0.24.1
+    rev: v0.25
     hooks:
       - id: validate-pyproject
         name: Validate pyproject.toml
   - repo: https://github.com/PyCQA/autoflake
-    rev: v2.3.1
+    rev: v2.3.3
     hooks:
       - id: autoflake
         args: [--in-place]
   - repo: https://github.com/pycqa/isort
-    rev: 6.0.1
+    rev: 8.0.1
     hooks:
       - id: isort
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.20.0
+    rev: v3.21.2
     hooks:
       - id: pyupgrade
-        args: [--py39-plus]
+        args: [--py311-plus]
   - repo: https://github.com/psf/black-pre-commit-mirror
-    rev: 25.1.0
+    rev: 26.3.1
     hooks:
       - id: black
   - repo: https://github.com/PyCQA/flake8
@@ -60,8 +62,8 @@ repos:
         # These versions need updated manually
         - flake8==7.3.0
         - flake8-comprehensions==3.17.0
-        - flake8-bugbear==24.12.12
-        # - flake8-simplify==0.21.0
+        - flake8-bugbear==25.11.29
+        # - flake8-simplify==0.22.0
   - repo: https://github.com/asottile/yesqa
     rev: v1.5.0
     hooks:
@@ -70,12 +72,24 @@ repos:
   # `pyroma` may help keep our package standards up to date if best practices change.
   # This is a "low value" check though and too slow to run as part of pre-commit.
   # - repo: https://github.com/regebro/pyroma
-  #   rev: "4.2"
+  #   rev: "5.0.1"
   #   hooks:
   #     - id: pyroma
   #       args: [-n, "10", .]
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: "v0.11.0.1"
+    hooks:
+      - id: shellcheck
+  - repo: https://github.com/pre-commit/pygrep-hooks
+    rev: v1.10.0
+    hooks:
+      - id: python-check-blanket-noqa
+      - id: python-check-blanket-type-ignore
+      - id: python-no-eval
+      - id: python-no-log-warn
+      - id: text-unicode-replacement-char
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.33.3
+    rev: 0.37.0
     hooks:
       - id: check-dependabot
       - id: check-github-workflows

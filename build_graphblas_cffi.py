@@ -13,7 +13,7 @@ ffibuilder = FFI()
 # GraphBLAS_ROOT env var can point to the root directory of GraphBLAS to link against.
 # Expected subdirectories: include/ (contains GraphBLAS.h), lib/, and bin/ (on Windows only)
 # Otherwise fallback to default system folders.
-graphblas_root = os.environ.get("GraphBLAS_ROOT", None)
+graphblas_root = os.environ.get("GraphBLAS_ROOT")
 
 if not graphblas_root:
     # Windows wheels.yml configures suitesparse.sh to install GraphBLAS to "C:\\GraphBLAS".

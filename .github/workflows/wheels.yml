@@ -34,9 +34,10 @@ jobs:
     name: Build SDist
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Build SDist
         run: pipx run build --sdist
@@ -60,58 +61,43 @@ jobs:
           - os: windows-latest
             cibw_archs: "auto64"
 
-          # Linux x86 manylinux
+          # Linux x86_64 manylinux
           - os: ubuntu-latest
             cibw_archs: "x86_64"
-            # Python 3.12 wheel requires libffi-devel to be installed. manylinux container uses yum
-            cibw_before_build_linux: "yum install -y libffi-devel"
+            # manylinux_2_28 uses dnf (not yum). libffi-devel needed for Python 3.12+ cffi.
+            cibw_before_build_linux: "dnf install -y libffi-devel || yum install -y libffi-devel || true"
             # skip musllinux
             cibw_skip: "*musl*"
 
-          # Linux x86 musllinux
+          # Linux x86_64 musllinux
           # Separate runner for a Musl build of graphblas. The glibc build is not guaranteed to be compatible.
           - os: ubuntu-latest
             cibw_archs: "x86_64"
             arch_note: "musl"
-            # skip manylinux (built elsewhere), PyPy (no musl numpy wheels), CPython 3.8 (no musl numpy wheels)
-            cibw_skip: "*many* pp* cp38*"
+            # skip manylinux (built elsewhere)
+            cibw_skip: "*many*"
 
-          # Linux aarch64
-          # Separate runner because this requires emulation (only x86 runners are available) and is very slow.
-          - os: ubuntu-latest
-            cibw_archs: "aarch64"
-            # numpy wheels not available for aarch64 PyPy or musllinux
-            cibw_skip: "pp* *musl*"
+          # Linux aarch64 — native ARM runner (no QEMU emulation needed)
+          - os: ubuntu-24.04-arm
+            cibw_archs: "auto"
+            # numpy wheels not available for aarch64 musllinux
+            cibw_skip: "*musl*"
 
-          # macOS x86
-          # Note: keep as old as possible as due to libomp this will be the oldest supported macOS version.
-          - os: macos-13
+          # macOS x86_64 — macos-15-intel is the last Intel macOS runner.
+          # libomp from Homebrew determines the minimum supported macOS version.
+          - os: macos-15-intel
             cibw_archs: "x86_64"
 
           # macOS Apple Silicon
-          # Note: keep as old as possible as due to libomp this will be the oldest supported macOS version.
+          # Keep runner version as old as possible: libomp determines minimum macOS version.
           - os: macos-14
             cibw_archs: "arm64"
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-
-      # aarch64 Linux builds are cross-compiled on x86 runners using emulation
-      # see https://cibuildwheel.readthedocs.io/en/stable/faq/#emulation
-      - name: Setup QEMU (for aarch64)
-        if: matrix.cibw_archs == 'aarch64'
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: arm64
-
-      - name: Setup env (for aarch64)
-        if: matrix.cibw_archs == 'aarch64'
-        # Ask suitesparse.sh to compile faster by optimizing fewer types. Otherwise, the build takes too long to finish
-        # in 6 hour limit.
-        run: |
-          echo "SUITESPARSE_FAST_BUILD=1" >> $GITHUB_ENV
+          persist-credentials: false
 
       - name: Setup for testing
         if: github.event_name == 'push' || github.event_name == 'pull_request'
@@ -145,19 +131,23 @@ jobs:
           brew fetch --retry libomp && brew reinstall libomp
           echo MACOSX_DEPLOYMENT_TARGET=$(otool -l $(brew --prefix libomp)/lib/libomp.dylib | grep minos | awk '{print $2}') >> $GITHUB_ENV
 
-      - uses: pypa/cibuildwheel@v2.22
+      - uses: pypa/cibuildwheel@v3.4
         with:
           output-dir: wheelhouse
         env:
           # very verbose
           CIBW_BUILD_VERBOSITY: 3
 
+          # cibuildwheel v3: PyPy no longer built by default; enable explicitly
+          # Note: cpython-freethreading not enabled because cffi doesn't support it yet
+          CIBW_ENABLE: "pypy"
+
           # Build SuiteSparse
           CIBW_BEFORE_ALL: bash suitesparse.sh ${{ env.GB_VERSION_REF }}
 
           CIBW_BEFORE_BUILD_LINUX: ${{ matrix.cibw_before_build_linux }}
 
-          CIBW_ENVIRONMENT_PASS_LINUX: SUITESPARSE_FAST_BUILD SUITESPARSE_FASTEST_BUILD
+          CIBW_ENVIRONMENT_PASS_LINUX: SUITESPARSE_FASTEST_BUILD
 
           # CMAKE_GNUtoMS=ON asks suitesparse.sh to build libraries in MSVC style on Windows.
           CIBW_ENVIRONMENT_WINDOWS: CMAKE_GNUtoMS=ON GRAPHBLAS_PREFIX="C:/GraphBLAS"
@@ -172,8 +162,7 @@ jobs:
           # Architectures to build specified in matrix
           CIBW_ARCHS: ${{ matrix.cibw_archs }}
 
-          # as of writing numpy does not support pypy 3.10
-          CIBW_SKIP: "${{ matrix.cibw_skip }} pp310*"
+          CIBW_SKIP: "${{ matrix.cibw_skip }}"
 
           # Use delvewheel on Windows.
           # This copies graphblas.dll into the wheel. "repair" in cibuildwheel parlance includes copying any shared
@@ -207,17 +196,17 @@ jobs:
     if: github.repository == 'GraphBLAS/python-suitesparse-graphblas' && ((github.event_name == 'release' && github.event.action == 'published') || (github.event_name == 'workflow_dispatch' && github.event.inputs.upload_dest != 'No Upload'))
 
     steps:
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.x"
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           path: dist
           merge-multiple: true
 
       # Upload to PyPI
-      - uses: pypa/gh-action-pypi-publish@release/v1
+      - uses: pypa/gh-action-pypi-publish@v1.13.0
         name: Upload to PyPI
         if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && github.event.inputs.upload_dest == 'PyPI')
         with:
@@ -227,7 +216,7 @@ jobs:
           password: ${{ secrets.PYPI_TOKEN }}
 
       # Upload to Test PyPI
-      - uses: pypa/gh-action-pypi-publish@release/v1
+      - uses: pypa/gh-action-pypi-publish@v1.13.0
         name: Upload to Test PyPI
         if: github.event_name == 'workflow_dispatch' && github.event.inputs.upload_dest == 'Test PyPI'
         with:

@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 if [ $# -eq 0 ]
     then
         echo "Usage: ./docker_build.sh SUITESPARSE_BRANCH VERSION [BRANCH LOCATION PUSH]
@@ -21,29 +22,29 @@ COMPACT=${COMPACT:-0}
 if [ "$LOCATION" = "clone" ]
 then
     TMPDIR=$(mktemp -d)
-    if [ ! -e $TMPDIR ]; then
+    if [ ! -e "$TMPDIR" ]; then
         >&2 echo "Failed to create temp directory"
         exit 1
     fi
     trap "exit 1"           HUP INT PIPE QUIT TERM
     trap 'rm -rf "$TMPDIR"' EXIT
 
-    cd $TMPDIR
-    git clone --branch $BRANCH https://github.com/GraphBLAS/python-suitesparse-graphblas.git
-    cd python-suitesparse-graphblas
+    cd "$TMPDIR" || exit
+    git clone --branch "$BRANCH" https://github.com/GraphBLAS/python-suitesparse-graphblas.git
+    cd python-suitesparse-graphblas || exit
 fi
 
 docker build \
-       --build-arg SUITESPARSE=${SUITESPARSE} \
-       --build-arg VERSION=${VERSION} \
-       --build-arg COMPACT=${COMPACT} \
-       -t $IMAGE:$VERSION \
+       --build-arg SUITESPARSE="${SUITESPARSE}" \
+       --build-arg VERSION="${VERSION}" \
+       --build-arg COMPACT="${COMPACT}" \
+       -t "$IMAGE:$VERSION" \
        .
 
-docker tag $IMAGE:$VERSION $IMAGE:latest
+docker tag "$IMAGE:$VERSION" "$IMAGE:latest"
 
 if [ "$PUSH" = "push" ]
 then
-    docker push $IMAGE:$VERSION
-    docker push $IMAGE:latest
+    docker push "$IMAGE:$VERSION"
+    docker push "$IMAGE:latest"
 fi
