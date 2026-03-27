@@ -6,11 +6,9 @@ from cffi import FFI
 from suitesparse_graphblas import __version__, check_status, ffi, lib, matrix
 
 stdffi = FFI()
-stdffi.cdef(
-    """
+stdffi.cdef("""
 void *malloc(size_t size);
-"""
-)
+""")
 stdlib = stdffi.dlopen(find_library("c"))
 
 # When "packing" a matrix the owner of the memory buffer is transfered

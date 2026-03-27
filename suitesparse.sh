@@ -10,9 +10,9 @@ elif [[ $1 =~ refs/tags/([0-9]*\.[0-9]*\.[0-9]*)\..*$ ]]; then
     VERSION=${BASH_REMATCH[1]}
 else
     echo "Specify a SuiteSparse version, such as: $0 refs/tags/7.4.3.0 (got: $1)"
-    exit -1
+    exit 1
 fi
-echo VERSION: $VERSION
+echo VERSION: "$VERSION"
 
 NPROC="$(nproc)"
 if [ -z "${NPROC}" ]; then
@@ -27,7 +27,8 @@ if [ -n "${BREW_LIBOMP}" ]; then
     cmake_params+=(-DOpenMP_C_FLAGS="-Xclang -fopenmp -I$(brew --prefix libomp)/include")
     cmake_params+=(-DOpenMP_C_LIB_NAMES="libomp")
     cmake_params+=(-DOpenMP_libomp_LIBRARY="omp")
-    export LDFLAGS="-L$(brew --prefix libomp)/lib"
+    LDFLAGS="-L$(brew --prefix libomp)/lib"
+    export LDFLAGS
 
     if [ -n "${SUITESPARSE_MACOS_ARCH}" ]; then
         export CFLAGS="-arch ${SUITESPARSE_MACOS_ARCH}"
@@ -50,12 +51,13 @@ if [ -n "${GRAPHBLAS_PREFIX}" ]; then
     cmake_params+=(-DCMAKE_INSTALL_PREFIX="${GRAPHBLAS_PREFIX}")
 fi
 
-curl -L https://github.com/DrTimothyAldenDavis/GraphBLAS/archive/refs/tags/v${VERSION}.tar.gz | tar xzf -
-cd GraphBLAS-${VERSION}/build
+curl -L "https://github.com/DrTimothyAldenDavis/GraphBLAS/archive/refs/tags/v${VERSION}.tar.gz" | tar xzf -
+cd "GraphBLAS-${VERSION}/build" || exit
 
 # Disable optimizing some rarely-used types for significantly faster builds and significantly smaller wheel size.
 # Also the build with all types enabled sometimes stalls on GitHub Actions. Probably due to exceeded resource limits.
 # These can still be used, they'll just have reduced performance (AFAIK similar to UDTs).
+# shellcheck disable=SC2129
 # echo "#define GxB_NO_BOOL      1" >> ../Source/GB_control.h #
 # echo "#define GxB_NO_FP32      1" >> ../Source/GB_control.h #
 # echo "#define GxB_NO_FP64      1" >> ../Source/GB_control.h #
@@ -74,6 +76,7 @@ if [ -n "${SUITESPARSE_FAST_BUILD}" ]; then
     echo "suitesparse.sh: Fast build requested."
     # Disable optimizing even more types. This is for builds that don't finish in runner resource limits,
     # such as emulated aarm64.
+    # shellcheck disable=SC2129
 
 #    echo "#define GxB_NO_BOOL      1" >> ../Source/GB_control.h
 #    echo "#define GxB_NO_FP32      1" >> ../Source/GB_control.h
@@ -93,6 +96,7 @@ fi
 if [ -n "${SUITESPARSE_FASTEST_BUILD}" ]; then
     echo "suitesparse.sh: Fastest build requested."
     # Fastest build possible. For use in development and automated tests that do not depend on performance.
+    # shellcheck disable=SC2129
 
     echo "#define GxB_NO_BOOL      1" >> ../Source/GB_control.h
     echo "#define GxB_NO_FP32      1" >> ../Source/GB_control.h
@@ -137,7 +141,7 @@ else
 fi
 
 cmake .. -DCMAKE_BUILD_TYPE=Release -G 'Unix Makefiles' "${cmake_params[@]}"
-make -j$NPROC
+make -j"$NPROC"
 $SUDO make install
 
 if [ -n "${CMAKE_GNUtoMS}" ]; then

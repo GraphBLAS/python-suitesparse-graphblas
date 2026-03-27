@@ -1,8 +1,7 @@
 [build-system]
 build-backend = "setuptools.build_meta"
 requires = [
-    # setuptools<74 until PyPy vendors cffi 1.15.1
-    "setuptools >=64, <74",
+    "setuptools >=77",
     "setuptools-git-versioning",
     "wheel",
     "cffi>=1.11",
@@ -17,8 +16,9 @@ name = "suitesparse-graphblas"
 dynamic = ["version"]
 description = "SuiteSparse:GraphBLAS Python bindings."
 readme = "README.md"
-requires-python = ">=3.10"
-license = {file = "LICENSE"}
+requires-python = ">=3.11"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
 authors = [
     {name = "Erik Welch", email = "erik.n.welch@gmail.com"},
     {name = "Jim Kitchen"},
@@ -47,13 +47,11 @@ keywords = [
 ]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
-    "License :: OSI Approved :: Apache Software License",
     "Operating System :: MacOS :: MacOS X",
     "Operating System :: POSIX :: Linux",
     "Operating System :: Microsoft :: Windows",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -70,7 +68,7 @@ classifiers = [
 ]
 dependencies = [
     "cffi>=1.15",
-    "numpy>=1.23",
+    "numpy>=1.24",
 ]
 [project.urls]
 homepage = "https://github.com/GraphBLAS/python-suitesparse-graphblas"
@@ -96,7 +94,7 @@ dirty_template = "{tag}+{ccount}.g{sha}.dirty"
 
 [tool.black]
 line-length = 100
-target-version = ["py310", "py311", "py312", "py313", "py314"]
+target-version = ["py311", "py312", "py313", "py314"]
 
 [tool.isort]
 sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]

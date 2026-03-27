@@ -34,7 +34,7 @@ jobs:
     name: Build SDist
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -64,8 +64,8 @@ jobs:
           # Linux x86 manylinux
           - os: ubuntu-latest
             cibw_archs: "x86_64"
-            # Python 3.12 wheel requires libffi-devel to be installed. manylinux container uses yum
-            cibw_before_build_linux: "yum install -y libffi-devel"
+            # manylinux_2_28 uses dnf (not yum). libffi-devel needed for Python 3.12+ cffi.
+            cibw_before_build_linux: "dnf install -y libffi-devel || yum install -y libffi-devel || true"
             # skip musllinux
             cibw_skip: "*musl*"
 
@@ -74,15 +74,15 @@ jobs:
           - os: ubuntu-latest
             cibw_archs: "x86_64"
             arch_note: "musl"
-            # skip manylinux (built elsewhere), PyPy (no musl numpy wheels), CPython 3.8 (no musl numpy wheels)
-            cibw_skip: "*many* pp* cp38*"
+            # skip manylinux (built elsewhere)
+            cibw_skip: "*many*"
 
           # Linux aarch64
           # Separate runner because this requires emulation (only x86 runners are available) and is very slow.
           - os: ubuntu-latest
             cibw_archs: "aarch64"
-            # numpy wheels not available for aarch64 PyPy or musllinux
-            cibw_skip: "pp* *musl*"
+            # numpy wheels not available for aarch64 musllinux
+            cibw_skip: "*musl*"
 
           # macOS x86
           # Note: keep as old as possible as due to libomp this will be the oldest supported macOS version.
@@ -95,7 +95,7 @@ jobs:
             cibw_archs: "arm64"
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -104,7 +104,7 @@ jobs:
       # see https://cibuildwheel.readthedocs.io/en/stable/faq/#emulation
       - name: Setup QEMU (for aarch64)
         if: matrix.cibw_archs == 'aarch64'
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
         with:
           platforms: arm64
 
@@ -147,12 +147,15 @@ jobs:
           brew fetch --retry libomp && brew reinstall libomp
           echo MACOSX_DEPLOYMENT_TARGET=$(otool -l $(brew --prefix libomp)/lib/libomp.dylib | grep minos | awk '{print $2}') >> $GITHUB_ENV
 
-      - uses: pypa/cibuildwheel@v2.22
+      - uses: pypa/cibuildwheel@v3.4
         with:
           output-dir: wheelhouse
         env:
           # very verbose
           CIBW_BUILD_VERBOSITY: 3
+
+          # cibuildwheel v3: PyPy and free-threading no longer built by default
+          CIBW_ENABLE: "pypy cpython-freethreading"
 
           # Build SuiteSparse
           CIBW_BEFORE_ALL: bash suitesparse.sh ${{ env.GB_VERSION_REF }}
@@ -174,8 +177,7 @@ jobs:
           # Architectures to build specified in matrix
           CIBW_ARCHS: ${{ matrix.cibw_archs }}
 
-          # as of writing numpy does not support pypy 3.10
-          CIBW_SKIP: "${{ matrix.cibw_skip }} pp310*"
+          CIBW_SKIP: "${{ matrix.cibw_skip }}"
 
           # Use delvewheel on Windows.
           # This copies graphblas.dll into the wheel. "repair" in cibuildwheel parlance includes copying any shared
@@ -219,7 +221,7 @@ jobs:
           merge-multiple: true
 
       # Upload to PyPI
-      - uses: pypa/gh-action-pypi-publish@release/v1
+      - uses: pypa/gh-action-pypi-publish@v1.13.0
         name: Upload to PyPI
         if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && github.event.inputs.upload_dest == 'PyPI')
         with:
@@ -229,7 +231,7 @@ jobs:
           password: ${{ secrets.PYPI_TOKEN }}
 
       # Upload to Test PyPI
-      - uses: pypa/gh-action-pypi-publish@release/v1
+      - uses: pypa/gh-action-pypi-publish@v1.13.0
         name: Upload to Test PyPI
         if: github.event_name == 'workflow_dispatch' && github.event.inputs.upload_dest == 'Test PyPI'
         with:

@@ -22,6 +22,7 @@ typedef struct GB_SelectOp_opaque *GxB_SelectOp;
 typedef struct GxB_Container_struct *GxB_Container;
 
 /* GxB typedefs (functions) */
+typedef int64_t (*GxB_print_function)(char *string, size_t string_size, const void *value, int verbose);
 typedef void (*GxB_binary_function)(void *, const void *, const void *);
 typedef void (*GxB_index_binary_function)(void *, const void *, GrB_Index, GrB_Index, const void *, GrB_Index, GrB_Index, const void *);
 typedef void (*GxB_index_unary_function)(void *z, const void *x, GrB_Index i, GrB_Index j, const void *y);
@@ -162,7 +163,8 @@ typedef enum
 {
   GxB_CONTEXT_NTHREADS = 7086,
   GxB_CONTEXT_CHUNK = 7087,
-  GxB_CONTEXT_GPU_ID = 7088
+  GxB_CONTEXT_NGPUS = 7102,
+  GxB_CONTEXT_GPU_IDS = 7101
 } GxB_Context_Field;
 
 typedef enum
@@ -252,7 +254,9 @@ typedef enum
   GxB_FREE_FUNCTION = 7040,
   GxB_GLOBAL_NTHREADS = 7086,
   GxB_GLOBAL_CHUNK = 7087,
-  GxB_GLOBAL_GPU_ID = 7088,
+  GxB_GLOBAL_NGPUS = 7102,
+  GxB_GLOBAL_GPU_IDS = 7101,
+  GxB_NGPUS_MAX = 7103,
   GxB_BURBLE = 7019,
   GxB_PRINTF = 7020,
   GxB_FLUSH = 7021,
@@ -269,7 +273,8 @@ typedef enum
   GxB_JIT_C_CMAKE_LIBS = 7031,
   GxB_JIT_USE_CMAKE = 7032,
   GxB_JIT_ERROR_LOG = 7033,
-  GxB_JIT_CUDA_PREFACE = 7100
+  GxB_JIT_CUDA_PREFACE = 7100,
+  GxB_PRINT_FUNCTION = 7104
 } GxB_Option_Field;
 
 typedef enum
@@ -3523,7 +3528,7 @@ GrB_Info GxB_unload_Vector_into_Container(GrB_Vector V, GxB_Container Container,
 #define GxB_END ...
 #define GxB_FAST_IMPORT ...
 #define GxB_FULL ...
-#define GxB_GPU_ID ...
+#define GxB_GPU_IDS ...
 #define GxB_HYPERSPARSE ...
 #define GxB_IMPLEMENTATION ...
 #define GxB_IMPLEMENTATION_MAJOR ...
@@ -3533,6 +3538,7 @@ GrB_Info GxB_unload_Vector_into_Container(GrB_Vector V, GxB_Container Container,
 #define GxB_INDEX_MAX ...
 #define GxB_MAX_NAME_LEN ...
 #define GxB_NBITMAP_SWITCH ...
+#define GxB_NGPUS ...
 #define GxB_NTHREADS ...
 #define GxB_RANGE ...
 #define GxB_SPARSE ...
