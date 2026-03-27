@@ -154,8 +154,9 @@ jobs:
           # very verbose
           CIBW_BUILD_VERBOSITY: 3
 
-          # cibuildwheel v3: PyPy and free-threading no longer built by default
-          CIBW_ENABLE: "pypy cpython-freethreading"
+          # cibuildwheel v3: PyPy no longer built by default; enable explicitly
+          # Note: cpython-freethreading not enabled because cffi doesn't support it yet
+          CIBW_ENABLE: "pypy"
 
           # Build SuiteSparse
           CIBW_BEFORE_ALL: bash suitesparse.sh ${{ env.GB_VERSION_REF }}
