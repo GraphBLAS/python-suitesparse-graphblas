@@ -61,7 +61,7 @@ jobs:
           - os: windows-latest
             cibw_archs: "auto64"
 
-          # Linux x86 manylinux
+          # Linux x86_64 manylinux
           - os: ubuntu-latest
             cibw_archs: "x86_64"
             # manylinux_2_28 uses dnf (not yum). libffi-devel needed for Python 3.12+ cffi.
@@ -69,7 +69,7 @@ jobs:
             # skip musllinux
             cibw_skip: "*musl*"
 
-          # Linux x86 musllinux
+          # Linux x86_64 musllinux
           # Separate runner for a Musl build of graphblas. The glibc build is not guaranteed to be compatible.
           - os: ubuntu-latest
             cibw_archs: "x86_64"
@@ -77,20 +77,19 @@ jobs:
             # skip manylinux (built elsewhere)
             cibw_skip: "*many*"
 
-          # Linux aarch64
-          # Separate runner because this requires emulation (only x86 runners are available) and is very slow.
-          - os: ubuntu-latest
-            cibw_archs: "aarch64"
+          # Linux aarch64 — native ARM runner (no QEMU emulation needed)
+          - os: ubuntu-24.04-arm
+            cibw_archs: "auto"
             # numpy wheels not available for aarch64 musllinux
             cibw_skip: "*musl*"
 
-          # macOS x86
-          # Note: keep as old as possible as due to libomp this will be the oldest supported macOS version.
-          - os: macos-13
+          # macOS x86_64 — macos-15-intel is the last Intel macOS runner.
+          # libomp from Homebrew determines the minimum supported macOS version.
+          - os: macos-15-intel
             cibw_archs: "x86_64"
 
           # macOS Apple Silicon
-          # Note: keep as old as possible as due to libomp this will be the oldest supported macOS version.
+          # Keep runner version as old as possible: libomp determines minimum macOS version.
           - os: macos-14
             cibw_archs: "arm64"
 
@@ -99,21 +98,6 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-
-      # aarch64 Linux builds are cross-compiled on x86 runners using emulation
-      # see https://cibuildwheel.readthedocs.io/en/stable/faq/#emulation
-      - name: Setup QEMU (for aarch64)
-        if: matrix.cibw_archs == 'aarch64'
-        uses: docker/setup-qemu-action@v4
-        with:
-          platforms: arm64
-
-      - name: Setup env (for aarch64)
-        if: matrix.cibw_archs == 'aarch64'
-        # Ask suitesparse.sh to compile faster by optimizing fewer types. Otherwise, the build takes too long to finish
-        # in 6 hour limit.
-        run: |
-          echo "SUITESPARSE_FAST_BUILD=1" >> $GITHUB_ENV
 
       - name: Setup for testing
         if: github.event_name == 'push' || github.event_name == 'pull_request'
@@ -163,7 +147,7 @@ jobs:
 
           CIBW_BEFORE_BUILD_LINUX: ${{ matrix.cibw_before_build_linux }}
 
-          CIBW_ENVIRONMENT_PASS_LINUX: SUITESPARSE_FAST_BUILD SUITESPARSE_FASTEST_BUILD
+          CIBW_ENVIRONMENT_PASS_LINUX: SUITESPARSE_FASTEST_BUILD
 
           # CMAKE_GNUtoMS=ON asks suitesparse.sh to build libraries in MSVC style on Windows.
           CIBW_ENVIRONMENT_WINDOWS: CMAKE_GNUtoMS=ON GRAPHBLAS_PREFIX="C:/GraphBLAS"
