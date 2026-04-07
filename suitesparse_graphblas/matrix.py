@@ -181,19 +181,19 @@ def set_bool(A, value, i, j):
 
     >>> A = new(lib.GrB_BOOL, 3, 3)
     >>> set_bool(A, True, 2, 2)
-    >>> bool(A, 2, 2) == True
+    >>> get_bool(A, 2, 2) == True
     True
 
     """
     check_status(A, lib.GrB_Matrix_setElement_BOOL(A[0], value, i, j))
 
 
-def bool(A, i, j):
+def get_bool(A, i, j):
     """Get a boolean value from the matrix at row `i` column `j`.
 
     >>> A = new(lib.GrB_BOOL, 3, 3)
     >>> set_bool(A, True, 2, 2)
-    >>> bool(A, 2, 2) == True
+    >>> get_bool(A, 2, 2) == True
     True
 
     """
@@ -207,19 +207,19 @@ def set_int8(A, value, i, j):
 
     >>> A = new(lib.GrB_INT8, 3, 3)
     >>> set_int8(A, 7, 2, 2)
-    >>> int8(A, 2, 2) == 7
+    >>> get_int8(A, 2, 2) == 7
     True
 
     """
     check_status(A, lib.GrB_Matrix_setElement_INT8(A[0], value, i, j))
 
 
-def int8(A, i, j):
+def get_int8(A, i, j):
     """Get an int8 value from the matrix at row `i` column `j`.
 
     >>> A = new(lib.GrB_INT8, 3, 3)
     >>> set_int8(A, 7, 2, 2)
-    >>> int8(A, 2, 2) == 7
+    >>> get_int8(A, 2, 2) == 7
     True
 
     """
@@ -233,19 +233,19 @@ def set_int16(A, value, i, j):
 
     >>> A = new(lib.GrB_INT16, 3, 3)
     >>> set_int16(A, 7, 2, 2)
-    >>> int16(A, 2, 2) == 7
+    >>> get_int16(A, 2, 2) == 7
     True
 
     """
     check_status(A, lib.GrB_Matrix_setElement_INT16(A[0], value, i, j))
 
 
-def int16(A, i, j):
+def get_int16(A, i, j):
     """Get an int16 value from the matrix at row `i` column `j`.
 
     >>> A = new(lib.GrB_INT16, 3, 3)
     >>> set_int16(A, 7, 2, 2)
-    >>> int16(A, 2, 2) == 7
+    >>> get_int16(A, 2, 2) == 7
     True
 
     """
@@ -259,19 +259,19 @@ def set_int32(A, value, i, j):
 
     >>> A = new(lib.GrB_INT32, 3, 3)
     >>> set_int32(A, 7, 2, 2)
-    >>> int32(A, 2, 2) == 7
+    >>> get_int32(A, 2, 2) == 7
     True
 
     """
     check_status(A, lib.GrB_Matrix_setElement_INT32(A[0], value, i, j))
 
 
-def int32(A, i, j):
+def get_int32(A, i, j):
     """Get an int32 value from the matrix at row `i` column `j`.
 
     >>> A = new(lib.GrB_INT32, 3, 3)
     >>> set_int32(A, 7, 2, 2)
-    >>> int32(A, 2, 2) == 7
+    >>> get_int32(A, 2, 2) == 7
     True
 
     """
@@ -285,19 +285,19 @@ def set_int64(A, value, i, j):
 
     >>> A = new(lib.GrB_INT64, 3, 3)
     >>> set_int64(A, 7, 2, 2)
-    >>> int64(A, 2, 2) == 7
+    >>> get_int64(A, 2, 2) == 7
     True
 
     """
     check_status(A, lib.GrB_Matrix_setElement_INT64(A[0], value, i, j))
 
 
-def int64(A, i, j):
+def get_int64(A, i, j):
     """Get an int64 value from the matrix at row `i` column `j`.
 
     >>> A = new(lib.GrB_INT64, 3, 3)
     >>> set_int64(A, 7, 2, 2)
-    >>> int64(A, 2, 2) == 7
+    >>> get_int64(A, 2, 2) == 7
     True
 
     """
@@ -311,19 +311,19 @@ def set_uint8(A, value, i, j):
 
     >>> A = new(lib.GrB_UINT8, 3, 3)
     >>> set_uint8(A, 7, 2, 2)
-    >>> uint8(A, 2, 2) == 7
+    >>> get_uint8(A, 2, 2) == 7
     True
 
     """
     check_status(A, lib.GrB_Matrix_setElement_UINT8(A[0], value, i, j))
 
 
-def uint8(A, i, j):
+def get_uint8(A, i, j):
     """Get a uint8 value from the matrix at row `i` column `j`.
 
     >>> A = new(lib.GrB_UINT8, 3, 3)
     >>> set_uint8(A, 7, 2, 2)
-    >>> uint8(A, 2, 2) == 7
+    >>> get_uint8(A, 2, 2) == 7
     True
 
     """
@@ -337,19 +337,19 @@ def set_uint16(A, value, i, j):
 
     >>> A = new(lib.GrB_UINT16, 3, 3)
     >>> set_uint16(A, 7, 2, 2)
-    >>> uint16(A, 2, 2) == 7
+    >>> get_uint16(A, 2, 2) == 7
     True
 
     """
     check_status(A, lib.GrB_Matrix_setElement_UINT16(A[0], value, i, j))
 
 
-def uint16(A, i, j):
+def get_uint16(A, i, j):
     """Get a uint16 value from the matrix at row `i` column `j`.
 
     >>> A = new(lib.GrB_UINT16, 3, 3)
     >>> set_uint16(A, 7, 2, 2)
-    >>> uint16(A, 2, 2) == 7
+    >>> get_uint16(A, 2, 2) == 7
     True
 
     """
@@ -363,19 +363,19 @@ def set_uint32(A, value, i, j):
 
     >>> A = new(lib.GrB_UINT32, 3, 3)
     >>> set_uint32(A, 7, 2, 2)
-    >>> uint32(A, 2, 2) == 7
+    >>> get_uint32(A, 2, 2) == 7
     True
 
     """
     check_status(A, lib.GrB_Matrix_setElement_UINT32(A[0], value, i, j))
 
 
-def uint32(A, i, j):
+def get_uint32(A, i, j):
     """Get a uint32 value from the matrix at row `i` column `j`.
 
     >>> A = new(lib.GrB_UINT32, 3, 3)
     >>> set_uint32(A, 7, 2, 2)
-    >>> uint32(A, 2, 2) == 7
+    >>> get_uint32(A, 2, 2) == 7
     True
 
     """
@@ -389,19 +389,19 @@ def set_uint64(A, value, i, j):
 
     >>> A = new(lib.GrB_UINT64, 3, 3)
     >>> set_uint64(A, 7, 2, 2)
-    >>> uint64(A, 2, 2) == 7
+    >>> get_uint64(A, 2, 2) == 7
     True
 
     """
     check_status(A, lib.GrB_Matrix_setElement_UINT64(A[0], value, i, j))
 
 
-def uint64(A, i, j):
+def get_uint64(A, i, j):
     """Get a uint64 value from the matrix at row `i` column `j`.
 
     >>> A = new(lib.GrB_UINT64, 3, 3)
     >>> set_uint64(A, 7, 2, 2)
-    >>> uint64(A, 2, 2) == 7
+    >>> get_uint64(A, 2, 2) == 7
     True
 
     """
@@ -415,19 +415,19 @@ def set_fp32(A, value, i, j):
 
     >>> A = new(lib.GrB_FP32, 3, 3)
     >>> set_fp32(A, 1.5, 2, 2)
-    >>> fp32(A, 2, 2) == 1.5
+    >>> get_fp32(A, 2, 2) == 1.5
     True
 
     """
     check_status(A, lib.GrB_Matrix_setElement_FP32(A[0], value, i, j))
 
 
-def fp32(A, i, j):
+def get_fp32(A, i, j):
     """Get an fp32 value from the matrix at row `i` column `j`.
 
     >>> A = new(lib.GrB_FP32, 3, 3)
     >>> set_fp32(A, 1.5, 2, 2)
-    >>> fp32(A, 2, 2) == 1.5
+    >>> get_fp32(A, 2, 2) == 1.5
     True
 
     """
@@ -441,19 +441,19 @@ def set_fp64(A, value, i, j):
 
     >>> A = new(lib.GrB_FP64, 3, 3)
     >>> set_fp64(A, 1.5, 2, 2)
-    >>> fp64(A, 2, 2) == 1.5
+    >>> get_fp64(A, 2, 2) == 1.5
     True
 
     """
     check_status(A, lib.GrB_Matrix_setElement_FP64(A[0], value, i, j))
 
 
-def fp64(A, i, j):
+def get_fp64(A, i, j):
     """Get an fp64 value from the matrix at row `i` column `j`.
 
     >>> A = new(lib.GrB_FP64, 3, 3)
     >>> set_fp64(A, 1.5, 2, 2)
-    >>> fp64(A, 2, 2) == 1.5
+    >>> get_fp64(A, 2, 2) == 1.5
     True
 
     """
@@ -469,18 +469,18 @@ if supports_complex():
 
         >>> A = new(lib.GxB_FC32, 3, 3)
         >>> set_fc32(A, 2+3j, 2, 2)
-        >>> fc32(A, 2, 2) == 2+3j
+        >>> get_fc32(A, 2, 2) == 2+3j
         True
 
         """
         check_status(A, lib.GxB_Matrix_setElement_FC32(A[0], value, i, j))
 
-    def fc32(A, i, j):
+    def get_fc32(A, i, j):
         """Get an fc32 value from the matrix at row `i` column `j`.
 
         >>> A = new(lib.GxB_FC32, 3, 3)
         >>> set_fc32(A, 2+3j, 2, 2)
-        >>> fc32(A, 2, 2) == 2+3j
+        >>> get_fc32(A, 2, 2) == 2+3j
         True
 
         """
@@ -493,18 +493,18 @@ if supports_complex():
 
         >>> A = new(lib.GxB_FC64, 3, 3)
         >>> set_fc64(A, 2+3j, 2, 2)
-        >>> fc64(A, 2, 2) == 2+3j
+        >>> get_fc64(A, 2, 2) == 2+3j
         True
 
         """
         check_status(A, lib.GxB_Matrix_setElement_FC64(A[0], value, i, j))
 
-    def fc64(A, i, j):
+    def get_fc64(A, i, j):
         """Get an fc64 value from the matrix at row `i` column `j`.
 
         >>> A = new(lib.GxB_FC64, 3, 3)
         >>> set_fc64(A, 2+3j, 2, 2)
-        >>> fc64(A, 2, 2) == 2+3j
+        >>> get_fc64(A, 2, 2) == 2+3j
         True
 
         """

@@ -82,19 +82,19 @@ def set_bool(v, value, i):
 
     >>> v = new(lib.GrB_BOOL, 3)
     >>> set_bool(v, True, 2)
-    >>> bool(v, 2) == True
+    >>> get_bool(v, 2) == True
     True
 
     """
     check_status(v, lib.GrB_Vector_setElement_BOOL(v[0], value, i))
 
 
-def bool(v, i):
+def get_bool(v, i):
     """Get a boolean value from the vector at position `i`.
 
     >>> v = new(lib.GrB_BOOL, 3)
     >>> set_bool(v, True, 2)
-    >>> bool(v, 2) == True
+    >>> get_bool(v, 2) == True
     True
 
     """
@@ -108,19 +108,19 @@ def set_int8(v, value, i):
 
     >>> v = new(lib.GrB_INT8, 3)
     >>> set_int8(v, 7, 2)
-    >>> int8(v, 2) == 7
+    >>> get_int8(v, 2) == 7
     True
 
     """
     check_status(v, lib.GrB_Vector_setElement_INT8(v[0], value, i))
 
 
-def int8(v, i):
+def get_int8(v, i):
     """Get an int8 value from the vector at position `i`.
 
     >>> v = new(lib.GrB_INT8, 3)
     >>> set_int8(v, 7, 2)
-    >>> int8(v, 2) == 7
+    >>> get_int8(v, 2) == 7
     True
 
     """
@@ -134,19 +134,19 @@ def set_int16(v, value, i):
 
     >>> v = new(lib.GrB_INT16, 3)
     >>> set_int16(v, 7, 2)
-    >>> int16(v, 2) == 7
+    >>> get_int16(v, 2) == 7
     True
 
     """
     check_status(v, lib.GrB_Vector_setElement_INT16(v[0], value, i))
 
 
-def int16(v, i):
+def get_int16(v, i):
     """Get an int16 value from the vector at position `i`.
 
     >>> v = new(lib.GrB_INT16, 3)
     >>> set_int16(v, 7, 2)
-    >>> int16(v, 2) == 7
+    >>> get_int16(v, 2) == 7
     True
 
     """
@@ -160,19 +160,19 @@ def set_int32(v, value, i):
 
     >>> v = new(lib.GrB_INT32, 3)
     >>> set_int32(v, 7, 2)
-    >>> int32(v, 2) == 7
+    >>> get_int32(v, 2) == 7
     True
 
     """
     check_status(v, lib.GrB_Vector_setElement_INT32(v[0], value, i))
 
 
-def int32(v, i):
+def get_int32(v, i):
     """Get an int32 value from the vector at position `i`.
 
     >>> v = new(lib.GrB_INT32, 3)
     >>> set_int32(v, 7, 2)
-    >>> int32(v, 2) == 7
+    >>> get_int32(v, 2) == 7
     True
 
     """
@@ -186,19 +186,19 @@ def set_int64(v, value, i):
 
     >>> v = new(lib.GrB_INT64, 3)
     >>> set_int64(v, 7, 2)
-    >>> int64(v, 2) == 7
+    >>> get_int64(v, 2) == 7
     True
 
     """
     check_status(v, lib.GrB_Vector_setElement_INT64(v[0], value, i))
 
 
-def int64(v, i):
+def get_int64(v, i):
     """Get an int64 value from the vector at position `i`.
 
     >>> v = new(lib.GrB_INT64, 3)
     >>> set_int64(v, 7, 2)
-    >>> int64(v, 2) == 7
+    >>> get_int64(v, 2) == 7
     True
 
     """
@@ -212,19 +212,19 @@ def set_uint8(v, value, i):
 
     >>> v = new(lib.GrB_UINT8, 3)
     >>> set_uint8(v, 7, 2)
-    >>> uint8(v, 2) == 7
+    >>> get_uint8(v, 2) == 7
     True
 
     """
     check_status(v, lib.GrB_Vector_setElement_UINT8(v[0], value, i))
 
 
-def uint8(v, i):
+def get_uint8(v, i):
     """Get a uint8 value from the vector at position `i`.
 
     >>> v = new(lib.GrB_UINT8, 3)
     >>> set_uint8(v, 7, 2)
-    >>> uint8(v, 2) == 7
+    >>> get_uint8(v, 2) == 7
     True
 
     """
@@ -238,19 +238,19 @@ def set_uint16(v, value, i):
 
     >>> v = new(lib.GrB_UINT16, 3)
     >>> set_uint16(v, 7, 2)
-    >>> uint16(v, 2) == 7
+    >>> get_uint16(v, 2) == 7
     True
 
     """
     check_status(v, lib.GrB_Vector_setElement_UINT16(v[0], value, i))
 
 
-def uint16(v, i):
+def get_uint16(v, i):
     """Get a uint16 value from the vector at position `i`.
 
     >>> v = new(lib.GrB_UINT16, 3)
     >>> set_uint16(v, 7, 2)
-    >>> uint16(v, 2) == 7
+    >>> get_uint16(v, 2) == 7
     True
 
     """
@@ -264,19 +264,19 @@ def set_uint32(v, value, i):
 
     >>> v = new(lib.GrB_UINT32, 3)
     >>> set_uint32(v, 7, 2)
-    >>> uint32(v, 2) == 7
+    >>> get_uint32(v, 2) == 7
     True
 
     """
     check_status(v, lib.GrB_Vector_setElement_UINT32(v[0], value, i))
 
 
-def uint32(v, i):
+def get_uint32(v, i):
     """Get a uint32 value from the vector at position `i`.
 
     >>> v = new(lib.GrB_UINT32, 3)
     >>> set_uint32(v, 7, 2)
-    >>> uint32(v, 2) == 7
+    >>> get_uint32(v, 2) == 7
     True
 
     """
@@ -290,19 +290,19 @@ def set_uint64(v, value, i):
 
     >>> v = new(lib.GrB_UINT64, 3)
     >>> set_uint64(v, 7, 2)
-    >>> uint64(v, 2) == 7
+    >>> get_uint64(v, 2) == 7
     True
 
     """
     check_status(v, lib.GrB_Vector_setElement_UINT64(v[0], value, i))
 
 
-def uint64(v, i):
+def get_uint64(v, i):
     """Get a uint64 value from the vector at position `i`.
 
     >>> v = new(lib.GrB_UINT64, 3)
     >>> set_uint64(v, 7, 2)
-    >>> uint64(v, 2) == 7
+    >>> get_uint64(v, 2) == 7
     True
 
     """
@@ -316,19 +316,19 @@ def set_fp32(v, value, i):
 
     >>> v = new(lib.GrB_FP32, 3)
     >>> set_fp32(v, 1.5, 2)
-    >>> fp32(v, 2) == 1.5
+    >>> get_fp32(v, 2) == 1.5
     True
 
     """
     check_status(v, lib.GrB_Vector_setElement_FP32(v[0], value, i))
 
 
-def fp32(v, i):
+def get_fp32(v, i):
     """Get an fp32 value from the vector at position `i`.
 
     >>> v = new(lib.GrB_FP32, 3)
     >>> set_fp32(v, 1.5, 2)
-    >>> fp32(v, 2) == 1.5
+    >>> get_fp32(v, 2) == 1.5
     True
 
     """
@@ -342,19 +342,19 @@ def set_fp64(v, value, i):
 
     >>> v = new(lib.GrB_FP64, 3)
     >>> set_fp64(v, 1.5, 2)
-    >>> fp64(v, 2) == 1.5
+    >>> get_fp64(v, 2) == 1.5
     True
 
     """
     check_status(v, lib.GrB_Vector_setElement_FP64(v[0], value, i))
 
 
-def fp64(v, i):
+def get_fp64(v, i):
     """Get an fp64 value from the vector at position `i`.
 
     >>> v = new(lib.GrB_FP64, 3)
     >>> set_fp64(v, 1.5, 2)
-    >>> fp64(v, 2) == 1.5
+    >>> get_fp64(v, 2) == 1.5
     True
 
     """
@@ -370,18 +370,18 @@ if supports_complex():
 
         >>> v = new(lib.GxB_FC32, 3)
         >>> set_fc32(v, 2+3j, 2)
-        >>> fc32(v, 2) == 2+3j
+        >>> get_fc32(v, 2) == 2+3j
         True
 
         """
         check_status(v, lib.GxB_Vector_setElement_FC32(v[0], value, i))
 
-    def fc32(v, i):
+    def get_fc32(v, i):
         """Get an fc32 value from the vector at position `i`.
 
         >>> v = new(lib.GxB_FC32, 3)
         >>> set_fc32(v, 2+3j, 2)
-        >>> fc32(v, 2) == 2+3j
+        >>> get_fc32(v, 2) == 2+3j
         True
 
         """
@@ -394,18 +394,18 @@ if supports_complex():
 
         >>> v = new(lib.GxB_FC64, 3)
         >>> set_fc64(v, 2+3j, 2)
-        >>> fc64(v, 2) == 2+3j
+        >>> get_fc64(v, 2) == 2+3j
         True
 
         """
         check_status(v, lib.GxB_Vector_setElement_FC64(v[0], value, i))
 
-    def fc64(v, i):
+    def get_fc64(v, i):
         """Get an fc64 value from the vector at position `i`.
 
         >>> v = new(lib.GxB_FC64, 3)
         >>> set_fc64(v, 2+3j, 2)
-        >>> fc64(v, 2) == 2+3j
+        >>> get_fc64(v, 2) == 2+3j
         True
 
         """
