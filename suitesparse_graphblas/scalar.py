@@ -42,19 +42,19 @@ def set_bool(s, value):
 
     >>> s = new(lib.GrB_BOOL)
     >>> set_bool(s, True)
-    >>> bool(s) == True
+    >>> get_bool(s) == True
     True
 
     """
     check_status(s, lib.GxB_Scalar_setElement_BOOL(s[0], value))
 
 
-def bool(s):
+def get_bool(s):
     """Get a boolean value from the scalar.
 
     >>> s = new(lib.GrB_BOOL)
     >>> set_bool(s, True)
-    >>> bool(s) == True
+    >>> get_bool(s) == True
     True
 
     """
@@ -70,19 +70,19 @@ def set_int8(s, value):
 
     >>> s = new(lib.GrB_INT8)
     >>> set_int8(s, 7)
-    >>> int8(s) == 7
+    >>> get_int8(s) == 7
     True
 
     """
     check_status(s, lib.GxB_Scalar_setElement_INT8(s[0], value))
 
 
-def int8(s):
+def get_int8(s):
     """Get an int8 value from the scalar.
 
     >>> s = new(lib.GrB_INT8)
     >>> set_int8(s, 7)
-    >>> int8(s) == 7
+    >>> get_int8(s) == 7
     True
 
     """
@@ -98,19 +98,19 @@ def set_int16(s, value):
 
     >>> s = new(lib.GrB_INT16)
     >>> set_int16(s, 7)
-    >>> int16(s) == 7
+    >>> get_int16(s) == 7
     True
 
     """
     check_status(s, lib.GxB_Scalar_setElement_INT16(s[0], value))
 
 
-def int16(s):
+def get_int16(s):
     """Get an int16 value from the scalar.
 
     >>> s = new(lib.GrB_INT16)
     >>> set_int16(s, 7)
-    >>> int16(s) == 7
+    >>> get_int16(s) == 7
     True
 
     """
@@ -126,19 +126,19 @@ def set_int32(s, value):
 
     >>> s = new(lib.GrB_INT32)
     >>> set_int32(s, 7)
-    >>> int32(s) == 7
+    >>> get_int32(s) == 7
     True
 
     """
     check_status(s, lib.GxB_Scalar_setElement_INT32(s[0], value))
 
 
-def int32(s):
+def get_int32(s):
     """Get an int32 value from the scalar.
 
     >>> s = new(lib.GrB_INT32)
     >>> set_int32(s, 7)
-    >>> int32(s) == 7
+    >>> get_int32(s) == 7
     True
 
     """
@@ -154,19 +154,19 @@ def set_int64(s, value):
 
     >>> s = new(lib.GrB_INT64)
     >>> set_int64(s, 7)
-    >>> int64(s) == 7
+    >>> get_int64(s) == 7
     True
 
     """
     check_status(s, lib.GxB_Scalar_setElement_INT64(s[0], value))
 
 
-def int64(s):
+def get_int64(s):
     """Get an int64 value from the scalar.
 
     >>> s = new(lib.GrB_INT64)
     >>> set_int64(s, 7)
-    >>> int64(s) == 7
+    >>> get_int64(s) == 7
     True
 
     """
@@ -182,19 +182,19 @@ def set_uint8(s, value):
 
     >>> s = new(lib.GrB_UINT8)
     >>> set_uint8(s, 7)
-    >>> uint8(s) == 7
+    >>> get_uint8(s) == 7
     True
 
     """
     check_status(s, lib.GxB_Scalar_setElement_UINT8(s[0], value))
 
 
-def uint8(s):
+def get_uint8(s):
     """Get a uint8 value from the scalar.
 
     >>> s = new(lib.GrB_UINT8)
     >>> set_uint8(s, 7)
-    >>> uint8(s) == 7
+    >>> get_uint8(s) == 7
     True
 
     """
@@ -210,19 +210,19 @@ def set_uint16(s, value):
 
     >>> s = new(lib.GrB_UINT16)
     >>> set_uint16(s, 7)
-    >>> uint16(s) == 7
+    >>> get_uint16(s) == 7
     True
 
     """
     check_status(s, lib.GxB_Scalar_setElement_UINT16(s[0], value))
 
 
-def uint16(s):
+def get_uint16(s):
     """Get a uint16 value from the scalar.
 
     >>> s = new(lib.GrB_UINT16)
     >>> set_uint16(s, 7)
-    >>> uint16(s) == 7
+    >>> get_uint16(s) == 7
     True
 
     """
@@ -238,19 +238,19 @@ def set_uint32(s, value):
 
     >>> s = new(lib.GrB_UINT32)
     >>> set_uint32(s, 7)
-    >>> uint32(s) == 7
+    >>> get_uint32(s) == 7
     True
 
     """
     check_status(s, lib.GxB_Scalar_setElement_UINT32(s[0], value))
 
 
-def uint32(s):
+def get_uint32(s):
     """Get a uint32 value from the scalar.
 
     >>> s = new(lib.GrB_UINT32)
     >>> set_uint32(s, 7)
-    >>> uint32(s) == 7
+    >>> get_uint32(s) == 7
     True
 
     """
@@ -266,19 +266,19 @@ def set_uint64(s, value):
 
     >>> s = new(lib.GrB_UINT64)
     >>> set_uint64(s, 7)
-    >>> uint64(s) == 7
+    >>> get_uint64(s) == 7
     True
 
     """
     check_status(s, lib.GxB_Scalar_setElement_UINT64(s[0], value))
 
 
-def uint64(s):
+def get_uint64(s):
     """Get a uint64 value from the scalar.
 
     >>> s = new(lib.GrB_UINT64)
     >>> set_uint64(s, 7)
-    >>> uint64(s) == 7
+    >>> get_uint64(s) == 7
     True
 
     """
@@ -294,19 +294,19 @@ def set_fp32(s, value):
 
     >>> s = new(lib.GrB_FP32)
     >>> set_fp32(s, 1.5)
-    >>> fp32(s) == 1.5
+    >>> get_fp32(s) == 1.5
     True
 
     """
     check_status(s, lib.GxB_Scalar_setElement_FP32(s[0], value))
 
 
-def fp32(s):
+def get_fp32(s):
     """Get an fp32 value from the scalar.
 
     >>> s = new(lib.GrB_FP32)
     >>> set_fp32(s, 1.5)
-    >>> fp32(s) == 1.5
+    >>> get_fp32(s) == 1.5
     True
 
     """
@@ -322,19 +322,19 @@ def set_fp64(s, value):
 
     >>> s = new(lib.GrB_FP64)
     >>> set_fp64(s, 1.5)
-    >>> fp64(s) == 1.5
+    >>> get_fp64(s) == 1.5
     True
 
     """
     check_status(s, lib.GxB_Scalar_setElement_FP64(s[0], value))
 
 
-def fp64(s):
+def get_fp64(s):
     """Get an fp64 value from the scalar.
 
     >>> s = new(lib.GrB_FP64)
     >>> set_fp64(s, 1.5)
-    >>> fp64(s) == 1.5
+    >>> get_fp64(s) == 1.5
     True
 
     """
@@ -352,18 +352,18 @@ if supports_complex():
 
         >>> s = new(lib.GxB_FC32)
         >>> set_fc32(s, 2+3j)
-        >>> fc32(s) == 2+3j
+        >>> get_fc32(s) == 2+3j
         True
 
         """
         check_status(s, lib.GxB_Scalar_setElement_FC32(s[0], value))
 
-    def fc32(s):
+    def get_fc32(s):
         """Get an fc32 value from the scalar.
 
         >>> s = new(lib.GxB_FC32)
         >>> set_fc32(s, 2+3j)
-        >>> fc32(s) == 2+3j
+        >>> get_fc32(s) == 2+3j
         True
 
         """
@@ -378,18 +378,18 @@ if supports_complex():
 
         >>> s = new(lib.GxB_FC64)
         >>> set_fc64(s, 2+3j)
-        >>> fc64(s) == 2+3j
+        >>> get_fc64(s) == 2+3j
         True
 
         """
         check_status(s, lib.GxB_Scalar_setElement_FC64(s[0], value))
 
-    def fc64(s):
+    def get_fc64(s):
         """Get an fc64 value from the scalar.
 
         >>> s = new(lib.GxB_FC64)
         >>> set_fc64(s, 2+3j)
-        >>> fc64(s) == 2+3j
+        >>> get_fc64(s) == 2+3j
         True
 
         """
