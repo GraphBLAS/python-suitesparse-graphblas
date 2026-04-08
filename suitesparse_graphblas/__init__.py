@@ -228,7 +228,7 @@ class burble:
 
     >>> from suitesparse_graphblas import burble, lib, matrix
     >>>
-    >>> A = matrix.new(lib.GrB_BOOL, 3, 3)
+    >>> A = matrix.matrix_new(lib.GrB_BOOL, 3, 3)
     >>> burble.is_enabled
     False
     >>> burble.enable()
@@ -239,7 +239,7 @@ class burble:
     Example with explicit enable and disable:
 
     >>> burble.enable()
-    >>> n = matrix.nvals(A)
+    >>> n = matrix.matrix_nvals(A)
       [ GrB_Matrix_nvals
          1.91e-06 sec ]
     >>> burble.disable()
@@ -247,7 +247,7 @@ class burble:
     Example as a context manager:
 
     >>> with burble():
-    >>>     n = matrix.nvals(A)
+    >>>     n = matrix.matrix_nvals(A)
       [ GrB_Matrix_nvals
          1.91e-06 sec ]
 

@@ -90,7 +90,7 @@ if supports_complex():
 
 def test_serialize_matrix():
     T = lib.GrB_INT64
-    A = matrix.new(T, 2, 2)
+    A = matrix.matrix_new(T, 2, 2)
     for args in zip(*_test_elements(T)):
         f = _element_setters[T]
         check_status(A, f(A[0], *args))
@@ -98,12 +98,12 @@ def test_serialize_matrix():
     B = matrix.deserialize(data)
 
     # Test equal
-    C = matrix.new(lib.GrB_BOOL, 2, 2)
+    C = matrix.matrix_new(lib.GrB_BOOL, 2, 2)
     check_status(
         C,
         lib.GrB_Matrix_eWiseAdd_BinaryOp(C[0], NULL, NULL, _eq_ops[T], A[0], B[0], NULL),
     )
-    assert matrix.nvals(A) == matrix.nvals(B) == matrix.nvals(C)
+    assert matrix.matrix_nvals(A) == matrix.matrix_nvals(B) == matrix.matrix_nvals(C)
     is_eq = ffi.new("bool*")
     check_status(
         C,
@@ -114,19 +114,19 @@ def test_serialize_matrix():
 
 def test_serialize_vector():
     T = lib.GrB_INT64
-    v = vector.new(T, 3)
+    v = vector.vector_new(T, 3)
     check_status(v, lib.GrB_Vector_setElement_INT64(v[0], 2, 0))
     check_status(v, lib.GrB_Vector_setElement_INT64(v[0], 10, 1))
     data = vector.serialize(v, lib.GxB_COMPRESSION_LZ4HC, level=7)
     w = vector.deserialize(data)
 
     # Test equal
-    x = vector.new(lib.GrB_BOOL, 3)
+    x = vector.vector_new(lib.GrB_BOOL, 3)
     check_status(
         x,
         lib.GrB_Vector_eWiseAdd_BinaryOp(x[0], NULL, NULL, _eq_ops[T], v[0], w[0], NULL),
     )
-    assert vector.nvals(v) == vector.nvals(w) == vector.nvals(x)
+    assert vector.vector_nvals(v) == vector.vector_nvals(w) == vector.vector_nvals(x)
     is_eq = ffi.new("bool*")
     check_status(
         x,
@@ -140,7 +140,7 @@ def test_matrix_binfile_read_write(tmp_path):
         for format in (lib.GxB_BY_ROW, lib.GxB_BY_COL):
             for T in grb_types:
                 for sparsity in (lib.GxB_HYPERSPARSE, lib.GxB_SPARSE, lib.GxB_BITMAP, lib.GxB_FULL):
-                    A = matrix.new(T, 2, 2)
+                    A = matrix.matrix_new(T, 2, 2)
 
                     if T is not lib.GxB_FULL:
                         for args in zip(*_test_elements(T)):
@@ -162,21 +162,21 @@ def test_matrix_binfile_read_write(tmp_path):
                                 NULL,
                             ),
                         )
-                    matrix.set_sparsity_control(A, sparsity)
-                    matrix.set_format(A, format)
+                    matrix.matrix_set_sparsity_control(A, sparsity)
+                    matrix.matrix_set_format(A, format)
 
                     binfilef = tmp_path / "binfilewrite_test.binfile"
                     binary.binwrite(A, binfilef, opener=opener)
                     B = binary.binread(binfilef, opener=opener)
 
-                    assert matrix.type(A) == matrix.type(B)
-                    assert matrix.nrows(A) == matrix.nrows(B)
-                    assert matrix.ncols(A) == matrix.ncols(B)
-                    assert matrix.hyper_switch(A) == matrix.hyper_switch(B)
-                    assert matrix.bitmap_switch(A) == matrix.bitmap_switch(B)
-                    # assert matrix.sparsity_control(A) == matrix.sparsity_control(B)
+                    assert matrix.matrix_type(A) == matrix.matrix_type(B)
+                    assert matrix.matrix_nrows(A) == matrix.matrix_nrows(B)
+                    assert matrix.matrix_ncols(A) == matrix.matrix_ncols(B)
+                    assert matrix.matrix_hyper_switch(A) == matrix.matrix_hyper_switch(B)
+                    assert matrix.matrix_bitmap_switch(A) == matrix.matrix_bitmap_switch(B)
+                    # assert matrix.matrix_sparsity_control(A) == matrix.matrix_sparsity_control(B)
 
-                    C = matrix.new(lib.GrB_BOOL, 2, 2)
+                    C = matrix.matrix_new(lib.GrB_BOOL, 2, 2)
 
                     check_status(
                         C,
@@ -185,7 +185,7 @@ def test_matrix_binfile_read_write(tmp_path):
                         ),
                     )
 
-                    assert matrix.nvals(A) == matrix.nvals(B) == matrix.nvals(C)
+                    assert matrix.matrix_nvals(A) == matrix.matrix_nvals(B) == matrix.matrix_nvals(C)
 
                     is_eq = ffi.new("bool*")
                     check_status(
