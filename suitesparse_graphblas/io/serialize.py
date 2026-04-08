@@ -88,7 +88,7 @@ def deserialize_matrix(data, *, free=True, nthreads=None):
     """Deserialize a Matrix from bytes.
 
     The `free` argument is called when the object is garbage
-    collected, the default is `matrix.free()`.  If `free` is None then
+    collected, the default is `matrix.matrix_free()`.  If `free` is None then
     there is no automatic garbage collection and it is up to the user
     to free the matrix.
     """
@@ -108,7 +108,7 @@ def deserialize_matrix(data, *, free=True, nthreads=None):
     if free:
         if callable(free):
             return ffi.gc(A, free)
-        return ffi.gc(A, matrix.free)
+        return ffi.gc(A, matrix.matrix_free)
     return A
 
 
@@ -116,7 +116,7 @@ def deserialize_vector(data, *, free=True, nthreads=None):
     """Deserialize a Vector from bytes.
 
     The `free` argument is called when the object is garbage
-    collected, the default is `vector.free()`.  If `free` is None then
+    collected, the default is `vector.vector_free()`.  If `free` is None then
     there is no automatic garbage collection and it is up to the user
     to free the vector.
     """
@@ -136,7 +136,7 @@ def deserialize_vector(data, *, free=True, nthreads=None):
     if free:
         if callable(free):
             return ffi.gc(v, free)
-        return ffi.gc(v, vector.free)
+        return ffi.gc(v, vector.vector_free)
     return v
 
 

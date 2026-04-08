@@ -123,19 +123,19 @@ def binwrite(A, filename, comments=None, opener=Path.open):
     typecode = ffinew("int32_t*")
     matrix_type = ffi.new("GrB_Type*")
 
-    nrows[0] = matrix.nrows(A)
-    ncols[0] = matrix.ncols(A)
-    nvals[0] = matrix.nvals(A)
-    matrix_type[0] = matrix.type(A)
+    nrows[0] = matrix.matrix_nrows(A)
+    ncols[0] = matrix.matrix_ncols(A)
+    nvals[0] = matrix.matrix_nvals(A)
+    matrix_type[0] = matrix.matrix_type(A)
 
     check_status(A, lib.GxB_Type_size(typesize, matrix_type[0]))
     typecode[0] = _ss_typecodes[matrix_type[0]]
 
-    format[0] = matrix.format(A)
-    hyper_switch[0] = matrix.hyper_switch(A)
-    bitmap_switch[0] = matrix.bitmap_switch(A)
-    sparsity_status[0] = matrix.sparsity_status(A)
-    sparsity_control[0] = matrix.sparsity_control(A)
+    format[0] = matrix.matrix_format(A)
+    hyper_switch[0] = matrix.matrix_hyper_switch(A)
+    bitmap_switch[0] = matrix.matrix_bitmap_switch(A)
+    sparsity_status[0] = matrix.matrix_sparsity_status(A)
+    sparsity_control[0] = matrix.matrix_sparsity_control(A)
 
     by_row = format[0] == lib.GxB_BY_ROW
     by_col = format[0] == lib.GxB_BY_COL
@@ -446,7 +446,7 @@ def binread(filename, opener=Path.open):
 
         Ax[0] = readinto_new_buffer(f, "uint8_t*", typesize[0] if is_iso[0] else Ax_size[0])
 
-        A = matrix.new(atype, nrows[0], ncols[0])
+        A = matrix.matrix_new(atype, nrows[0], ncols[0])
 
         if by_col and is_hyper:
             check_status(
@@ -546,7 +546,7 @@ def binread(filename, opener=Path.open):
         else:
             raise TypeError("Unknown format {format[0]}")
 
-        matrix.set_sparsity_control(A, sparsity_control[0])
-        matrix.set_hyper_switch(A, hyper_switch[0])
-        matrix.set_bitmap_switch(A, bitmap_switch[0])
+        matrix.matrix_set_sparsity_control(A, sparsity_control[0])
+        matrix.matrix_set_hyper_switch(A, hyper_switch[0])
+        matrix.matrix_set_bitmap_switch(A, bitmap_switch[0])
         return A

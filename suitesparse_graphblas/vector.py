@@ -4,26 +4,26 @@ from .io.serialize import deserialize_vector as deserialize  # noqa: F401
 from .io.serialize import serialize_vector as serialize  # noqa: F401
 
 
-def free(v):
+def vector_free(v):
     """Free a vector."""
     check_status(v, lib.GrB_Vector_free(v))
 
 
-def new(T, size=lib.GxB_INDEX_MAX, *, free=free):
+def vector_new(T, size=lib.GxB_INDEX_MAX, *, free=vector_free):
     """Create a new `GrB_Vector` of type `T` and initialize it.
 
-    >>> A = new(lib.GrB_UINT8, 2)
-    >>> size(A)
+    >>> A = vector_new(lib.GrB_UINT8, 2)
+    >>> vector_size(A)
     2
 
     The default `size` is `lib.GxB_INDEX_MAX`.
 
-    >>> A = new(lib.GrB_UINT8)
-    >>> size(A) == lib.GxB_INDEX_MAX
+    >>> A = vector_new(lib.GrB_UINT8)
+    >>> vector_size(A) == lib.GxB_INDEX_MAX
     True
 
     The `free` argument is called when the object is garbage
-    collected, the default is `vector.free()`.  If `free` is None then
+    collected, the default is `vector.vector_free()`.  If `free` is None then
     there is no automatic garbage collection and it is up to the user
     to free the vector.
     """
@@ -34,11 +34,11 @@ def new(T, size=lib.GxB_INDEX_MAX, *, free=free):
     return v
 
 
-def type(v):
+def vector_type(v):
     """Return the GraphBLAS type of the vector.
 
-    >>> v = new(lib.GrB_UINT8, 2)
-    >>> type(v) == lib.GrB_UINT8
+    >>> v = vector_new(lib.GrB_UINT8, 2)
+    >>> vector_type(v) == lib.GrB_UINT8
     True
 
 
@@ -48,11 +48,11 @@ def type(v):
     return T[0]
 
 
-def size(v):
+def vector_size(v):
     """Return the size of the vector.
 
-    >>> v = new(lib.GrB_UINT8, 2)
-    >>> size(v) == 2
+    >>> v = vector_new(lib.GrB_UINT8, 2)
+    >>> vector_size(v) == 2
     True
 
     """
@@ -61,14 +61,14 @@ def size(v):
     return n[0]
 
 
-def nvals(v):
+def vector_nvals(v):
     """Return the number of stored elements in the vector.
 
-    >>> v = new(lib.GrB_BOOL, 2)
-    >>> nvals(v)
+    >>> v = vector_new(lib.GrB_BOOL, 2)
+    >>> vector_nvals(v)
     0
     >>> set_bool(v, True, 1)
-    >>> nvals(v)
+    >>> vector_nvals(v)
     1
 
     """
@@ -80,7 +80,7 @@ def nvals(v):
 def set_bool(v, value, i):
     """Set a boolean value to the vector at position `i`.
 
-    >>> v = new(lib.GrB_BOOL, 3)
+    >>> v = vector_new(lib.GrB_BOOL, 3)
     >>> set_bool(v, True, 2)
     >>> get_bool(v, 2) == True
     True
@@ -92,7 +92,7 @@ def set_bool(v, value, i):
 def get_bool(v, i):
     """Get a boolean value from the vector at position `i`.
 
-    >>> v = new(lib.GrB_BOOL, 3)
+    >>> v = vector_new(lib.GrB_BOOL, 3)
     >>> set_bool(v, True, 2)
     >>> get_bool(v, 2) == True
     True
@@ -106,7 +106,7 @@ def get_bool(v, i):
 def set_int8(v, value, i):
     """Set an int8 value to the vector at position `i`.
 
-    >>> v = new(lib.GrB_INT8, 3)
+    >>> v = vector_new(lib.GrB_INT8, 3)
     >>> set_int8(v, 7, 2)
     >>> get_int8(v, 2) == 7
     True
@@ -118,7 +118,7 @@ def set_int8(v, value, i):
 def get_int8(v, i):
     """Get an int8 value from the vector at position `i`.
 
-    >>> v = new(lib.GrB_INT8, 3)
+    >>> v = vector_new(lib.GrB_INT8, 3)
     >>> set_int8(v, 7, 2)
     >>> get_int8(v, 2) == 7
     True
@@ -132,7 +132,7 @@ def get_int8(v, i):
 def set_int16(v, value, i):
     """Set an int16 value to the vector at position `i`.
 
-    >>> v = new(lib.GrB_INT16, 3)
+    >>> v = vector_new(lib.GrB_INT16, 3)
     >>> set_int16(v, 7, 2)
     >>> get_int16(v, 2) == 7
     True
@@ -144,7 +144,7 @@ def set_int16(v, value, i):
 def get_int16(v, i):
     """Get an int16 value from the vector at position `i`.
 
-    >>> v = new(lib.GrB_INT16, 3)
+    >>> v = vector_new(lib.GrB_INT16, 3)
     >>> set_int16(v, 7, 2)
     >>> get_int16(v, 2) == 7
     True
@@ -158,7 +158,7 @@ def get_int16(v, i):
 def set_int32(v, value, i):
     """Set an int32 value to the vector at position `i`.
 
-    >>> v = new(lib.GrB_INT32, 3)
+    >>> v = vector_new(lib.GrB_INT32, 3)
     >>> set_int32(v, 7, 2)
     >>> get_int32(v, 2) == 7
     True
@@ -170,7 +170,7 @@ def set_int32(v, value, i):
 def get_int32(v, i):
     """Get an int32 value from the vector at position `i`.
 
-    >>> v = new(lib.GrB_INT32, 3)
+    >>> v = vector_new(lib.GrB_INT32, 3)
     >>> set_int32(v, 7, 2)
     >>> get_int32(v, 2) == 7
     True
@@ -184,7 +184,7 @@ def get_int32(v, i):
 def set_int64(v, value, i):
     """Set an int64 value to the vector at position `i`.
 
-    >>> v = new(lib.GrB_INT64, 3)
+    >>> v = vector_new(lib.GrB_INT64, 3)
     >>> set_int64(v, 7, 2)
     >>> get_int64(v, 2) == 7
     True
@@ -196,7 +196,7 @@ def set_int64(v, value, i):
 def get_int64(v, i):
     """Get an int64 value from the vector at position `i`.
 
-    >>> v = new(lib.GrB_INT64, 3)
+    >>> v = vector_new(lib.GrB_INT64, 3)
     >>> set_int64(v, 7, 2)
     >>> get_int64(v, 2) == 7
     True
@@ -210,7 +210,7 @@ def get_int64(v, i):
 def set_uint8(v, value, i):
     """Set a uint8 value to the vector at position `i`.
 
-    >>> v = new(lib.GrB_UINT8, 3)
+    >>> v = vector_new(lib.GrB_UINT8, 3)
     >>> set_uint8(v, 7, 2)
     >>> get_uint8(v, 2) == 7
     True
@@ -222,7 +222,7 @@ def set_uint8(v, value, i):
 def get_uint8(v, i):
     """Get a uint8 value from the vector at position `i`.
 
-    >>> v = new(lib.GrB_UINT8, 3)
+    >>> v = vector_new(lib.GrB_UINT8, 3)
     >>> set_uint8(v, 7, 2)
     >>> get_uint8(v, 2) == 7
     True
@@ -236,7 +236,7 @@ def get_uint8(v, i):
 def set_uint16(v, value, i):
     """Set a uint16 value to the vector at position `i`.
 
-    >>> v = new(lib.GrB_UINT16, 3)
+    >>> v = vector_new(lib.GrB_UINT16, 3)
     >>> set_uint16(v, 7, 2)
     >>> get_uint16(v, 2) == 7
     True
@@ -248,7 +248,7 @@ def set_uint16(v, value, i):
 def get_uint16(v, i):
     """Get a uint16 value from the vector at position `i`.
 
-    >>> v = new(lib.GrB_UINT16, 3)
+    >>> v = vector_new(lib.GrB_UINT16, 3)
     >>> set_uint16(v, 7, 2)
     >>> get_uint16(v, 2) == 7
     True
@@ -262,7 +262,7 @@ def get_uint16(v, i):
 def set_uint32(v, value, i):
     """Set a uint32 value to the vector at position `i`.
 
-    >>> v = new(lib.GrB_UINT32, 3)
+    >>> v = vector_new(lib.GrB_UINT32, 3)
     >>> set_uint32(v, 7, 2)
     >>> get_uint32(v, 2) == 7
     True
@@ -274,7 +274,7 @@ def set_uint32(v, value, i):
 def get_uint32(v, i):
     """Get a uint32 value from the vector at position `i`.
 
-    >>> v = new(lib.GrB_UINT32, 3)
+    >>> v = vector_new(lib.GrB_UINT32, 3)
     >>> set_uint32(v, 7, 2)
     >>> get_uint32(v, 2) == 7
     True
@@ -288,7 +288,7 @@ def get_uint32(v, i):
 def set_uint64(v, value, i):
     """Set a uint64 value to the vector at position `i`.
 
-    >>> v = new(lib.GrB_UINT64, 3)
+    >>> v = vector_new(lib.GrB_UINT64, 3)
     >>> set_uint64(v, 7, 2)
     >>> get_uint64(v, 2) == 7
     True
@@ -300,7 +300,7 @@ def set_uint64(v, value, i):
 def get_uint64(v, i):
     """Get a uint64 value from the vector at position `i`.
 
-    >>> v = new(lib.GrB_UINT64, 3)
+    >>> v = vector_new(lib.GrB_UINT64, 3)
     >>> set_uint64(v, 7, 2)
     >>> get_uint64(v, 2) == 7
     True
@@ -314,7 +314,7 @@ def get_uint64(v, i):
 def set_fp32(v, value, i):
     """Set an fp32 value to the vector at position `i`.
 
-    >>> v = new(lib.GrB_FP32, 3)
+    >>> v = vector_new(lib.GrB_FP32, 3)
     >>> set_fp32(v, 1.5, 2)
     >>> get_fp32(v, 2) == 1.5
     True
@@ -326,7 +326,7 @@ def set_fp32(v, value, i):
 def get_fp32(v, i):
     """Get an fp32 value from the vector at position `i`.
 
-    >>> v = new(lib.GrB_FP32, 3)
+    >>> v = vector_new(lib.GrB_FP32, 3)
     >>> set_fp32(v, 1.5, 2)
     >>> get_fp32(v, 2) == 1.5
     True
@@ -340,7 +340,7 @@ def get_fp32(v, i):
 def set_fp64(v, value, i):
     """Set an fp64 value to the vector at position `i`.
 
-    >>> v = new(lib.GrB_FP64, 3)
+    >>> v = vector_new(lib.GrB_FP64, 3)
     >>> set_fp64(v, 1.5, 2)
     >>> get_fp64(v, 2) == 1.5
     True
@@ -352,7 +352,7 @@ def set_fp64(v, value, i):
 def get_fp64(v, i):
     """Get an fp64 value from the vector at position `i`.
 
-    >>> v = new(lib.GrB_FP64, 3)
+    >>> v = vector_new(lib.GrB_FP64, 3)
     >>> set_fp64(v, 1.5, 2)
     >>> get_fp64(v, 2) == 1.5
     True
@@ -368,7 +368,7 @@ if supports_complex():
     def set_fc32(v, value, i):
         """Set an fc32 value to the vector at position `i`.
 
-        >>> v = new(lib.GxB_FC32, 3)
+        >>> v = vector_new(lib.GxB_FC32, 3)
         >>> set_fc32(v, 2+3j, 2)
         >>> get_fc32(v, 2) == 2+3j
         True
@@ -379,7 +379,7 @@ if supports_complex():
     def get_fc32(v, i):
         """Get an fc32 value from the vector at position `i`.
 
-        >>> v = new(lib.GxB_FC32, 3)
+        >>> v = vector_new(lib.GxB_FC32, 3)
         >>> set_fc32(v, 2+3j, 2)
         >>> get_fc32(v, 2) == 2+3j
         True
@@ -392,7 +392,7 @@ if supports_complex():
     def set_fc64(v, value, i):
         """Set an fc64 value to the vector at position `i`.
 
-        >>> v = new(lib.GxB_FC64, 3)
+        >>> v = vector_new(lib.GxB_FC64, 3)
         >>> set_fc64(v, 2+3j, 2)
         >>> get_fc64(v, 2) == 2+3j
         True
@@ -403,7 +403,7 @@ if supports_complex():
     def get_fc64(v, i):
         """Get an fc64 value from the vector at position `i`.
 
-        >>> v = new(lib.GxB_FC64, 3)
+        >>> v = vector_new(lib.GxB_FC64, 3)
         >>> set_fc64(v, 2+3j, 2)
         >>> get_fc64(v, 2) == 2+3j
         True
