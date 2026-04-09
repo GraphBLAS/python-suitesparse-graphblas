@@ -185,7 +185,9 @@ def test_matrix_binfile_read_write(tmp_path):
                         ),
                     )
 
-                    assert matrix.matrix_nvals(A) == matrix.matrix_nvals(B) == matrix.matrix_nvals(C)
+                    assert (
+                        matrix.matrix_nvals(A) == matrix.matrix_nvals(B) == matrix.matrix_nvals(C)
+                    )
 
                     is_eq = ffi.new("bool*")
                     check_status(
