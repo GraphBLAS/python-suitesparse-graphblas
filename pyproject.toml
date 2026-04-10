@@ -79,6 +79,10 @@ changelog = "https://github.com/GraphBLAS/python-suitesparse-graphblas/releases"
 test = [
     "pytest",
 ]
+docs = [
+    "mkdocs-material",
+    "mkdocstrings[python]",
+]
 
 [tool.setuptools]
 packages = [
