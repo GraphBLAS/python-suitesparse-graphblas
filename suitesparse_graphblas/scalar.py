@@ -1,4 +1,21 @@
+import os
+import sys
+
 from suitesparse_graphblas import check_status, exceptions, ffi, lib, supports_complex
+
+
+def _capture_c_output(fn, *args):
+    """Capture C-level stdout output from a function call."""
+    sys.stdout.flush()
+    r, w = os.pipe()
+    old = os.dup(1)
+    os.dup2(w, 1)
+    fn(*args)
+    os.dup2(old, 1)
+    os.close(w)
+    out = os.read(r, 100000).decode()
+    os.close(r)
+    return out
 
 
 def scalar_free(v):
@@ -35,6 +52,96 @@ def scalar_type(s):
     T = ffi.new("GrB_Type*")
     check_status(s, lib.GxB_Scalar_type(T, s[0]))
     return T[0]
+
+
+# ---------------------------------------------------------------------------
+# GraphBLAS operations
+# ---------------------------------------------------------------------------
+
+
+def scalar_dup(s, *, free=scalar_free):
+    """Duplicate a scalar.
+
+    >>> s = scalar_new(lib.GrB_INT64)
+    >>> set_int64(s, 42)
+    >>> t = scalar_dup(s)
+    >>> get_int64(t) == 42
+    True
+
+    """
+    t = ffi.new("GxB_Scalar*")
+    check_status(t, lib.GrB_Scalar_dup(t, s[0]))
+    if free:
+        return ffi.gc(t, free)
+    return t
+
+
+def scalar_clear(s):
+    """Remove the entry from a scalar.
+
+    >>> s = scalar_new(lib.GrB_INT64)
+    >>> set_int64(s, 42)
+    >>> get_int64(s) == 42
+    True
+    >>> scalar_clear(s)
+    >>> get_int64(s) is None
+    True
+
+    """
+    check_status(s, lib.GrB_Scalar_clear(s[0]))
+
+
+def scalar_wait(s, waitmode=lib.GrB_COMPLETE):
+    """Wait for a scalar to complete pending operations.
+
+    >>> s = scalar_new(lib.GrB_INT64)
+    >>> scalar_wait(s)
+
+    """
+    check_status(s, lib.GrB_Scalar_wait(s[0], waitmode))
+
+
+def scalar_print(s, name="", level=lib.GxB_COMPLETE):
+    """Print a scalar to stdout.
+
+    ``level`` controls verbosity: ``lib.GxB_SILENT``, ``lib.GxB_SUMMARY``,
+    ``lib.GxB_SHORT``, ``lib.GxB_COMPLETE``, ``lib.GxB_SHORT_VERBOSE``,
+    or ``lib.GxB_COMPLETE_VERBOSE``.
+
+    >>> s = scalar_new(lib.GrB_INT64)
+    >>> set_int64(s, 42)
+    >>> out = _capture_c_output(scalar_print, s, 's', lib.GxB_SHORT)
+    >>> 'int64_t scalar' in out
+    True
+    >>> '(0,0)   42' in out
+    True
+
+    """
+    check_status(s, lib.GxB_Scalar_fprint(
+        s[0], name.encode() if isinstance(name, str) else name,
+        level, ffi.NULL,
+    ))
+
+
+def scalar_fprint(s, f, name="", level=lib.GxB_COMPLETE):
+    """Print a scalar to a C FILE* stream.
+
+    Pass ``ffi.NULL`` for ``f`` to print to stdout.
+    ``level`` controls verbosity (see :func:`scalar_print`).
+
+    >>> s = scalar_new(lib.GrB_INT64)
+    >>> set_int64(s, 7)
+    >>> out = _capture_c_output(scalar_fprint, s, ffi.NULL, 's', lib.GxB_SHORT)
+    >>> 'int64_t scalar' in out
+    True
+    >>> '(0,0)   7' in out
+    True
+
+    """
+    check_status(s, lib.GxB_Scalar_fprint(
+        s[0], name.encode() if isinstance(name, str) else name,
+        level, f,
+    ))
 
 
 def set_bool(s, value):
