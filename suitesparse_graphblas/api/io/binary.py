@@ -3,7 +3,8 @@ from pathlib import Path
 
 from cffi import FFI
 
-from suitesparse_graphblas import __version__, check_status, ffi, lib, matrix
+from suitesparse_graphblas import __version__, check_status, ffi, lib
+from suitesparse_graphblas.api import matrix
 
 stdffi = FFI()
 stdffi.cdef("""

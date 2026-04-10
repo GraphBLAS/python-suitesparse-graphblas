@@ -1,23 +1,8 @@
-import os
-import sys
-
 import numpy as np
 
 from suitesparse_graphblas import check_status, ffi, lib, supports_complex
 
-
-def _capture_c_output(fn, *args):
-    """Capture C-level stdout output from a function call."""
-    sys.stdout.flush()
-    r, w = os.pipe()
-    old = os.dup(1)
-    os.dup2(w, 1)
-    fn(*args)
-    os.dup2(old, 1)
-    os.close(w)
-    out = os.read(r, 100000).decode()
-    os.close(r)
-    return out
+from .utils import _capture_c_output  # noqa: F401
 
 from .io.serialize import deserialize_vector as deserialize  # noqa: F401
 from .io.serialize import serialize_vector as serialize  # noqa: F401
