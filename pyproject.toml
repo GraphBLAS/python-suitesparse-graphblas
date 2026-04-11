@@ -80,8 +80,7 @@ test = [
     "pytest",
 ]
 docs = [
-    "mkdocs-material",
-    "mkdocstrings[python]",
+    "pdoc",
 ]
 
 [tool.setuptools]

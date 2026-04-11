@@ -6,15 +6,43 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+
+      - name: Build package in Docker
+        run: |
+          docker build --target psg \
+            --build-arg SUITESPARSE=v$(cat GB_VERSION.txt) \
+            --build-arg VERSION=99.0.0.0 \
+            -t psg-docs .
+
+      - name: Generate docs with pdoc
+        run: |
+          docker run --rm -v ${{ github.workspace }}/site:/out psg-docs \
+            bash -c "pip install --break-system-packages -q pdoc && \
+              pdoc --output-directory /out --no-show-source --docformat numpy \
+              suitesparse_graphblas.api"
+
+      - uses: actions/upload-pages-artifact@v3
         with:
-          python-version: '3.12'
-      - run: pip install mkdocs-material "mkdocstrings[python]"
-      - run: mkdocs gh-deploy --force
+          path: site/
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/deploy-pages@v4
+        id: deployment
