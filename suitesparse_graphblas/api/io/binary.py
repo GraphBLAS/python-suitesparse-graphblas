@@ -1,3 +1,4 @@
+import sys
 from ctypes.util import find_library
 from pathlib import Path
 
@@ -10,7 +11,10 @@ stdffi = FFI()
 stdffi.cdef("""
 void *malloc(size_t size);
 """)
-stdlib = stdffi.dlopen(find_library("c"))
+if sys.platform == "win32":
+    stdlib = stdffi.dlopen("ucrtbase")
+else:
+    stdlib = stdffi.dlopen(find_library("c"))
 
 # When "packing" a matrix the owner of the memory buffer is transfered
 # to SuiteSparse, which then becomes responsible for freeing it.  cffi
