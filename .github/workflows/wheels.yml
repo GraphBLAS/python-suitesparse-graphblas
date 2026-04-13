@@ -206,7 +206,7 @@ jobs:
           merge-multiple: true
 
       # Upload to PyPI
-      - uses: pypa/gh-action-pypi-publish@v1.13.0
+      - uses: pypa/gh-action-pypi-publish@v1.14.0
         name: Upload to PyPI
         if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && github.event.inputs.upload_dest == 'PyPI')
         with:
@@ -216,7 +216,7 @@ jobs:
           password: ${{ secrets.PYPI_TOKEN }}
 
       # Upload to Test PyPI
-      - uses: pypa/gh-action-pypi-publish@v1.13.0
+      - uses: pypa/gh-action-pypi-publish@v1.14.0
         name: Upload to Test PyPI
         if: github.event_name == 'workflow_dispatch' && github.event.inputs.upload_dest == 'Test PyPI'
         with:
