@@ -56,7 +56,7 @@ def matrix_iterator_attach(it, A, desc=None):
 
     """
     info = lib.GxB_Matrix_Iterator_attach(
-        it[0], A[0], ffi.NULL if desc is None else desc[0],
+        it[0], A[0], ffi.NULL if desc is None else desc,
     )
     return _check_info(info)
 
@@ -79,7 +79,7 @@ def row_iterator_attach(it, A, desc=None):
 
     """
     info = lib.GxB_rowIterator_attach(
-        it[0], A[0], ffi.NULL if desc is None else desc[0],
+        it[0], A[0], ffi.NULL if desc is None else desc,
     )
     return _check_info(info)
 
@@ -102,7 +102,7 @@ def col_iterator_attach(it, A, desc=None):
 
     """
     info = lib.GxB_colIterator_attach(
-        it[0], A[0], ffi.NULL if desc is None else desc[0],
+        it[0], A[0], ffi.NULL if desc is None else desc,
     )
     return _check_info(info)
 
@@ -124,7 +124,7 @@ def vector_iterator_attach(it, v, desc=None):
 
     """
     info = lib.GxB_Vector_Iterator_attach(
-        it[0], v[0], ffi.NULL if desc is None else desc[0],
+        it[0], v[0], ffi.NULL if desc is None else desc,
     )
     return _check_info(info)
 

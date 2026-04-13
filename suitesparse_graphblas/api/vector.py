@@ -250,7 +250,7 @@ def vector_mxv(w, semiring, A, u, mask=None, accum=None, desc=None):
         semiring,
         A[0],
         u[0],
-        ffi.NULL if desc is None else desc[0],
+        ffi.NULL if desc is None else desc,
     ))
 
 
@@ -275,7 +275,7 @@ def vector_vxm(w, semiring, u, A, mask=None, accum=None, desc=None):
         semiring,
         u[0],
         A[0],
-        ffi.NULL if desc is None else desc[0],
+        ffi.NULL if desc is None else desc,
     ))
 
 
@@ -299,7 +299,7 @@ def vector_ewise_add(w, op, u, v, mask=None, accum=None, desc=None):
         op,
         u[0],
         v[0],
-        ffi.NULL if desc is None else desc[0],
+        ffi.NULL if desc is None else desc,
     ))
 
 
@@ -323,7 +323,7 @@ def vector_ewise_mult(w, op, u, v, mask=None, accum=None, desc=None):
         op,
         u[0],
         v[0],
-        ffi.NULL if desc is None else desc[0],
+        ffi.NULL if desc is None else desc,
     ))
 
 
@@ -357,7 +357,7 @@ def vector_ewise_union(w, op, u, alpha, v, beta, mask=None, accum=None, desc=Non
         op,
         u[0], alpha[0],
         v[0], beta[0],
-        ffi.NULL if desc is None else desc[0],
+        ffi.NULL if desc is None else desc,
     ))
 
 
@@ -378,7 +378,7 @@ def vector_apply(w, op, u, mask=None, accum=None, desc=None):
         ffi.NULL if accum is None else accum,
         op,
         u[0],
-        ffi.NULL if desc is None else desc[0],
+        ffi.NULL if desc is None else desc,
     ))
 
 
@@ -403,7 +403,7 @@ def vector_apply_first(w, op, x, u, mask=None, accum=None, desc=None):
         op,
         x[0],
         u[0],
-        ffi.NULL if desc is None else desc[0],
+        ffi.NULL if desc is None else desc,
     ))
 
 
@@ -428,7 +428,7 @@ def vector_apply_second(w, op, u, y, mask=None, accum=None, desc=None):
         op,
         u[0],
         y[0],
-        ffi.NULL if desc is None else desc[0],
+        ffi.NULL if desc is None else desc,
     ))
 
 
@@ -456,7 +456,7 @@ def vector_select(w, op, u, thunk, mask=None, accum=None, desc=None):
         op,
         u[0],
         thunk[0],
-        ffi.NULL if desc is None else desc[0],
+        ffi.NULL if desc is None else desc,
     ))
 
 
@@ -478,7 +478,7 @@ def vector_reduce(s, monoid, u, accum=None, desc=None):
         ffi.NULL if accum is None else accum,
         monoid,
         u[0],
-        ffi.NULL if desc is None else desc[0],
+        ffi.NULL if desc is None else desc,
     ))
 
 
@@ -504,7 +504,7 @@ def vector_diag(v, A, k=0, desc=None):
     """
     check_status(v, lib.GxB_Vector_diag(
         v[0], A[0], k,
-        ffi.NULL if desc is None else desc[0],
+        ffi.NULL if desc is None else desc,
     ))
 
 
@@ -526,7 +526,7 @@ def vector_assign(w, u, indices, ni, mask=None, accum=None, desc=None):
         ffi.NULL if accum is None else accum,
         u[0],
         indices, ni,
-        ffi.NULL if desc is None else desc[0],
+        ffi.NULL if desc is None else desc,
     ))
 
 
@@ -551,7 +551,7 @@ def vector_assign_scalar(w, x, indices, ni, mask=None, accum=None, desc=None):
         ffi.NULL if accum is None else accum,
         x[0],
         indices, ni,
-        ffi.NULL if desc is None else desc[0],
+        ffi.NULL if desc is None else desc,
     ))
 
 
@@ -573,7 +573,7 @@ def vector_extract(w, u, indices, ni, mask=None, accum=None, desc=None):
         ffi.NULL if accum is None else accum,
         u[0],
         indices, ni,
-        ffi.NULL if desc is None else desc[0],
+        ffi.NULL if desc is None else desc,
     ))
 
 

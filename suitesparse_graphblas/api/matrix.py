@@ -348,7 +348,7 @@ def matrix_mxm(C, semiring, A, B, mask=None, accum=None, desc=None):
         semiring,
         A[0],
         B[0],
-        ffi.NULL if desc is None else desc[0],
+        ffi.NULL if desc is None else desc,
     ))
 
 
@@ -372,7 +372,7 @@ def matrix_ewise_add(C, op, A, B, mask=None, accum=None, desc=None):
         op,
         A[0],
         B[0],
-        ffi.NULL if desc is None else desc[0],
+        ffi.NULL if desc is None else desc,
     ))
 
 
@@ -396,7 +396,7 @@ def matrix_ewise_mult(C, op, A, B, mask=None, accum=None, desc=None):
         op,
         A[0],
         B[0],
-        ffi.NULL if desc is None else desc[0],
+        ffi.NULL if desc is None else desc,
     ))
 
 
@@ -430,7 +430,7 @@ def matrix_ewise_union(C, op, A, alpha, B, beta, mask=None, accum=None, desc=Non
         op,
         A[0], alpha[0],
         B[0], beta[0],
-        ffi.NULL if desc is None else desc[0],
+        ffi.NULL if desc is None else desc,
     ))
 
 
@@ -451,7 +451,7 @@ def matrix_apply(C, op, A, mask=None, accum=None, desc=None):
         ffi.NULL if accum is None else accum,
         op,
         A[0],
-        ffi.NULL if desc is None else desc[0],
+        ffi.NULL if desc is None else desc,
     ))
 
 
@@ -476,7 +476,7 @@ def matrix_apply_first(C, op, x, A, mask=None, accum=None, desc=None):
         op,
         x[0],
         A[0],
-        ffi.NULL if desc is None else desc[0],
+        ffi.NULL if desc is None else desc,
     ))
 
 
@@ -501,7 +501,7 @@ def matrix_apply_second(C, op, A, y, mask=None, accum=None, desc=None):
         op,
         A[0],
         y[0],
-        ffi.NULL if desc is None else desc[0],
+        ffi.NULL if desc is None else desc,
     ))
 
 
@@ -529,7 +529,7 @@ def matrix_select(C, op, A, thunk, mask=None, accum=None, desc=None):
         op,
         A[0],
         thunk[0],
-        ffi.NULL if desc is None else desc[0],
+        ffi.NULL if desc is None else desc,
     ))
 
 
@@ -552,7 +552,7 @@ def matrix_reduce(w, monoid, A, mask=None, accum=None, desc=None):
         ffi.NULL if accum is None else accum,
         monoid,
         A[0],
-        ffi.NULL if desc is None else desc[0],
+        ffi.NULL if desc is None else desc,
     ))
 
 
@@ -574,7 +574,7 @@ def matrix_reduce_scalar(s, monoid, A, accum=None, desc=None):
         ffi.NULL if accum is None else accum,
         monoid,
         A[0],
-        ffi.NULL if desc is None else desc[0],
+        ffi.NULL if desc is None else desc,
     ))
 
 
@@ -594,7 +594,7 @@ def matrix_transpose(C, A, mask=None, accum=None, desc=None):
         ffi.NULL if mask is None else mask[0],
         ffi.NULL if accum is None else accum,
         A[0],
-        ffi.NULL if desc is None else desc[0],
+        ffi.NULL if desc is None else desc,
     ))
 
 
@@ -618,7 +618,7 @@ def matrix_kronecker(C, op, A, B, mask=None, accum=None, desc=None):
         op,
         A[0],
         B[0],
-        ffi.NULL if desc is None else desc[0],
+        ffi.NULL if desc is None else desc,
     ))
 
 
@@ -645,7 +645,7 @@ def matrix_diag(C, v, k=0, desc=None):
     """
     check_status(C, lib.GxB_Matrix_diag(
         C[0], v[0], k,
-        ffi.NULL if desc is None else desc[0],
+        ffi.NULL if desc is None else desc,
     ))
 
 
@@ -672,7 +672,7 @@ def matrix_concat(C, tiles, m, n, desc=None):
     tile_array = ffi.new("GrB_Matrix[]", [t[0] for t in tiles])
     check_status(C, lib.GxB_Matrix_concat(
         C[0], tile_array, m, n,
-        ffi.NULL if desc is None else desc[0],
+        ffi.NULL if desc is None else desc,
     ))
 
 
@@ -698,7 +698,7 @@ def matrix_assign(C, A, rows, nrows, cols, ncols, mask=None, accum=None, desc=No
         ffi.NULL if accum is None else accum,
         A[0],
         rows, nrows, cols, ncols,
-        ffi.NULL if desc is None else desc[0],
+        ffi.NULL if desc is None else desc,
     ))
 
 
@@ -724,7 +724,7 @@ def matrix_assign_scalar(C, x, rows, nrows, cols, ncols, mask=None, accum=None, 
         ffi.NULL if accum is None else accum,
         x[0],
         rows, nrows, cols, ncols,
-        ffi.NULL if desc is None else desc[0],
+        ffi.NULL if desc is None else desc,
     ))
 
 
@@ -747,7 +747,7 @@ def matrix_extract(C, A, rows, nrows, cols, ncols, mask=None, accum=None, desc=N
         ffi.NULL if accum is None else accum,
         A[0],
         rows, nrows, cols, ncols,
-        ffi.NULL if desc is None else desc[0],
+        ffi.NULL if desc is None else desc,
     ))
 
 
@@ -769,7 +769,7 @@ def matrix_col_extract(w, A, rows, nrows, j, mask=None, accum=None, desc=None):
         ffi.NULL if accum is None else accum,
         A[0],
         rows, nrows, j,
-        ffi.NULL if desc is None else desc[0],
+        ffi.NULL if desc is None else desc,
     ))
 
 
@@ -791,7 +791,7 @@ def matrix_col_assign(C, u, rows, nrows, j, mask=None, accum=None, desc=None):
         ffi.NULL if accum is None else accum,
         u[0],
         rows, nrows, j,
-        ffi.NULL if desc is None else desc[0],
+        ffi.NULL if desc is None else desc,
     ))
 
 
@@ -813,7 +813,7 @@ def matrix_row_assign(C, u, i, cols, ncols, mask=None, accum=None, desc=None):
         ffi.NULL if accum is None else accum,
         u[0],
         i, cols, ncols,
-        ffi.NULL if desc is None else desc[0],
+        ffi.NULL if desc is None else desc,
     ))
 
 

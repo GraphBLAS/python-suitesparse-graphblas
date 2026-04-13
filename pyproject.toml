@@ -87,6 +87,7 @@ docs = [
 packages = [
     'suitesparse_graphblas',
     'suitesparse_graphblas.api',
+    'suitesparse_graphblas.api.examples',
     'suitesparse_graphblas.api.io',
     'suitesparse_graphblas.tests',
     'suitesparse_graphblas.io',

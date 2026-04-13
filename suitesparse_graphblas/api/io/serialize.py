@@ -4,25 +4,26 @@ from suitesparse_graphblas import check_status, ffi, lib
 from suitesparse_graphblas.utils import claim_buffer
 
 
-def free_desc(desc):
-    """Free a descriptor."""
-    check_status(desc, lib.GrB_Descriptor_free(desc))
+def _free_desc(desc):
+    """Free a descriptor via a temporary pointer."""
+    desc_ptr = ffi.new("GrB_Descriptor*", desc)
+    lib.GrB_Descriptor_free(desc_ptr)
 
 
 def get_serialize_desc(compression=lib.GxB_COMPRESSION_DEFAULT, level=None, nthreads=None):
     """Create a descriptor for serializing or deserializing.
 
-    This returns None (for NULL descriptor) or a pointer to a GrB_Descriptor.
+    This returns None (for NULL descriptor) or a GrB_Descriptor.
     """
     if nthreads is None and (compression is None or compression == lib.GxB_COMPRESSION_DEFAULT):
         return None
-    desc = ffi.new("GrB_Descriptor*")
-    check_status(desc, lib.GrB_Descriptor_new(desc))
-    desc = ffi.gc(desc, free_desc)
+    desc_ptr = ffi.new("GrB_Descriptor*")
+    check_status(desc_ptr, lib.GrB_Descriptor_new(desc_ptr))
+    desc = ffi.gc(desc_ptr[0], _free_desc)
     if nthreads is not None:
         check_status(
             desc,
-            lib.GxB_Desc_set_INT32(desc[0], lib.GxB_NTHREADS, ffi.cast("int32_t", nthreads)),
+            lib.GxB_Desc_set_INT32(desc, lib.GxB_NTHREADS, ffi.cast("int32_t", nthreads)),
         )
     if compression is not None:
         if level is not None and compression in {
@@ -32,7 +33,7 @@ def get_serialize_desc(compression=lib.GxB_COMPRESSION_DEFAULT, level=None, nthr
             compression += level
         check_status(
             desc,
-            lib.GxB_Desc_set_INT32(desc[0], lib.GxB_COMPRESSION, ffi.cast("int32_t", compression)),
+            lib.GxB_Desc_set_INT32(desc, lib.GxB_COMPRESSION, ffi.cast("int32_t", compression)),
         )
     return desc
 
@@ -56,7 +57,7 @@ def serialize_matrix(A, compression=lib.GxB_COMPRESSION_DEFAULT, level=None, *, 
     data_ptr = ffi.new("void**")
     size_ptr = ffi.new("GrB_Index*")
     check_status(
-        A, lib.GxB_Matrix_serialize(data_ptr, size_ptr, A[0], ffi.NULL if desc is None else desc[0])
+        A, lib.GxB_Matrix_serialize(data_ptr, size_ptr, A[0], ffi.NULL if desc is None else desc)
     )
     return claim_buffer(ffi, data_ptr[0], size_ptr[0], np.dtype(np.uint8))
 
@@ -79,7 +80,7 @@ def serialize_vector(v, compression=lib.GxB_COMPRESSION_DEFAULT, level=None, *, 
     data_ptr = ffi.new("void**")
     size_ptr = ffi.new("GrB_Index*")
     check_status(
-        v, lib.GxB_Vector_serialize(data_ptr, size_ptr, v[0], ffi.NULL if desc is None else desc[0])
+        v, lib.GxB_Vector_serialize(data_ptr, size_ptr, v[0], ffi.NULL if desc is None else desc)
     )
     return claim_buffer(ffi, data_ptr[0], size_ptr[0], np.dtype(np.uint8))
 
@@ -102,7 +103,7 @@ def deserialize_matrix(data, *, free=True, nthreads=None):
             ffi.NULL,  # dtype; we don't check for now
             ffi.from_buffer("void*", data),
             data.nbytes,
-            ffi.NULL if desc is None else desc[0],
+            ffi.NULL if desc is None else desc,
         ),
     )
     if free:
@@ -130,7 +131,7 @@ def deserialize_vector(data, *, free=True, nthreads=None):
             ffi.NULL,  # dtype; we don't check for now
             ffi.from_buffer("void*", data),
             data.nbytes,
-            ffi.NULL if desc is None else desc[0],
+            ffi.NULL if desc is None else desc,
         ),
     )
     if free:
