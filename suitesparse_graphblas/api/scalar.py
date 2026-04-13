@@ -1,3 +1,5 @@
+"""Create, manipulate, and query GxB_Scalar objects."""
+
 from suitesparse_graphblas import check_status, exceptions, ffi, lib, supports_complex
 
 from .utils import _capture_c_output  # noqa: F401

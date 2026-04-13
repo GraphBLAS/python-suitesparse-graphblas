@@ -1,3 +1,5 @@
+"""Low-level Python CFFI binding for SuiteSparse:GraphBLAS."""
+
 import importlib.metadata
 import platform
 import struct as _struct

@@ -1,3 +1,5 @@
+"""Create, manipulate, and query GrB_Vector objects."""
+
 import numpy as np
 
 from suitesparse_graphblas import check_status, ffi, lib, supports_complex
