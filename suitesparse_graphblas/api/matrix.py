@@ -505,6 +505,34 @@ def matrix_apply_second(C, op, A, y, mask=None, accum=None, desc=None):
     ))
 
 
+def matrix_apply_indexop(C, op, A, thunk, mask=None, accum=None, desc=None):
+    """Apply an index unary operator to each entry of a matrix with a scalar thunk.
+
+    >>> from suitesparse_graphblas import scalar
+    >>> C = matrix_new(lib.GrB_INT64, 3, 3)
+    >>> A = matrix_new(lib.GrB_INT64, 3, 3)
+    >>> set_int64(A, 10, 0, 0)
+    >>> set_int64(A, 20, 1, 1)
+    >>> s = scalar.scalar_new(lib.GrB_INT64)
+    >>> scalar.set_int64(s, 0)
+    >>> matrix_apply_indexop(C, lib.GrB_ROWINDEX_INT64, A, s)
+    >>> get_int64(C, 0, 0) == 0
+    True
+    >>> get_int64(C, 1, 1) == 1
+    True
+
+    """
+    check_status(C, lib.GrB_Matrix_apply_IndexOp_Scalar(
+        C[0],
+        ffi.NULL if mask is None else mask[0],
+        ffi.NULL if accum is None else accum,
+        op,
+        A[0],
+        thunk[0],
+        ffi.NULL if desc is None else desc,
+    ))
+
+
 def matrix_select(C, op, A, thunk, mask=None, accum=None, desc=None):
     """Select entries from a matrix using an index unary operator and scalar thunk.
 

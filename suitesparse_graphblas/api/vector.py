@@ -432,6 +432,34 @@ def vector_apply_second(w, op, u, y, mask=None, accum=None, desc=None):
     ))
 
 
+def vector_apply_indexop(w, op, u, thunk, mask=None, accum=None, desc=None):
+    """Apply an index unary operator to each entry of a vector with a scalar thunk.
+
+    >>> from suitesparse_graphblas import scalar
+    >>> w = vector_new(lib.GrB_INT64, 3)
+    >>> u = vector_new(lib.GrB_INT64, 3)
+    >>> set_int64(u, 10, 0)
+    >>> set_int64(u, 20, 2)
+    >>> s = scalar.scalar_new(lib.GrB_INT64)
+    >>> scalar.set_int64(s, 0)
+    >>> vector_apply_indexop(w, lib.GrB_ROWINDEX_INT64, u, s)
+    >>> get_int64(w, 0) == 0
+    True
+    >>> get_int64(w, 2) == 2
+    True
+
+    """
+    check_status(w, lib.GrB_Vector_apply_IndexOp_Scalar(
+        w[0],
+        ffi.NULL if mask is None else mask[0],
+        ffi.NULL if accum is None else accum,
+        op,
+        u[0],
+        thunk[0],
+        ffi.NULL if desc is None else desc,
+    ))
+
+
 def vector_select(w, op, u, thunk, mask=None, accum=None, desc=None):
     """Select entries from a vector using an index unary operator and scalar thunk.
 

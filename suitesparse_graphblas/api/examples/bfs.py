@@ -29,7 +29,7 @@ Build a small directed graph and run BFS from node 0::
     [0, 0, 1, 2]
 """
 
-from suitesparse_graphblas import check_status, ffi, lib
+from suitesparse_graphblas import lib
 from suitesparse_graphblas.api import matrix, scalar, vector
 
 
@@ -69,6 +69,8 @@ def bfs(A, src, compute_level=True, compute_parent=True):
         semiring = lib.GrB_MIN_FIRST_SEMIRING_INT64
         frontier = vector.vector_new(lib.GrB_INT64, n)
         vector.set_int64(frontier, src, src)
+        index_thunk = scalar.scalar_new(lib.GrB_INT64)
+        scalar.set_int64(index_thunk, 0)
     else:
         # Level-only mode: frontier is BOOL.
         # Semiring: ANY_PAIR just checks reachability.
@@ -106,12 +108,8 @@ def bfs(A, src, compute_level=True, compute_parent=True):
             # Convert frontier values to their own indices (ROWINDEX).
             # After this, frontier(i) == i for every stored entry,
             # so the next vxm propagates node i as the parent ID.
-            check_status(
-                frontier,
-                lib.GrB_Vector_apply_IndexOp_INT64(
-                    frontier[0], ffi.NULL, ffi.NULL,
-                    lib.GrB_ROWINDEX_INT64, frontier[0], 0, ffi.NULL,
-                ),
+            vector.vector_apply_indexop(
+                frontier, lib.GrB_ROWINDEX_INT64, frontier, index_thunk,
             )
 
         current_level += 1
