@@ -25,7 +25,6 @@ from suitesparse_graphblas.api import (
     container,
     context,
     descriptor,
-    global_,
     global_options,
     grb_type,
     indexbinaryop,

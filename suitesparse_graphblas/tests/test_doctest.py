@@ -6,7 +6,6 @@ def test_run_doctests():
         container,
         context,
         descriptor,
-        global_,
         global_options,
         grb_type,
         indexbinaryop,
@@ -38,6 +37,5 @@ def test_run_doctests():
         descriptor,
         selectop,
         container,
-        global_,
     ):
         doctest.testmod(mod, optionflags=doctest.ELLIPSIS, raise_on_error=True)
