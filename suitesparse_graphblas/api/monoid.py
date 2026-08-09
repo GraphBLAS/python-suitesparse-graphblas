@@ -471,10 +471,15 @@ def monoid_print(m, name="", level=lib.GxB_COMPLETE):
     True
 
     """
-    check_status(m, lib.GxB_Monoid_fprint(
-        m[0], name.encode() if isinstance(name, str) else name,
-        level, ffi.NULL,
-    ))
+    check_status(
+        m,
+        lib.GxB_Monoid_fprint(
+            m[0],
+            name.encode() if isinstance(name, str) else name,
+            level,
+            ffi.NULL,
+        ),
+    )
 
 
 def monoid_fprint(m, f, name="", level=lib.GxB_COMPLETE):
@@ -489,10 +494,15 @@ def monoid_fprint(m, f, name="", level=lib.GxB_COMPLETE):
     True
 
     """
-    check_status(m, lib.GxB_Monoid_fprint(
-        m[0], name.encode() if isinstance(name, str) else name,
-        level, f,
-    ))
+    check_status(
+        m,
+        lib.GxB_Monoid_fprint(
+            m[0],
+            name.encode() if isinstance(name, str) else name,
+            level,
+            f,
+        ),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -514,9 +524,7 @@ def monoid_get_int32(m, field):
 
 
 def monoid_set_int32(m, field, value):
-    """Set a monoid option from an int32.
-
-    """
+    """Set a monoid option from an int32."""
     check_status(m, lib.GrB_Monoid_set_INT32(m[0], ffi.cast("int32_t", value), field))
 
 
@@ -547,9 +555,7 @@ def monoid_get_string(m, field):
 
 
 def monoid_set_string(m, field, value):
-    """Set a monoid option from a string.
-
-    """
+    """Set a monoid option from a string."""
     check_status(m, lib.GrB_Monoid_set_String(m[0], value.encode(), field))
 
 

@@ -201,10 +201,15 @@ def context_print(ctx, name="", level=lib.GxB_COMPLETE):
     True
 
     """
-    check_status(ctx, lib.GxB_Context_fprint(
-        ctx[0], name.encode() if isinstance(name, str) else name,
-        level, ffi.NULL,
-    ))
+    check_status(
+        ctx,
+        lib.GxB_Context_fprint(
+            ctx[0],
+            name.encode() if isinstance(name, str) else name,
+            level,
+            ffi.NULL,
+        ),
+    )
 
 
 def context_fprint(ctx, f, name="", level=lib.GxB_COMPLETE):
@@ -219,7 +224,12 @@ def context_fprint(ctx, f, name="", level=lib.GxB_COMPLETE):
     True
 
     """
-    check_status(ctx, lib.GxB_Context_fprint(
-        ctx[0], name.encode() if isinstance(name, str) else name,
-        level, f,
-    ))
+    check_status(
+        ctx,
+        lib.GxB_Context_fprint(
+            ctx[0],
+            name.encode() if isinstance(name, str) else name,
+            level,
+            f,
+        ),
+    )

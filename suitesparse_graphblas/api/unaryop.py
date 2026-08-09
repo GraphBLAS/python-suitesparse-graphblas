@@ -88,10 +88,15 @@ def unaryop_print(op, name="", level=lib.GxB_COMPLETE):
     True
 
     """
-    check_status(op, lib.GxB_UnaryOp_fprint(
-        op[0], name.encode() if isinstance(name, str) else name,
-        level, ffi.NULL,
-    ))
+    check_status(
+        op,
+        lib.GxB_UnaryOp_fprint(
+            op[0],
+            name.encode() if isinstance(name, str) else name,
+            level,
+            ffi.NULL,
+        ),
+    )
 
 
 def unaryop_fprint(op, f, name="", level=lib.GxB_COMPLETE):
@@ -106,10 +111,15 @@ def unaryop_fprint(op, f, name="", level=lib.GxB_COMPLETE):
     True
 
     """
-    check_status(op, lib.GxB_UnaryOp_fprint(
-        op[0], name.encode() if isinstance(name, str) else name,
-        level, f,
-    ))
+    check_status(
+        op,
+        lib.GxB_UnaryOp_fprint(
+            op[0],
+            name.encode() if isinstance(name, str) else name,
+            level,
+            f,
+        ),
+    )
 
 
 # ---------------------------------------------------------------------------

@@ -89,10 +89,15 @@ def indexunaryop_print(op, name="", level=lib.GxB_COMPLETE):
     True
 
     """
-    check_status(op, lib.GxB_IndexUnaryOp_fprint(
-        op[0], name.encode() if isinstance(name, str) else name,
-        level, ffi.NULL,
-    ))
+    check_status(
+        op,
+        lib.GxB_IndexUnaryOp_fprint(
+            op[0],
+            name.encode() if isinstance(name, str) else name,
+            level,
+            ffi.NULL,
+        ),
+    )
 
 
 def indexunaryop_fprint(op, f, name="", level=lib.GxB_COMPLETE):
@@ -107,10 +112,15 @@ def indexunaryop_fprint(op, f, name="", level=lib.GxB_COMPLETE):
     True
 
     """
-    check_status(op, lib.GxB_IndexUnaryOp_fprint(
-        op[0], name.encode() if isinstance(name, str) else name,
-        level, f,
-    ))
+    check_status(
+        op,
+        lib.GxB_IndexUnaryOp_fprint(
+            op[0],
+            name.encode() if isinstance(name, str) else name,
+            level,
+            f,
+        ),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -133,9 +143,7 @@ def indexunaryop_get_int32(op, field):
 
 def indexunaryop_set_int32(op, field, value):
     """Set an operator option from an int32."""
-    check_status(
-        op, lib.GrB_IndexUnaryOp_set_INT32(op[0], ffi.cast("int32_t", value), field)
-    )
+    check_status(op, lib.GrB_IndexUnaryOp_set_INT32(op[0], ffi.cast("int32_t", value), field))
 
 
 def indexunaryop_get_size(op, field):

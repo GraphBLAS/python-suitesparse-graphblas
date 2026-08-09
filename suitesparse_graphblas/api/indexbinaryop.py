@@ -66,10 +66,15 @@ def indexbinaryop_print(op, name="", level=lib.GxB_COMPLETE):
     ``lib.GxB_SHORT``, ``lib.GxB_COMPLETE``, ``lib.GxB_SHORT_VERBOSE``,
     or ``lib.GxB_COMPLETE_VERBOSE``.
     """
-    check_status(op, lib.GxB_IndexBinaryOp_fprint(
-        op[0], name.encode() if isinstance(name, str) else name,
-        level, ffi.NULL,
-    ))
+    check_status(
+        op,
+        lib.GxB_IndexBinaryOp_fprint(
+            op[0],
+            name.encode() if isinstance(name, str) else name,
+            level,
+            ffi.NULL,
+        ),
+    )
 
 
 def indexbinaryop_fprint(op, f, name="", level=lib.GxB_COMPLETE):
@@ -78,10 +83,15 @@ def indexbinaryop_fprint(op, f, name="", level=lib.GxB_COMPLETE):
     Pass ``ffi.NULL`` for ``f`` to print to stdout.
     ``level`` controls verbosity (see :func:`indexbinaryop_print`).
     """
-    check_status(op, lib.GxB_IndexBinaryOp_fprint(
-        op[0], name.encode() if isinstance(name, str) else name,
-        level, f,
-    ))
+    check_status(
+        op,
+        lib.GxB_IndexBinaryOp_fprint(
+            op[0],
+            name.encode() if isinstance(name, str) else name,
+            level,
+            f,
+        ),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -98,9 +108,7 @@ def indexbinaryop_get_int32(op, field):
 
 def indexbinaryop_set_int32(op, field, value):
     """Set an operator option from an int32."""
-    check_status(
-        op, lib.GxB_IndexBinaryOp_set_INT32(op[0], ffi.cast("int32_t", value), field)
-    )
+    check_status(op, lib.GxB_IndexBinaryOp_set_INT32(op[0], ffi.cast("int32_t", value), field))
 
 
 def indexbinaryop_get_size(op, field):

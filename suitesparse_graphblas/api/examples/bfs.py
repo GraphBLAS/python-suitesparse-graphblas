@@ -95,29 +95,44 @@ def bfs(A, src, compute_level=True, compute_parent=True):
         if compute_level:
             scalar.set_int64(level_scalar, current_level)
             vector.vector_assign_scalar(
-                level_vec, level_scalar, lib.GrB_ALL, n,
-                mask=frontier, desc=lib.GrB_DESC_S,
+                level_vec,
+                level_scalar,
+                lib.GrB_ALL,
+                n,
+                mask=frontier,
+                desc=lib.GrB_DESC_S,
             )
 
         if compute_parent:
             # Record parent IDs: parent<s(frontier)> = frontier
             vector.vector_assign(
-                parent_vec, frontier, lib.GrB_ALL, n,
-                mask=frontier, desc=lib.GrB_DESC_S,
+                parent_vec,
+                frontier,
+                lib.GrB_ALL,
+                n,
+                mask=frontier,
+                desc=lib.GrB_DESC_S,
             )
             # Convert frontier values to their own indices (ROWINDEX).
             # After this, frontier(i) == i for every stored entry,
             # so the next vxm propagates node i as the parent ID.
             vector.vector_apply_indexop(
-                frontier, lib.GrB_ROWINDEX_INT64, frontier, index_thunk,
+                frontier,
+                lib.GrB_ROWINDEX_INT64,
+                frontier,
+                index_thunk,
             )
 
         current_level += 1
 
         # Expand frontier: frontier<!mask> = frontier * A
         vector.vector_vxm(
-            frontier, semiring, frontier, A,
-            mask=mask, desc=lib.GrB_DESC_RSC,
+            frontier,
+            semiring,
+            frontier,
+            A,
+            mask=mask,
+            desc=lib.GrB_DESC_RSC,
         )
 
         # Stop when the frontier is empty.

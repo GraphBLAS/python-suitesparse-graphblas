@@ -309,9 +309,13 @@ class burble:
 
 burble = burble()
 
-# Backward-compatible re-exports: functional API moved to suitesparse_graphblas.api
-from suitesparse_graphblas.api import iterator, matrix, scalar, vector  # noqa: E402,F401
-from suitesparse_graphblas.api.global_options import (  # noqa: E402,F401
+# isort: off
+# Backward-compatible re-exports: functional API moved to suitesparse_graphblas.api.
+# These must stay at the bottom of the file: the api modules import names defined
+# above (`check_status`, `ffi`, `lib`), so letting isort's `float_to_top` hoist them
+# to the top would make `import suitesparse_graphblas` a circular import.
+from suitesparse_graphblas.api import iterator, matrix, scalar, vector  # noqa: E402, F401
+from suitesparse_graphblas.api.global_options import (  # noqa: E402, F401
     global_option_get_char,
     global_option_get_fp64,
     global_option_get_int32,

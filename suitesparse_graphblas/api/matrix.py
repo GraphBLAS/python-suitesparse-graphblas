@@ -4,10 +4,9 @@ import numpy as np
 
 from suitesparse_graphblas import check_status, ffi, lib, supports_complex
 
-from .utils import _capture_c_output  # noqa: F401
-
 from .io.serialize import deserialize_matrix as deserialize  # noqa: F401
 from .io.serialize import serialize_matrix as serialize  # noqa: F401
+from .utils import _capture_c_output  # noqa: F401
 
 
 def matrix_free(A):
@@ -204,9 +203,14 @@ def matrix_option_set_int32(A, field, value):
     True
 
     """
-    check_status(A, lib.GxB_Matrix_Option_set_INT32(
-        A[0], field, ffi.cast("int32_t", value),
-    ))
+    check_status(
+        A,
+        lib.GxB_Matrix_Option_set_INT32(
+            A[0],
+            field,
+            ffi.cast("int32_t", value),
+        ),
+    )
 
 
 def matrix_option_get_fp64(A, field):
@@ -231,9 +235,14 @@ def matrix_option_set_fp64(A, field, value):
     True
 
     """
-    check_status(A, lib.GxB_Matrix_Option_set_FP64(
-        A[0], field, ffi.cast("double", value),
-    ))
+    check_status(
+        A,
+        lib.GxB_Matrix_Option_set_FP64(
+            A[0],
+            field,
+            ffi.cast("double", value),
+        ),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -300,10 +309,15 @@ def matrix_print(A, name="", level=lib.GxB_COMPLETE):
     True
 
     """
-    check_status(A, lib.GxB_Matrix_fprint(
-        A[0], name.encode() if isinstance(name, str) else name,
-        level, ffi.NULL,
-    ))
+    check_status(
+        A,
+        lib.GxB_Matrix_fprint(
+            A[0],
+            name.encode() if isinstance(name, str) else name,
+            level,
+            ffi.NULL,
+        ),
+    )
 
 
 def matrix_fprint(A, f, name="", level=lib.GxB_COMPLETE):
@@ -322,10 +336,15 @@ def matrix_fprint(A, f, name="", level=lib.GxB_COMPLETE):
     True
 
     """
-    check_status(A, lib.GxB_Matrix_fprint(
-        A[0], name.encode() if isinstance(name, str) else name,
-        level, f,
-    ))
+    check_status(
+        A,
+        lib.GxB_Matrix_fprint(
+            A[0],
+            name.encode() if isinstance(name, str) else name,
+            level,
+            f,
+        ),
+    )
 
 
 def matrix_mxm(C, semiring, A, B, mask=None, accum=None, desc=None):
@@ -341,15 +360,18 @@ def matrix_mxm(C, semiring, A, B, mask=None, accum=None, desc=None):
     True
 
     """
-    check_status(C, lib.GrB_mxm(
-        C[0],
-        ffi.NULL if mask is None else mask[0],
-        ffi.NULL if accum is None else accum,
-        semiring,
-        A[0],
-        B[0],
-        ffi.NULL if desc is None else desc,
-    ))
+    check_status(
+        C,
+        lib.GrB_mxm(
+            C[0],
+            ffi.NULL if mask is None else mask[0],
+            ffi.NULL if accum is None else accum,
+            semiring,
+            A[0],
+            B[0],
+            ffi.NULL if desc is None else desc,
+        ),
+    )
 
 
 def matrix_ewise_add(C, op, A, B, mask=None, accum=None, desc=None):
@@ -365,15 +387,18 @@ def matrix_ewise_add(C, op, A, B, mask=None, accum=None, desc=None):
     True
 
     """
-    check_status(C, lib.GrB_Matrix_eWiseAdd_BinaryOp(
-        C[0],
-        ffi.NULL if mask is None else mask[0],
-        ffi.NULL if accum is None else accum,
-        op,
-        A[0],
-        B[0],
-        ffi.NULL if desc is None else desc,
-    ))
+    check_status(
+        C,
+        lib.GrB_Matrix_eWiseAdd_BinaryOp(
+            C[0],
+            ffi.NULL if mask is None else mask[0],
+            ffi.NULL if accum is None else accum,
+            op,
+            A[0],
+            B[0],
+            ffi.NULL if desc is None else desc,
+        ),
+    )
 
 
 def matrix_ewise_mult(C, op, A, B, mask=None, accum=None, desc=None):
@@ -389,15 +414,18 @@ def matrix_ewise_mult(C, op, A, B, mask=None, accum=None, desc=None):
     True
 
     """
-    check_status(C, lib.GrB_Matrix_eWiseMult_BinaryOp(
-        C[0],
-        ffi.NULL if mask is None else mask[0],
-        ffi.NULL if accum is None else accum,
-        op,
-        A[0],
-        B[0],
-        ffi.NULL if desc is None else desc,
-    ))
+    check_status(
+        C,
+        lib.GrB_Matrix_eWiseMult_BinaryOp(
+            C[0],
+            ffi.NULL if mask is None else mask[0],
+            ffi.NULL if accum is None else accum,
+            op,
+            A[0],
+            B[0],
+            ffi.NULL if desc is None else desc,
+        ),
+    )
 
 
 def matrix_ewise_union(C, op, A, alpha, B, beta, mask=None, accum=None, desc=None):
@@ -423,15 +451,20 @@ def matrix_ewise_union(C, op, A, alpha, B, beta, mask=None, accum=None, desc=Non
     True
 
     """
-    check_status(C, lib.GxB_Matrix_eWiseUnion(
-        C[0],
-        ffi.NULL if mask is None else mask[0],
-        ffi.NULL if accum is None else accum,
-        op,
-        A[0], alpha[0],
-        B[0], beta[0],
-        ffi.NULL if desc is None else desc,
-    ))
+    check_status(
+        C,
+        lib.GxB_Matrix_eWiseUnion(
+            C[0],
+            ffi.NULL if mask is None else mask[0],
+            ffi.NULL if accum is None else accum,
+            op,
+            A[0],
+            alpha[0],
+            B[0],
+            beta[0],
+            ffi.NULL if desc is None else desc,
+        ),
+    )
 
 
 def matrix_apply(C, op, A, mask=None, accum=None, desc=None):
@@ -445,14 +478,17 @@ def matrix_apply(C, op, A, mask=None, accum=None, desc=None):
     True
 
     """
-    check_status(C, lib.GrB_Matrix_apply(
-        C[0],
-        ffi.NULL if mask is None else mask[0],
-        ffi.NULL if accum is None else accum,
-        op,
-        A[0],
-        ffi.NULL if desc is None else desc,
-    ))
+    check_status(
+        C,
+        lib.GrB_Matrix_apply(
+            C[0],
+            ffi.NULL if mask is None else mask[0],
+            ffi.NULL if accum is None else accum,
+            op,
+            A[0],
+            ffi.NULL if desc is None else desc,
+        ),
+    )
 
 
 def matrix_apply_first(C, op, x, A, mask=None, accum=None, desc=None):
@@ -469,15 +505,18 @@ def matrix_apply_first(C, op, x, A, mask=None, accum=None, desc=None):
     True
 
     """
-    check_status(C, lib.GrB_Matrix_apply_BinaryOp1st_Scalar(
-        C[0],
-        ffi.NULL if mask is None else mask[0],
-        ffi.NULL if accum is None else accum,
-        op,
-        x[0],
-        A[0],
-        ffi.NULL if desc is None else desc,
-    ))
+    check_status(
+        C,
+        lib.GrB_Matrix_apply_BinaryOp1st_Scalar(
+            C[0],
+            ffi.NULL if mask is None else mask[0],
+            ffi.NULL if accum is None else accum,
+            op,
+            x[0],
+            A[0],
+            ffi.NULL if desc is None else desc,
+        ),
+    )
 
 
 def matrix_apply_second(C, op, A, y, mask=None, accum=None, desc=None):
@@ -494,15 +533,18 @@ def matrix_apply_second(C, op, A, y, mask=None, accum=None, desc=None):
     True
 
     """
-    check_status(C, lib.GrB_Matrix_apply_BinaryOp2nd_Scalar(
-        C[0],
-        ffi.NULL if mask is None else mask[0],
-        ffi.NULL if accum is None else accum,
-        op,
-        A[0],
-        y[0],
-        ffi.NULL if desc is None else desc,
-    ))
+    check_status(
+        C,
+        lib.GrB_Matrix_apply_BinaryOp2nd_Scalar(
+            C[0],
+            ffi.NULL if mask is None else mask[0],
+            ffi.NULL if accum is None else accum,
+            op,
+            A[0],
+            y[0],
+            ffi.NULL if desc is None else desc,
+        ),
+    )
 
 
 def matrix_apply_indexop(C, op, A, thunk, mask=None, accum=None, desc=None):
@@ -522,15 +564,18 @@ def matrix_apply_indexop(C, op, A, thunk, mask=None, accum=None, desc=None):
     True
 
     """
-    check_status(C, lib.GrB_Matrix_apply_IndexOp_Scalar(
-        C[0],
-        ffi.NULL if mask is None else mask[0],
-        ffi.NULL if accum is None else accum,
-        op,
-        A[0],
-        thunk[0],
-        ffi.NULL if desc is None else desc,
-    ))
+    check_status(
+        C,
+        lib.GrB_Matrix_apply_IndexOp_Scalar(
+            C[0],
+            ffi.NULL if mask is None else mask[0],
+            ffi.NULL if accum is None else accum,
+            op,
+            A[0],
+            thunk[0],
+            ffi.NULL if desc is None else desc,
+        ),
+    )
 
 
 def matrix_select(C, op, A, thunk, mask=None, accum=None, desc=None):
@@ -550,15 +595,18 @@ def matrix_select(C, op, A, thunk, mask=None, accum=None, desc=None):
     True
 
     """
-    check_status(C, lib.GrB_Matrix_select_Scalar(
-        C[0],
-        ffi.NULL if mask is None else mask[0],
-        ffi.NULL if accum is None else accum,
-        op,
-        A[0],
-        thunk[0],
-        ffi.NULL if desc is None else desc,
-    ))
+    check_status(
+        C,
+        lib.GrB_Matrix_select_Scalar(
+            C[0],
+            ffi.NULL if mask is None else mask[0],
+            ffi.NULL if accum is None else accum,
+            op,
+            A[0],
+            thunk[0],
+            ffi.NULL if desc is None else desc,
+        ),
+    )
 
 
 def matrix_reduce(w, monoid, A, mask=None, accum=None, desc=None):
@@ -574,14 +622,17 @@ def matrix_reduce(w, monoid, A, mask=None, accum=None, desc=None):
     True
 
     """
-    check_status(w, lib.GrB_Matrix_reduce_Monoid(
-        w[0],
-        ffi.NULL if mask is None else mask[0],
-        ffi.NULL if accum is None else accum,
-        monoid,
-        A[0],
-        ffi.NULL if desc is None else desc,
-    ))
+    check_status(
+        w,
+        lib.GrB_Matrix_reduce_Monoid(
+            w[0],
+            ffi.NULL if mask is None else mask[0],
+            ffi.NULL if accum is None else accum,
+            monoid,
+            A[0],
+            ffi.NULL if desc is None else desc,
+        ),
+    )
 
 
 def matrix_reduce_scalar(s, monoid, A, accum=None, desc=None):
@@ -597,13 +648,16 @@ def matrix_reduce_scalar(s, monoid, A, accum=None, desc=None):
     True
 
     """
-    check_status(s, lib.GrB_Matrix_reduce_Monoid_Scalar(
-        s[0],
-        ffi.NULL if accum is None else accum,
-        monoid,
-        A[0],
-        ffi.NULL if desc is None else desc,
-    ))
+    check_status(
+        s,
+        lib.GrB_Matrix_reduce_Monoid_Scalar(
+            s[0],
+            ffi.NULL if accum is None else accum,
+            monoid,
+            A[0],
+            ffi.NULL if desc is None else desc,
+        ),
+    )
 
 
 def matrix_transpose(C, A, mask=None, accum=None, desc=None):
@@ -617,13 +671,16 @@ def matrix_transpose(C, A, mask=None, accum=None, desc=None):
     True
 
     """
-    check_status(C, lib.GrB_transpose(
-        C[0],
-        ffi.NULL if mask is None else mask[0],
-        ffi.NULL if accum is None else accum,
-        A[0],
-        ffi.NULL if desc is None else desc,
-    ))
+    check_status(
+        C,
+        lib.GrB_transpose(
+            C[0],
+            ffi.NULL if mask is None else mask[0],
+            ffi.NULL if accum is None else accum,
+            A[0],
+            ffi.NULL if desc is None else desc,
+        ),
+    )
 
 
 def matrix_kronecker(C, op, A, B, mask=None, accum=None, desc=None):
@@ -639,15 +696,18 @@ def matrix_kronecker(C, op, A, B, mask=None, accum=None, desc=None):
     True
 
     """
-    check_status(C, lib.GrB_Matrix_kronecker_BinaryOp(
-        C[0],
-        ffi.NULL if mask is None else mask[0],
-        ffi.NULL if accum is None else accum,
-        op,
-        A[0],
-        B[0],
-        ffi.NULL if desc is None else desc,
-    ))
+    check_status(
+        C,
+        lib.GrB_Matrix_kronecker_BinaryOp(
+            C[0],
+            ffi.NULL if mask is None else mask[0],
+            ffi.NULL if accum is None else accum,
+            op,
+            A[0],
+            B[0],
+            ffi.NULL if desc is None else desc,
+        ),
+    )
 
 
 def matrix_diag(C, v, k=0, desc=None):
@@ -671,10 +731,15 @@ def matrix_diag(C, v, k=0, desc=None):
     True
 
     """
-    check_status(C, lib.GxB_Matrix_diag(
-        C[0], v[0], k,
-        ffi.NULL if desc is None else desc,
-    ))
+    check_status(
+        C,
+        lib.GxB_Matrix_diag(
+            C[0],
+            v[0],
+            k,
+            ffi.NULL if desc is None else desc,
+        ),
+    )
 
 
 def matrix_concat(C, tiles, m, n, desc=None):
@@ -698,10 +763,16 @@ def matrix_concat(C, tiles, m, n, desc=None):
 
     """
     tile_array = ffi.new("GrB_Matrix[]", [t[0] for t in tiles])
-    check_status(C, lib.GxB_Matrix_concat(
-        C[0], tile_array, m, n,
-        ffi.NULL if desc is None else desc,
-    ))
+    check_status(
+        C,
+        lib.GxB_Matrix_concat(
+            C[0],
+            tile_array,
+            m,
+            n,
+            ffi.NULL if desc is None else desc,
+        ),
+    )
 
 
 def matrix_assign(C, A, rows, nrows, cols, ncols, mask=None, accum=None, desc=None):
@@ -720,14 +791,20 @@ def matrix_assign(C, A, rows, nrows, cols, ncols, mask=None, accum=None, desc=No
     True
 
     """
-    check_status(C, lib.GrB_Matrix_assign(
-        C[0],
-        ffi.NULL if mask is None else mask[0],
-        ffi.NULL if accum is None else accum,
-        A[0],
-        rows, nrows, cols, ncols,
-        ffi.NULL if desc is None else desc,
-    ))
+    check_status(
+        C,
+        lib.GrB_Matrix_assign(
+            C[0],
+            ffi.NULL if mask is None else mask[0],
+            ffi.NULL if accum is None else accum,
+            A[0],
+            rows,
+            nrows,
+            cols,
+            ncols,
+            ffi.NULL if desc is None else desc,
+        ),
+    )
 
 
 def matrix_assign_scalar(C, x, rows, nrows, cols, ncols, mask=None, accum=None, desc=None):
@@ -746,14 +823,20 @@ def matrix_assign_scalar(C, x, rows, nrows, cols, ncols, mask=None, accum=None, 
     True
 
     """
-    check_status(C, lib.GrB_Matrix_assign_Scalar(
-        C[0],
-        ffi.NULL if mask is None else mask[0],
-        ffi.NULL if accum is None else accum,
-        x[0],
-        rows, nrows, cols, ncols,
-        ffi.NULL if desc is None else desc,
-    ))
+    check_status(
+        C,
+        lib.GrB_Matrix_assign_Scalar(
+            C[0],
+            ffi.NULL if mask is None else mask[0],
+            ffi.NULL if accum is None else accum,
+            x[0],
+            rows,
+            nrows,
+            cols,
+            ncols,
+            ffi.NULL if desc is None else desc,
+        ),
+    )
 
 
 def matrix_extract(C, A, rows, nrows, cols, ncols, mask=None, accum=None, desc=None):
@@ -769,14 +852,20 @@ def matrix_extract(C, A, rows, nrows, cols, ncols, mask=None, accum=None, desc=N
     True
 
     """
-    check_status(C, lib.GrB_Matrix_extract(
-        C[0],
-        ffi.NULL if mask is None else mask[0],
-        ffi.NULL if accum is None else accum,
-        A[0],
-        rows, nrows, cols, ncols,
-        ffi.NULL if desc is None else desc,
-    ))
+    check_status(
+        C,
+        lib.GrB_Matrix_extract(
+            C[0],
+            ffi.NULL if mask is None else mask[0],
+            ffi.NULL if accum is None else accum,
+            A[0],
+            rows,
+            nrows,
+            cols,
+            ncols,
+            ffi.NULL if desc is None else desc,
+        ),
+    )
 
 
 def matrix_col_extract(w, A, rows, nrows, j, mask=None, accum=None, desc=None):
@@ -791,14 +880,19 @@ def matrix_col_extract(w, A, rows, nrows, j, mask=None, accum=None, desc=None):
     True
 
     """
-    check_status(w, lib.GrB_Col_extract(
-        w[0],
-        ffi.NULL if mask is None else mask[0],
-        ffi.NULL if accum is None else accum,
-        A[0],
-        rows, nrows, j,
-        ffi.NULL if desc is None else desc,
-    ))
+    check_status(
+        w,
+        lib.GrB_Col_extract(
+            w[0],
+            ffi.NULL if mask is None else mask[0],
+            ffi.NULL if accum is None else accum,
+            A[0],
+            rows,
+            nrows,
+            j,
+            ffi.NULL if desc is None else desc,
+        ),
+    )
 
 
 def matrix_col_assign(C, u, rows, nrows, j, mask=None, accum=None, desc=None):
@@ -813,14 +907,19 @@ def matrix_col_assign(C, u, rows, nrows, j, mask=None, accum=None, desc=None):
     True
 
     """
-    check_status(C, lib.GrB_Col_assign(
-        C[0],
-        ffi.NULL if mask is None else mask[0],
-        ffi.NULL if accum is None else accum,
-        u[0],
-        rows, nrows, j,
-        ffi.NULL if desc is None else desc,
-    ))
+    check_status(
+        C,
+        lib.GrB_Col_assign(
+            C[0],
+            ffi.NULL if mask is None else mask[0],
+            ffi.NULL if accum is None else accum,
+            u[0],
+            rows,
+            nrows,
+            j,
+            ffi.NULL if desc is None else desc,
+        ),
+    )
 
 
 def matrix_row_assign(C, u, i, cols, ncols, mask=None, accum=None, desc=None):
@@ -835,14 +934,19 @@ def matrix_row_assign(C, u, i, cols, ncols, mask=None, accum=None, desc=None):
     True
 
     """
-    check_status(C, lib.GrB_Row_assign(
-        C[0],
-        ffi.NULL if mask is None else mask[0],
-        ffi.NULL if accum is None else accum,
-        u[0],
-        i, cols, ncols,
-        ffi.NULL if desc is None else desc,
-    ))
+    check_status(
+        C,
+        lib.GrB_Row_assign(
+            C[0],
+            ffi.NULL if mask is None else mask[0],
+            ffi.NULL if accum is None else accum,
+            u[0],
+            i,
+            cols,
+            ncols,
+            ffi.NULL if desc is None else desc,
+        ),
+    )
 
 
 def matrix_build_bool(C, rows, cols, vals, nvals, dup):
@@ -857,13 +961,17 @@ def matrix_build_bool(C, rows, cols, vals, nvals, dup):
     True
 
     """
-    check_status(C, lib.GrB_Matrix_build_BOOL(
-        C[0],
-        ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
-        ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
-        ffi.cast("bool*", ffi.from_buffer(vals)),
-        nvals, dup,
-    ))
+    check_status(
+        C,
+        lib.GrB_Matrix_build_BOOL(
+            C[0],
+            ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
+            ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
+            ffi.cast("bool*", ffi.from_buffer(vals)),
+            nvals,
+            dup,
+        ),
+    )
 
 
 def matrix_build_int8(C, rows, cols, vals, nvals, dup):
@@ -878,13 +986,17 @@ def matrix_build_int8(C, rows, cols, vals, nvals, dup):
     True
 
     """
-    check_status(C, lib.GrB_Matrix_build_INT8(
-        C[0],
-        ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
-        ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
-        ffi.cast("int8_t*", ffi.from_buffer(vals)),
-        nvals, dup,
-    ))
+    check_status(
+        C,
+        lib.GrB_Matrix_build_INT8(
+            C[0],
+            ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
+            ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
+            ffi.cast("int8_t*", ffi.from_buffer(vals)),
+            nvals,
+            dup,
+        ),
+    )
 
 
 def matrix_build_int16(C, rows, cols, vals, nvals, dup):
@@ -899,13 +1011,17 @@ def matrix_build_int16(C, rows, cols, vals, nvals, dup):
     True
 
     """
-    check_status(C, lib.GrB_Matrix_build_INT16(
-        C[0],
-        ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
-        ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
-        ffi.cast("int16_t*", ffi.from_buffer(vals)),
-        nvals, dup,
-    ))
+    check_status(
+        C,
+        lib.GrB_Matrix_build_INT16(
+            C[0],
+            ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
+            ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
+            ffi.cast("int16_t*", ffi.from_buffer(vals)),
+            nvals,
+            dup,
+        ),
+    )
 
 
 def matrix_build_int32(C, rows, cols, vals, nvals, dup):
@@ -920,13 +1036,17 @@ def matrix_build_int32(C, rows, cols, vals, nvals, dup):
     True
 
     """
-    check_status(C, lib.GrB_Matrix_build_INT32(
-        C[0],
-        ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
-        ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
-        ffi.cast("int32_t*", ffi.from_buffer(vals)),
-        nvals, dup,
-    ))
+    check_status(
+        C,
+        lib.GrB_Matrix_build_INT32(
+            C[0],
+            ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
+            ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
+            ffi.cast("int32_t*", ffi.from_buffer(vals)),
+            nvals,
+            dup,
+        ),
+    )
 
 
 def matrix_build_int64(C, rows, cols, vals, nvals, dup):
@@ -941,13 +1061,17 @@ def matrix_build_int64(C, rows, cols, vals, nvals, dup):
     True
 
     """
-    check_status(C, lib.GrB_Matrix_build_INT64(
-        C[0],
-        ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
-        ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
-        ffi.cast("int64_t*", ffi.from_buffer(vals)),
-        nvals, dup,
-    ))
+    check_status(
+        C,
+        lib.GrB_Matrix_build_INT64(
+            C[0],
+            ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
+            ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
+            ffi.cast("int64_t*", ffi.from_buffer(vals)),
+            nvals,
+            dup,
+        ),
+    )
 
 
 def matrix_build_uint8(C, rows, cols, vals, nvals, dup):
@@ -962,13 +1086,17 @@ def matrix_build_uint8(C, rows, cols, vals, nvals, dup):
     True
 
     """
-    check_status(C, lib.GrB_Matrix_build_UINT8(
-        C[0],
-        ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
-        ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
-        ffi.cast("uint8_t*", ffi.from_buffer(vals)),
-        nvals, dup,
-    ))
+    check_status(
+        C,
+        lib.GrB_Matrix_build_UINT8(
+            C[0],
+            ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
+            ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
+            ffi.cast("uint8_t*", ffi.from_buffer(vals)),
+            nvals,
+            dup,
+        ),
+    )
 
 
 def matrix_build_uint16(C, rows, cols, vals, nvals, dup):
@@ -983,13 +1111,17 @@ def matrix_build_uint16(C, rows, cols, vals, nvals, dup):
     True
 
     """
-    check_status(C, lib.GrB_Matrix_build_UINT16(
-        C[0],
-        ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
-        ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
-        ffi.cast("uint16_t*", ffi.from_buffer(vals)),
-        nvals, dup,
-    ))
+    check_status(
+        C,
+        lib.GrB_Matrix_build_UINT16(
+            C[0],
+            ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
+            ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
+            ffi.cast("uint16_t*", ffi.from_buffer(vals)),
+            nvals,
+            dup,
+        ),
+    )
 
 
 def matrix_build_uint32(C, rows, cols, vals, nvals, dup):
@@ -1004,13 +1136,17 @@ def matrix_build_uint32(C, rows, cols, vals, nvals, dup):
     True
 
     """
-    check_status(C, lib.GrB_Matrix_build_UINT32(
-        C[0],
-        ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
-        ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
-        ffi.cast("uint32_t*", ffi.from_buffer(vals)),
-        nvals, dup,
-    ))
+    check_status(
+        C,
+        lib.GrB_Matrix_build_UINT32(
+            C[0],
+            ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
+            ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
+            ffi.cast("uint32_t*", ffi.from_buffer(vals)),
+            nvals,
+            dup,
+        ),
+    )
 
 
 def matrix_build_uint64(C, rows, cols, vals, nvals, dup):
@@ -1025,13 +1161,17 @@ def matrix_build_uint64(C, rows, cols, vals, nvals, dup):
     True
 
     """
-    check_status(C, lib.GrB_Matrix_build_UINT64(
-        C[0],
-        ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
-        ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
-        ffi.cast("uint64_t*", ffi.from_buffer(vals)),
-        nvals, dup,
-    ))
+    check_status(
+        C,
+        lib.GrB_Matrix_build_UINT64(
+            C[0],
+            ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
+            ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
+            ffi.cast("uint64_t*", ffi.from_buffer(vals)),
+            nvals,
+            dup,
+        ),
+    )
 
 
 def matrix_build_fp32(C, rows, cols, vals, nvals, dup):
@@ -1046,13 +1186,17 @@ def matrix_build_fp32(C, rows, cols, vals, nvals, dup):
     True
 
     """
-    check_status(C, lib.GrB_Matrix_build_FP32(
-        C[0],
-        ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
-        ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
-        ffi.cast("float*", ffi.from_buffer(vals)),
-        nvals, dup,
-    ))
+    check_status(
+        C,
+        lib.GrB_Matrix_build_FP32(
+            C[0],
+            ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
+            ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
+            ffi.cast("float*", ffi.from_buffer(vals)),
+            nvals,
+            dup,
+        ),
+    )
 
 
 def matrix_build_fp64(C, rows, cols, vals, nvals, dup):
@@ -1067,13 +1211,17 @@ def matrix_build_fp64(C, rows, cols, vals, nvals, dup):
     True
 
     """
-    check_status(C, lib.GrB_Matrix_build_FP64(
-        C[0],
-        ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
-        ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
-        ffi.cast("double*", ffi.from_buffer(vals)),
-        nvals, dup,
-    ))
+    check_status(
+        C,
+        lib.GrB_Matrix_build_FP64(
+            C[0],
+            ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
+            ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
+            ffi.cast("double*", ffi.from_buffer(vals)),
+            nvals,
+            dup,
+        ),
+    )
 
 
 def matrix_extract_tuples_int64(A):
@@ -1096,12 +1244,16 @@ def matrix_extract_tuples_int64(A):
     vals = np.empty(n, dtype=np.int64)
     nvals_p = ffi.new("GrB_Index*", n)
     if n > 0:
-        check_status(A, lib.GrB_Matrix_extractTuples_INT64(
-            ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
-            ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
-            ffi.cast("int64_t*", ffi.from_buffer(vals)),
-            nvals_p, A[0],
-        ))
+        check_status(
+            A,
+            lib.GrB_Matrix_extractTuples_INT64(
+                ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
+                ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
+                ffi.cast("int64_t*", ffi.from_buffer(vals)),
+                nvals_p,
+                A[0],
+            ),
+        )
     return rows, cols, vals
 
 
@@ -1125,13 +1277,18 @@ def matrix_extract_tuples_fp64(A):
     vals = np.empty(n, dtype=np.float64)
     nvals_p = ffi.new("GrB_Index*", n)
     if n > 0:
-        check_status(A, lib.GrB_Matrix_extractTuples_FP64(
-            ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
-            ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
-            ffi.cast("double*", ffi.from_buffer(vals)),
-            nvals_p, A[0],
-        ))
+        check_status(
+            A,
+            lib.GrB_Matrix_extractTuples_FP64(
+                ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
+                ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
+                ffi.cast("double*", ffi.from_buffer(vals)),
+                nvals_p,
+                A[0],
+            ),
+        )
     return rows, cols, vals
+
 
 def matrix_extract_tuples_bool(A):
     """Extract all tuples from a matrix as numpy arrays.
@@ -1153,13 +1310,18 @@ def matrix_extract_tuples_bool(A):
     vals = np.empty(n, dtype=np.bool_)
     nvals_p = ffi.new("GrB_Index*", n)
     if n > 0:
-        check_status(A, lib.GrB_Matrix_extractTuples_BOOL(
-            ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
-            ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
-            ffi.cast("bool*", ffi.from_buffer(vals)),
-            nvals_p, A[0],
-        ))
+        check_status(
+            A,
+            lib.GrB_Matrix_extractTuples_BOOL(
+                ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
+                ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
+                ffi.cast("bool*", ffi.from_buffer(vals)),
+                nvals_p,
+                A[0],
+            ),
+        )
     return rows, cols, vals
+
 
 def matrix_extract_tuples_int8(A):
     """Extract all tuples from a matrix as numpy arrays.
@@ -1181,13 +1343,18 @@ def matrix_extract_tuples_int8(A):
     vals = np.empty(n, dtype=np.int8)
     nvals_p = ffi.new("GrB_Index*", n)
     if n > 0:
-        check_status(A, lib.GrB_Matrix_extractTuples_INT8(
-            ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
-            ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
-            ffi.cast("int8_t*", ffi.from_buffer(vals)),
-            nvals_p, A[0],
-        ))
+        check_status(
+            A,
+            lib.GrB_Matrix_extractTuples_INT8(
+                ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
+                ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
+                ffi.cast("int8_t*", ffi.from_buffer(vals)),
+                nvals_p,
+                A[0],
+            ),
+        )
     return rows, cols, vals
+
 
 def matrix_extract_tuples_int16(A):
     """Extract all tuples from a matrix as numpy arrays.
@@ -1209,13 +1376,18 @@ def matrix_extract_tuples_int16(A):
     vals = np.empty(n, dtype=np.int16)
     nvals_p = ffi.new("GrB_Index*", n)
     if n > 0:
-        check_status(A, lib.GrB_Matrix_extractTuples_INT16(
-            ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
-            ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
-            ffi.cast("int16_t*", ffi.from_buffer(vals)),
-            nvals_p, A[0],
-        ))
+        check_status(
+            A,
+            lib.GrB_Matrix_extractTuples_INT16(
+                ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
+                ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
+                ffi.cast("int16_t*", ffi.from_buffer(vals)),
+                nvals_p,
+                A[0],
+            ),
+        )
     return rows, cols, vals
+
 
 def matrix_extract_tuples_int32(A):
     """Extract all tuples from a matrix as numpy arrays.
@@ -1237,13 +1409,18 @@ def matrix_extract_tuples_int32(A):
     vals = np.empty(n, dtype=np.int32)
     nvals_p = ffi.new("GrB_Index*", n)
     if n > 0:
-        check_status(A, lib.GrB_Matrix_extractTuples_INT32(
-            ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
-            ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
-            ffi.cast("int32_t*", ffi.from_buffer(vals)),
-            nvals_p, A[0],
-        ))
+        check_status(
+            A,
+            lib.GrB_Matrix_extractTuples_INT32(
+                ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
+                ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
+                ffi.cast("int32_t*", ffi.from_buffer(vals)),
+                nvals_p,
+                A[0],
+            ),
+        )
     return rows, cols, vals
+
 
 def matrix_extract_tuples_uint8(A):
     """Extract all tuples from a matrix as numpy arrays.
@@ -1265,13 +1442,18 @@ def matrix_extract_tuples_uint8(A):
     vals = np.empty(n, dtype=np.uint8)
     nvals_p = ffi.new("GrB_Index*", n)
     if n > 0:
-        check_status(A, lib.GrB_Matrix_extractTuples_UINT8(
-            ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
-            ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
-            ffi.cast("uint8_t*", ffi.from_buffer(vals)),
-            nvals_p, A[0],
-        ))
+        check_status(
+            A,
+            lib.GrB_Matrix_extractTuples_UINT8(
+                ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
+                ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
+                ffi.cast("uint8_t*", ffi.from_buffer(vals)),
+                nvals_p,
+                A[0],
+            ),
+        )
     return rows, cols, vals
+
 
 def matrix_extract_tuples_uint16(A):
     """Extract all tuples from a matrix as numpy arrays.
@@ -1293,13 +1475,18 @@ def matrix_extract_tuples_uint16(A):
     vals = np.empty(n, dtype=np.uint16)
     nvals_p = ffi.new("GrB_Index*", n)
     if n > 0:
-        check_status(A, lib.GrB_Matrix_extractTuples_UINT16(
-            ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
-            ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
-            ffi.cast("uint16_t*", ffi.from_buffer(vals)),
-            nvals_p, A[0],
-        ))
+        check_status(
+            A,
+            lib.GrB_Matrix_extractTuples_UINT16(
+                ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
+                ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
+                ffi.cast("uint16_t*", ffi.from_buffer(vals)),
+                nvals_p,
+                A[0],
+            ),
+        )
     return rows, cols, vals
+
 
 def matrix_extract_tuples_uint32(A):
     """Extract all tuples from a matrix as numpy arrays.
@@ -1321,13 +1508,18 @@ def matrix_extract_tuples_uint32(A):
     vals = np.empty(n, dtype=np.uint32)
     nvals_p = ffi.new("GrB_Index*", n)
     if n > 0:
-        check_status(A, lib.GrB_Matrix_extractTuples_UINT32(
-            ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
-            ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
-            ffi.cast("uint32_t*", ffi.from_buffer(vals)),
-            nvals_p, A[0],
-        ))
+        check_status(
+            A,
+            lib.GrB_Matrix_extractTuples_UINT32(
+                ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
+                ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
+                ffi.cast("uint32_t*", ffi.from_buffer(vals)),
+                nvals_p,
+                A[0],
+            ),
+        )
     return rows, cols, vals
+
 
 def matrix_extract_tuples_uint64(A):
     """Extract all tuples from a matrix as numpy arrays.
@@ -1349,13 +1541,18 @@ def matrix_extract_tuples_uint64(A):
     vals = np.empty(n, dtype=np.uint64)
     nvals_p = ffi.new("GrB_Index*", n)
     if n > 0:
-        check_status(A, lib.GrB_Matrix_extractTuples_UINT64(
-            ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
-            ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
-            ffi.cast("uint64_t*", ffi.from_buffer(vals)),
-            nvals_p, A[0],
-        ))
+        check_status(
+            A,
+            lib.GrB_Matrix_extractTuples_UINT64(
+                ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
+                ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
+                ffi.cast("uint64_t*", ffi.from_buffer(vals)),
+                nvals_p,
+                A[0],
+            ),
+        )
     return rows, cols, vals
+
 
 def matrix_extract_tuples_fp32(A):
     """Extract all tuples from a matrix as numpy arrays.
@@ -1377,12 +1574,16 @@ def matrix_extract_tuples_fp32(A):
     vals = np.empty(n, dtype=np.float32)
     nvals_p = ffi.new("GrB_Index*", n)
     if n > 0:
-        check_status(A, lib.GrB_Matrix_extractTuples_FP32(
-            ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
-            ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
-            ffi.cast("float*", ffi.from_buffer(vals)),
-            nvals_p, A[0],
-        ))
+        check_status(
+            A,
+            lib.GrB_Matrix_extractTuples_FP32(
+                ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
+                ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
+                ffi.cast("float*", ffi.from_buffer(vals)),
+                nvals_p,
+                A[0],
+            ),
+        )
     return rows, cols, vals
 
 
@@ -1734,13 +1935,17 @@ if supports_complex():
         True
 
         """
-        check_status(C, lib.GxB_Matrix_build_FC32(
-            C[0],
-            ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
-            ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
-            ffi.cast("GxB_FC32_t*", ffi.from_buffer(vals)),
-            nvals, dup,
-        ))
+        check_status(
+            C,
+            lib.GxB_Matrix_build_FC32(
+                C[0],
+                ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
+                ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
+                ffi.cast("GxB_FC32_t*", ffi.from_buffer(vals)),
+                nvals,
+                dup,
+            ),
+        )
 
     def matrix_extract_tuples_fc32(A):
         """Extract all tuples from a matrix as numpy arrays.
@@ -1762,12 +1967,16 @@ if supports_complex():
         vals = np.empty(n, dtype=np.complex64)
         nvals_p = ffi.new("GrB_Index*", n)
         if n > 0:
-            check_status(A, lib.GxB_Matrix_extractTuples_FC32(
-                ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
-                ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
-                ffi.cast("GxB_FC32_t*", ffi.from_buffer(vals)),
-                nvals_p, A[0],
-            ))
+            check_status(
+                A,
+                lib.GxB_Matrix_extractTuples_FC32(
+                    ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
+                    ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
+                    ffi.cast("GxB_FC32_t*", ffi.from_buffer(vals)),
+                    nvals_p,
+                    A[0],
+                ),
+            )
         return rows, cols, vals
 
     def matrix_build_fc64(C, rows, cols, vals, nvals, dup):
@@ -1782,13 +1991,17 @@ if supports_complex():
         True
 
         """
-        check_status(C, lib.GxB_Matrix_build_FC64(
-            C[0],
-            ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
-            ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
-            ffi.cast("GxB_FC64_t*", ffi.from_buffer(vals)),
-            nvals, dup,
-        ))
+        check_status(
+            C,
+            lib.GxB_Matrix_build_FC64(
+                C[0],
+                ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
+                ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
+                ffi.cast("GxB_FC64_t*", ffi.from_buffer(vals)),
+                nvals,
+                dup,
+            ),
+        )
 
     def matrix_extract_tuples_fc64(A):
         """Extract all tuples from a matrix as numpy arrays.
@@ -1810,10 +2023,14 @@ if supports_complex():
         vals = np.empty(n, dtype=np.complex128)
         nvals_p = ffi.new("GrB_Index*", n)
         if n > 0:
-            check_status(A, lib.GxB_Matrix_extractTuples_FC64(
-                ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
-                ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
-                ffi.cast("GxB_FC64_t*", ffi.from_buffer(vals)),
-                nvals_p, A[0],
-            ))
+            check_status(
+                A,
+                lib.GxB_Matrix_extractTuples_FC64(
+                    ffi.cast("GrB_Index*", ffi.from_buffer(rows)),
+                    ffi.cast("GrB_Index*", ffi.from_buffer(cols)),
+                    ffi.cast("GxB_FC64_t*", ffi.from_buffer(vals)),
+                    nvals_p,
+                    A[0],
+                ),
+            )
         return rows, cols, vals

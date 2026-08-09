@@ -69,10 +69,15 @@ def grb_type_print(T, name="", level=lib.GxB_COMPLETE):
     True
 
     """
-    check_status(T, lib.GxB_Type_fprint(
-        T[0], name.encode() if isinstance(name, str) else name,
-        level, ffi.NULL,
-    ))
+    check_status(
+        T,
+        lib.GxB_Type_fprint(
+            T[0],
+            name.encode() if isinstance(name, str) else name,
+            level,
+            ffi.NULL,
+        ),
+    )
 
 
 def grb_type_fprint(T, f, name="", level=lib.GxB_COMPLETE):
@@ -87,10 +92,15 @@ def grb_type_fprint(T, f, name="", level=lib.GxB_COMPLETE):
     True
 
     """
-    check_status(T, lib.GxB_Type_fprint(
-        T[0], name.encode() if isinstance(name, str) else name,
-        level, f,
-    ))
+    check_status(
+        T,
+        lib.GxB_Type_fprint(
+            T[0],
+            name.encode() if isinstance(name, str) else name,
+            level,
+            f,
+        ),
+    )
 
 
 # ---------------------------------------------------------------------------

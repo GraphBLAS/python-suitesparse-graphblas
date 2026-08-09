@@ -3,7 +3,13 @@
 set -x  # echo on
 
 # parse SuiteSparse version from first argument, a git tag that ends in the version (no leading v)
-if [[ $1 =~ refs/tags/([0-9]*\.[0-9]*\.[0-9]*\.beta[0-9]*).*$ ]]; then
+if [[ $1 =~ refs/tags/v?([0-9]+\.[0-9]+\.[0-9]+-beta\.[0-9]+) ]]; then
+    # Naming used since v10.4.0-beta.1, e.g. "10.4.0-beta.2".  Note that callers
+    # append the psg patch level (".0"), which is not part of the upstream tag.
+    echo "Beta version detected (X.Y.Z-beta.N)"
+    VERSION=${BASH_REMATCH[1]}
+elif [[ $1 =~ refs/tags/([0-9]*\.[0-9]*\.[0-9]*\.beta[0-9]*).*$ ]]; then
+    # Older naming, e.g. "8.0.1.beta1"
     echo "Beta version detected"
     VERSION=${BASH_REMATCH[1]}
 elif [[ $1 =~ refs/tags/([0-9]*\.[0-9]*\.[0-9]*)\..*$ ]]; then
