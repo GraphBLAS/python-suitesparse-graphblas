@@ -18,19 +18,38 @@ jobs:
         source: ["conda-forge"]
         # os: ["ubuntu-latest"]
         # source: ["source"]
-        python-version: ["3.11", "3.12", "3.13", "3.14"]
+        # A trailing "t" means the free-threaded (no-GIL) build of that version.
+        python-version: ["3.11", "3.12", "3.13", "3.14", "3.14t"]
     steps:
     - name: Checkout
       uses: actions/checkout@v6
       with:
         fetch-depth: 0
         persist-credentials: false
+    - name: Compose conda environment file
+      run: |
+        # conda-forge ships two ABIs for CPython 3.13+ ("cp314" and "cp314t"),
+        # and `python=3.14` alone lets the solver pick either one: it resolved
+        # to free-threaded on Linux and Windows but to the GIL build on macOS.
+        # The `python-gil` and `python-freethreading` metapackages pin
+        # `python_abi` to one or the other, so ask for the one this matrix
+        # entry wants instead of leaving it to the solver.
+        pyver="${{ matrix.python-version }}"
+        if [[ $pyver == *t ]]; then
+          variant=python-freethreading
+          pyver=${pyver%t}
+        else
+          variant=python-gil
+        fi
+        cp continuous_integration/environment.yml environment-ci.yml
+        echo "  - python=$pyver" >> environment-ci.yml
+        echo "  - $variant" >> environment-ci.yml
+        cat environment-ci.yml
     - name: Conda
       uses: conda-incubator/setup-miniconda@v3
       with:
         auto-update-conda: true
-        python-version: ${{ matrix.python-version }}
-        environment-file: continuous_integration/environment.yml
+        environment-file: environment-ci.yml
         channels: conda-forge,nodefaults
         channel-priority: strict
         activate-environment: suitesparse-graphblas
@@ -62,15 +81,31 @@ jobs:
     - name: Build
       run: |
         pip install -e . --no-deps
+    - name: Configure coverage
+      run: |
+        # Cython's coverage plugin (see [tool.coverage.run] in pyproject.toml)
+        # needs coverage's C tracer.  conda-forge builds coverage without its C
+        # extension for free-threaded Python, and conda resolves `python=3.14`
+        # to the free-threaded build (3.14t) on some platforms.  There, loading
+        # the plugin raises ImportError and every `coverage run` dies before it
+        # runs anything, so run the tests directly instead.
+        if python -c "import Cython.Coverage" 2>/dev/null; then
+          coverage erase
+          echo "COV=coverage run -a --branch" >> $GITHUB_ENV
+        else
+          echo "Cython coverage plugin unusable here; running without coverage"
+          python -VV
+          echo "COV=python" >> $GITHUB_ENV
+        fi
     - name: Test
       env:
         CYTHON_COVERAGE: true
       run: |
         pytest -s -k test_print_jit_config
-        coverage run --branch -m pytest
-        coverage run -a --branch suitesparse_graphblas/tests/test_initialize.py
+        $COV -m pytest
+        $COV suitesparse_graphblas/tests/test_initialize.py
     - name: create_headers.py check
       if: (! contains(matrix.os, 'windows'))
       run: |
-        coverage run -a --branch suitesparse_graphblas/create_headers.py
+        $COV suitesparse_graphblas/create_headers.py
         git diff --exit-code  # error if anything changed

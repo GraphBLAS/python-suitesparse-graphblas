@@ -43,6 +43,9 @@ GraphBLAS-*/
 pip-log.txt
 pip-delete-this-directory.txt
 
+# Conda environment file composed by CI (see .github/workflows/test.yml)
+environment-ci.yml
+
 # Unit test / coverage reports
 htmlcov/
 .tox/
