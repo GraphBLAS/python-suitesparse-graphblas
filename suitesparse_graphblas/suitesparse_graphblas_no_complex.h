@@ -22,7 +22,7 @@ typedef struct GB_SelectOp_opaque *GxB_SelectOp;
 typedef struct GxB_Container_struct *GxB_Container;
 
 /* GxB typedefs (functions) */
-typedef int64_t (*GxB_print_function)(char *string, size_t string_size, const void *value, int verbose);
+typedef int64_t (*GxB_print_function)(char *string, size_t string_len, const void *value, int verbose);
 typedef void (*GxB_binary_function)(void *, const void *, const void *);
 typedef void (*GxB_index_binary_function)(void *, const void *, GrB_Index, GrB_Index, const void *, GrB_Index, GrB_Index, const void *);
 typedef void (*GxB_index_unary_function)(void *z, const void *x, GrB_Index i, GrB_Index j, const void *y);
@@ -39,7 +39,8 @@ struct GxB_Container_struct
   uint64_t u64_future[11];
   int32_t format;
   int32_t orientation;
-  uint32_t u32_future[14];
+  int32_t header_arena;
+  uint32_t u32_future[13];
   GrB_Vector p;
   GrB_Vector h;
   GrB_Vector b;
@@ -252,6 +253,10 @@ typedef enum
   GxB_CALLOC_FUNCTION = 7038,
   GxB_REALLOC_FUNCTION = 7039,
   GxB_FREE_FUNCTION = 7040,
+  GxB_ARENA_MALLOC = 0x10000,
+  GxB_ARENA_CALLOC = 0x20000,
+  GxB_ARENA_REALLOC = 0x30000,
+  GxB_ARENA_FREE = 0x40000,
   GxB_GLOBAL_NTHREADS = 7086,
   GxB_GLOBAL_CHUNK = 7087,
   GxB_GLOBAL_NGPUS = 7102,
@@ -2817,8 +2822,8 @@ GrB_Info GrB_Matrix_select_UINT8(GrB_Matrix C, const GrB_Matrix Mask, const GrB_
 GrB_Info GrB_Matrix_select_UINT16(GrB_Matrix C, const GrB_Matrix Mask, const GrB_BinaryOp accum, const GrB_IndexUnaryOp op, const GrB_Matrix A, uint16_t y, const GrB_Descriptor desc);
 GrB_Info GrB_Matrix_select_UINT32(GrB_Matrix C, const GrB_Matrix Mask, const GrB_BinaryOp accum, const GrB_IndexUnaryOp op, const GrB_Matrix A, uint32_t y, const GrB_Descriptor desc);
 GrB_Info GrB_Matrix_select_UINT64(GrB_Matrix C, const GrB_Matrix Mask, const GrB_BinaryOp accum, const GrB_IndexUnaryOp op, const GrB_Matrix A, uint64_t y, const GrB_Descriptor desc);
-GrB_Info GrB_Matrix_serialize(void *blob, GrB_Index *blob_size_handle, GrB_Matrix A);
-GrB_Info GrB_Matrix_serializeSize(GrB_Index *blob_size_handle, GrB_Matrix A);
+GrB_Info GrB_Matrix_serialize(void *blob, GrB_Index *blob_size, GrB_Matrix A);
+GrB_Info GrB_Matrix_serializeSize(GrB_Index *blob_size, GrB_Matrix A);
 GrB_Info GrB_Matrix_setElement_BOOL(GrB_Matrix C, bool x, GrB_Index i, GrB_Index j);
 GrB_Info GrB_Matrix_setElement_FP32(GrB_Matrix C, float x, GrB_Index i, GrB_Index j);
 GrB_Info GrB_Matrix_setElement_FP64(GrB_Matrix C, double x, GrB_Index i, GrB_Index j);
@@ -3142,6 +3147,7 @@ GrB_Info GB_Iterator_attach(GxB_Iterator iterator, GrB_Matrix A, int format, GrB
 /* binary */
 GrB_Info GxB_BinaryOp_fprint(GrB_BinaryOp binaryop, const char *name, int pr, FILE *f);
 GrB_Info GxB_BinaryOp_new(GrB_BinaryOp *op, GxB_binary_function function, GrB_Type ztype, GrB_Type xtype, GrB_Type ytype, const char *binop_name, const char *binop_defn);
+GrB_Info GxB_BinaryOp_new_arena(GrB_BinaryOp *op_handle, GxB_binary_function function, GrB_Type ztype, GrB_Type xtype, GrB_Type ytype, const char *binop_name, const char *binop_defn, const int header_arena);
 GrB_Info GxB_BinaryOp_xtype(GrB_Type *, GrB_BinaryOp);
 GrB_Info GxB_BinaryOp_xtype_name(char *, const GrB_BinaryOp);
 GrB_Info GxB_BinaryOp_ytype(GrB_Type *, GrB_BinaryOp);
@@ -3152,6 +3158,7 @@ GrB_Info GxB_BinaryOp_ztype_name(char *, const GrB_BinaryOp);
 /* container */
 GrB_Info GxB_Container_free(GxB_Container *object);
 GrB_Info GxB_Container_new(GxB_Container *Container);
+GrB_Info GxB_Container_new_arena(GxB_Container *Container, const int header_arena, const int data_arena);
 
 /* context */
 GrB_Info GxB_Context_disengage(GxB_Context Context);
@@ -3167,6 +3174,7 @@ GrB_Info GxB_Context_get_SIZE(GxB_Context, size_t *, int);
 GrB_Info GxB_Context_get_String(GxB_Context, char *, int);
 GrB_Info GxB_Context_get_VOID(GxB_Context, void *, int);
 GrB_Info GxB_Context_new(GxB_Context *Context);
+GrB_Info GxB_Context_new_arena(GxB_Context *Context_handle, const int header_arena);
 GrB_Info GxB_Context_set(GxB_Context, int, ...);
 GrB_Info GxB_Context_set_FP64(GxB_Context, int, double);
 GrB_Info GxB_Context_set_INT(GxB_Context, int32_t, int);
@@ -3193,8 +3201,15 @@ GrB_Info GxB_Serialized_get_INT32(const void *, int32_t *, int, size_t);
 GrB_Info GxB_Serialized_get_SIZE(const void *, size_t *, int, size_t);
 GrB_Info GxB_Serialized_get_String(const void *, char *, int, size_t);
 GrB_Info GxB_Serialized_get_VOID(const void *, void *, int, size_t);
+GrB_Info GxB_arena_init(int arena, void *(*user_malloc_function)(size_t), void *(*user_calloc_function)(size_t, size_t), void *(*user_realloc_function)(void *, size_t), void (*user_free_function)(void *));
+GrB_Info GxB_arena_initialized(int *flag, int arena);
 GrB_Info GxB_deserialize_type_name(char *, const void *, uint64_t);
+GrB_Info GxB_finalized(int *flag);
 GrB_Info GxB_init(int mode, void *(*user_malloc_function)(size_t), void *(*user_calloc_function)(size_t, size_t), void *(*user_realloc_function)(void *, size_t), void (*user_free_function)(void *));
+GrB_Info GxB_initialized(int *flag);
+void GxB_atfork_child(void);
+void GxB_atfork_parent(void);
+void GxB_atfork_prepare(void);
 
 /* descriptor */
 GrB_Info GxB_Desc_get(GrB_Descriptor, int, ...);
@@ -3205,6 +3220,7 @@ GrB_Info GxB_Desc_set_FP64(GrB_Descriptor, int, double);
 GrB_Info GxB_Desc_set_INT32(GrB_Descriptor, int, int32_t);
 GrB_Info GxB_Descriptor_fprint(GrB_Descriptor descriptor, const char *name, int pr, FILE *f);
 GrB_Info GxB_Descriptor_get(int32_t *, GrB_Descriptor, int);
+GrB_Info GxB_Descriptor_new_arena(GrB_Descriptor *descriptor, const int header_arena);
 
 /* indexbinary */
 GrB_Info GxB_IndexBinaryOp_error(const char **error, const GxB_IndexBinaryOp object);
@@ -3215,6 +3231,7 @@ GrB_Info GxB_IndexBinaryOp_get_SIZE(GxB_IndexBinaryOp object, size_t *, int);
 GrB_Info GxB_IndexBinaryOp_get_String(GxB_IndexBinaryOp object, char *, int);
 GrB_Info GxB_IndexBinaryOp_get_VOID(GxB_IndexBinaryOp object, void *, int);
 GrB_Info GxB_IndexBinaryOp_new(GxB_IndexBinaryOp *op, GxB_index_binary_function function, GrB_Type ztype, GrB_Type xtype, GrB_Type ytype, GrB_Type theta_type, const char *idxbinop_name, const char *idxbinop_defn);
+GrB_Info GxB_IndexBinaryOp_new_arena(GxB_IndexBinaryOp *op_handle, GxB_index_binary_function function, GrB_Type ztype, GrB_Type xtype, GrB_Type ytype, GrB_Type theta_type, const char *idxop_name, const char *idxop_defn, const int header_arena);
 GrB_Info GxB_IndexBinaryOp_set_INT32(GxB_IndexBinaryOp object, int32_t, int);
 GrB_Info GxB_IndexBinaryOp_set_String(GxB_IndexBinaryOp object, char *, int);
 GrB_Info GxB_IndexBinaryOp_set_VOID(GxB_IndexBinaryOp object, void *, int, size_t);
@@ -3223,6 +3240,7 @@ GrB_Info GxB_IndexBinaryOp_wait(GxB_IndexBinaryOp object, int waitmode);
 /* indexunary */
 GrB_Info GxB_IndexUnaryOp_fprint(GrB_IndexUnaryOp op, const char *name, int pr, FILE *f);
 GrB_Info GxB_IndexUnaryOp_new(GrB_IndexUnaryOp *op, GxB_index_unary_function function, GrB_Type ztype, GrB_Type xtype, GrB_Type ytype, const char *idxop_name, const char *idxop_defn);
+GrB_Info GxB_IndexUnaryOp_new_arena(GrB_IndexUnaryOp *op_handle, GxB_index_unary_function function, GrB_Type ztype, GrB_Type xtype, GrB_Type ytype, const char *idxop_name, const char *idxop_defn, const int header_arena);
 GrB_Info GxB_IndexUnaryOp_xtype_name(char *, const GrB_IndexUnaryOp);
 GrB_Info GxB_IndexUnaryOp_ytype_name(char *, const GrB_IndexUnaryOp);
 GrB_Info GxB_IndexUnaryOp_ztype_name(char *, const GrB_IndexUnaryOp);
@@ -3241,6 +3259,7 @@ GrB_Index GxB_rowIterator_getRowIndex(GxB_Iterator iterator);
 GrB_Index GxB_rowIterator_kount(GxB_Iterator iterator);
 GrB_Info GxB_Iterator_free(GxB_Iterator *object);
 GrB_Info GxB_Iterator_new(GxB_Iterator *iterator);
+GrB_Info GxB_Iterator_new_arena(GxB_Iterator *iterator, const int header_arena);
 GrB_Info GxB_Matrix_Iterator_next(GxB_Iterator iterator);
 GrB_Info GxB_Matrix_Iterator_seek(GxB_Iterator iterator, GrB_Index p);
 GrB_Info GxB_Vector_Iterator_next(GxB_Iterator iterator);
@@ -3288,7 +3307,10 @@ GrB_Info GxB_Matrix_build_Scalar_Vector(GrB_Matrix C, const GrB_Vector I_vector,
 GrB_Info GxB_Matrix_build_Vector(GrB_Matrix C, const GrB_Vector I_vector, const GrB_Vector J_vector, const GrB_Vector X_vector, const GrB_BinaryOp dup, const GrB_Descriptor desc);
 GrB_Info GxB_Matrix_concat(GrB_Matrix C, const GrB_Matrix *Tiles, const GrB_Index m, const GrB_Index n, const GrB_Descriptor desc);
 GrB_Info GxB_Matrix_deserialize(GrB_Matrix *C, GrB_Type type, const void *blob, GrB_Index blob_size, const GrB_Descriptor desc);
+GrB_Info GxB_Matrix_deserialize_arena(GrB_Matrix *C, GrB_Type type, const void *blob, uint64_t blob_memsize, const int header_arena, const int data_arena, const GrB_Descriptor desc);
 GrB_Info GxB_Matrix_diag(GrB_Matrix C, const GrB_Vector v, int64_t k, const GrB_Descriptor desc);
+GrB_Info GxB_Matrix_diag_arena(GrB_Matrix *C, const GrB_Vector v, int64_t k, const int header_arena, const int data_arena);
+GrB_Info GxB_Matrix_dup_arena(GrB_Matrix *C, const GrB_Matrix A, const int header_arena, const int data_arena);
 GrB_Info GxB_Matrix_eWiseUnion(GrB_Matrix C, const GrB_Matrix Mask, const GrB_BinaryOp accum, const GrB_BinaryOp add, const GrB_Matrix A, const GrB_Scalar alpha, const GrB_Matrix B, const GrB_Scalar beta, const GrB_Descriptor desc);
 GrB_Info GxB_Matrix_export_BitmapC(GrB_Matrix *, GrB_Type *, uint64_t *, uint64_t *, int8_t **, void **, uint64_t *, uint64_t *, bool *, uint64_t *, const GrB_Descriptor);
 GrB_Info GxB_Matrix_export_BitmapR(GrB_Matrix *, GrB_Type *, uint64_t *, uint64_t *, int8_t **, void **, uint64_t *, uint64_t *, bool *, uint64_t *, const GrB_Descriptor);
@@ -3312,6 +3334,7 @@ GrB_Info GxB_Matrix_import_HyperCSR(GrB_Matrix *, GrB_Type, uint64_t, uint64_t, 
 GrB_Info GxB_Matrix_isStoredElement(const GrB_Matrix A, GrB_Index i, GrB_Index j);
 GrB_Info GxB_Matrix_iso(bool *, const GrB_Matrix);
 GrB_Info GxB_Matrix_memoryUsage(size_t *size, const GrB_Matrix A);
+GrB_Info GxB_Matrix_new_arena(GrB_Matrix *A, GrB_Type type, GrB_Index nrows, GrB_Index ncols, const int header_arena, const int data_arena);
 GrB_Info GxB_Matrix_pack_BitmapC(GrB_Matrix, int8_t **, void **, uint64_t, uint64_t, bool, uint64_t, const GrB_Descriptor);
 GrB_Info GxB_Matrix_pack_BitmapR(GrB_Matrix, int8_t **, void **, uint64_t, uint64_t, bool, uint64_t, const GrB_Descriptor);
 GrB_Info GxB_Matrix_pack_CSC(GrB_Matrix, uint64_t **, uint64_t **, void **, uint64_t, uint64_t, uint64_t, bool, bool, const GrB_Descriptor);
@@ -3322,10 +3345,14 @@ GrB_Info GxB_Matrix_pack_HyperCSC(GrB_Matrix, uint64_t **, uint64_t **, uint64_t
 GrB_Info GxB_Matrix_pack_HyperCSR(GrB_Matrix, uint64_t **, uint64_t **, uint64_t **, void **, uint64_t, uint64_t, uint64_t, uint64_t, bool, uint64_t, bool, const GrB_Descriptor);
 GrB_Info GxB_Matrix_reshape(GrB_Matrix C, bool by_col, GrB_Index nrows_new, GrB_Index ncols_new, const GrB_Descriptor desc);
 GrB_Info GxB_Matrix_reshapeDup(GrB_Matrix *C, GrB_Matrix A, bool by_col, GrB_Index nrows_new, GrB_Index ncols_new, const GrB_Descriptor desc);
+GrB_Info GxB_Matrix_reshapeDup_arena(GrB_Matrix *C, GrB_Matrix A, bool by_col, uint64_t nrows_new, uint64_t ncols_new, const int header_arena, const int data_arena, const GrB_Descriptor desc);
 GrB_Info GxB_Matrix_select(GrB_Matrix, const GrB_Matrix, const GrB_BinaryOp, const GxB_SelectOp, const GrB_Matrix, const GrB_Scalar, const GrB_Descriptor);
-GrB_Info GxB_Matrix_serialize(void **blob_handle, GrB_Index *blob_size_handle, GrB_Matrix A, const GrB_Descriptor desc);
+GrB_Info GxB_Matrix_serialize(void **blob_handle, GrB_Index *blob_size, GrB_Matrix A, const GrB_Descriptor desc);
+GrB_Info GxB_Matrix_serialize_arena(void **blob_handle, GrB_Index *blob_size, GrB_Matrix A, const int data_arena, const GrB_Descriptor desc);
+GrB_Info GxB_Matrix_set_arenas(GrB_Matrix *Ahandle, const int new_header_arena, const int new_data_arena);
 GrB_Info GxB_Matrix_sort(GrB_Matrix C, GrB_Matrix P, GrB_BinaryOp op, GrB_Matrix A, const GrB_Descriptor desc);
 GrB_Info GxB_Matrix_split(GrB_Matrix *Tiles, const GrB_Index m, const GrB_Index n, const GrB_Index *Tile_nrows, const GrB_Index *Tile_ncols, const GrB_Matrix A, const GrB_Descriptor desc);
+GrB_Info GxB_Matrix_split_arena(GrB_Matrix *Tiles, const GrB_Index m, const GrB_Index n, const GrB_Index *Tile_nrows, const GrB_Index *Tile_ncols, const GrB_Matrix A, const int header_arena, const int data_arena, const GrB_Descriptor desc);
 GrB_Info GxB_Matrix_subassign(GrB_Matrix C, const GrB_Matrix Mask, const GrB_BinaryOp accum, const GrB_Matrix A, const GrB_Index *I_, GrB_Index ni, const GrB_Index *J, GrB_Index nj, const GrB_Descriptor desc);
 GrB_Info GxB_Matrix_subassign_BOOL(GrB_Matrix C, const GrB_Matrix Mask, const GrB_BinaryOp accum, bool x, const GrB_Index *I_, GrB_Index ni, const GrB_Index *J, GrB_Index nj, const GrB_Descriptor desc);
 GrB_Info GxB_Matrix_subassign_FP32(GrB_Matrix C, const GrB_Matrix Mask, const GrB_BinaryOp accum, float x, const GrB_Index *I_, GrB_Index ni, const GrB_Index *J, GrB_Index nj, const GrB_Descriptor desc);
@@ -3366,6 +3393,18 @@ GrB_Info GxB_unpack_HyperHash(GrB_Matrix, GrB_Matrix *, const GrB_Descriptor);
 /* monoid */
 GrB_Info GxB_Monoid_fprint(GrB_Monoid monoid, const char *name, int pr, FILE *f);
 GrB_Info GxB_Monoid_identity(void *, GrB_Monoid);
+GrB_Info GxB_Monoid_new_arena_BOOL(GrB_Monoid *monoid, GrB_BinaryOp op, bool identity, const int header_arena);
+GrB_Info GxB_Monoid_new_arena_FP32(GrB_Monoid *monoid, GrB_BinaryOp op, float identity, const int header_arena);
+GrB_Info GxB_Monoid_new_arena_FP64(GrB_Monoid *monoid, GrB_BinaryOp op, double identity, const int header_arena);
+GrB_Info GxB_Monoid_new_arena_INT8(GrB_Monoid *monoid, GrB_BinaryOp op, int8_t identity, const int header_arena);
+GrB_Info GxB_Monoid_new_arena_INT16(GrB_Monoid *monoid, GrB_BinaryOp op, int16_t identity, const int header_arena);
+GrB_Info GxB_Monoid_new_arena_INT32(GrB_Monoid *monoid, GrB_BinaryOp op, int32_t identity, const int header_arena);
+GrB_Info GxB_Monoid_new_arena_INT64(GrB_Monoid *monoid, GrB_BinaryOp op, int64_t identity, const int header_arena);
+GrB_Info GxB_Monoid_new_arena_UDT(GrB_Monoid *monoid, GrB_BinaryOp op, void *identity, const int header_arena);
+GrB_Info GxB_Monoid_new_arena_UINT8(GrB_Monoid *monoid, GrB_BinaryOp op, uint8_t identity, const int header_arena);
+GrB_Info GxB_Monoid_new_arena_UINT16(GrB_Monoid *monoid, GrB_BinaryOp op, uint16_t identity, const int header_arena);
+GrB_Info GxB_Monoid_new_arena_UINT32(GrB_Monoid *monoid, GrB_BinaryOp op, uint32_t identity, const int header_arena);
+GrB_Info GxB_Monoid_new_arena_UINT64(GrB_Monoid *monoid, GrB_BinaryOp op, uint64_t identity, const int header_arena);
 GrB_Info GxB_Monoid_operator(GrB_BinaryOp *, GrB_Monoid);
 GrB_Info GxB_Monoid_terminal(bool *, void *, GrB_Monoid);
 GrB_Info GxB_Monoid_terminal_new_BOOL(GrB_Monoid *monoid, GrB_BinaryOp op, bool identity, bool terminal);
@@ -3380,15 +3419,29 @@ GrB_Info GxB_Monoid_terminal_new_UINT8(GrB_Monoid *monoid, GrB_BinaryOp op, uint
 GrB_Info GxB_Monoid_terminal_new_UINT16(GrB_Monoid *monoid, GrB_BinaryOp op, uint16_t identity, uint16_t terminal);
 GrB_Info GxB_Monoid_terminal_new_UINT32(GrB_Monoid *monoid, GrB_BinaryOp op, uint32_t identity, uint32_t terminal);
 GrB_Info GxB_Monoid_terminal_new_UINT64(GrB_Monoid *monoid, GrB_BinaryOp op, uint64_t identity, uint64_t terminal);
+GrB_Info GxB_Monoid_terminal_new_arena_BOOL(GrB_Monoid *monoid, GrB_BinaryOp op, bool identity, bool terminal, const int header_arena);
+GrB_Info GxB_Monoid_terminal_new_arena_FP32(GrB_Monoid *monoid, GrB_BinaryOp op, float identity, float terminal, const int header_arena);
+GrB_Info GxB_Monoid_terminal_new_arena_FP64(GrB_Monoid *monoid, GrB_BinaryOp op, double identity, double terminal, const int header_arena);
+GrB_Info GxB_Monoid_terminal_new_arena_INT8(GrB_Monoid *monoid, GrB_BinaryOp op, int8_t identity, int8_t terminal, const int header_arena);
+GrB_Info GxB_Monoid_terminal_new_arena_INT16(GrB_Monoid *monoid, GrB_BinaryOp op, int16_t identity, int16_t terminal, const int header_arena);
+GrB_Info GxB_Monoid_terminal_new_arena_INT32(GrB_Monoid *monoid, GrB_BinaryOp op, int32_t identity, int32_t terminal, const int header_arena);
+GrB_Info GxB_Monoid_terminal_new_arena_INT64(GrB_Monoid *monoid, GrB_BinaryOp op, int64_t identity, int64_t terminal, const int header_arena);
+GrB_Info GxB_Monoid_terminal_new_arena_UDT(GrB_Monoid *monoid, GrB_BinaryOp op, void *identity, void *terminal, const int header_arena);
+GrB_Info GxB_Monoid_terminal_new_arena_UINT8(GrB_Monoid *monoid, GrB_BinaryOp op, uint8_t identity, uint8_t terminal, const int header_arena);
+GrB_Info GxB_Monoid_terminal_new_arena_UINT16(GrB_Monoid *monoid, GrB_BinaryOp op, uint16_t identity, uint16_t terminal, const int header_arena);
+GrB_Info GxB_Monoid_terminal_new_arena_UINT32(GrB_Monoid *monoid, GrB_BinaryOp op, uint32_t identity, uint32_t terminal, const int header_arena);
+GrB_Info GxB_Monoid_terminal_new_arena_UINT64(GrB_Monoid *monoid, GrB_BinaryOp op, uint64_t identity, uint64_t terminal, const int header_arena);
 
 /* scalar */
 GrB_Info GxB_BinaryOp_new_IndexOp(GrB_BinaryOp *binop, GxB_IndexBinaryOp idxbinop, GrB_Scalar theta);
+GrB_Info GxB_BinaryOp_new_IndexOp_arena(GrB_BinaryOp *binop_handle, GxB_IndexBinaryOp idxbinop, GrB_Scalar theta, const int header_arena);
 GrB_Info GxB_Context_get_Scalar(GxB_Context, GrB_Scalar, int);
 GrB_Info GxB_Context_set_Scalar(GxB_Context, GrB_Scalar, int);
 GrB_Info GxB_IndexBinaryOp_get_Scalar(GxB_IndexBinaryOp object, GrB_Scalar, int);
 GrB_Info GxB_IndexBinaryOp_set_Scalar(GxB_IndexBinaryOp object, GrB_Scalar, int);
 GrB_Info GxB_Scalar_clear(GrB_Scalar);
 GrB_Info GxB_Scalar_dup(GrB_Scalar *, const GrB_Scalar);
+GrB_Info GxB_Scalar_dup_arena(GrB_Scalar *s, const GrB_Scalar t, const int header_arena, const int data_arena);
 GrB_Info GxB_Scalar_error(const char **, const GrB_Scalar);
 GrB_Info GxB_Scalar_extractElement_BOOL(bool *, const GrB_Scalar);
 GrB_Info GxB_Scalar_extractElement_FP32(float *, const GrB_Scalar);
@@ -3406,6 +3459,7 @@ GrB_Info GxB_Scalar_fprint(GrB_Scalar s, const char *name, int pr, FILE *f);
 GrB_Info GxB_Scalar_free(GrB_Scalar *);
 GrB_Info GxB_Scalar_memoryUsage(size_t *size, const GrB_Scalar s);
 GrB_Info GxB_Scalar_new(GrB_Scalar *, GrB_Type);
+GrB_Info GxB_Scalar_new_arena(GrB_Scalar *s, GrB_Type type, const int header_arena, const int data_arena);
 GrB_Info GxB_Scalar_nvals(uint64_t *, const GrB_Scalar);
 GrB_Info GxB_Scalar_setElement_BOOL(GrB_Scalar, bool);
 GrB_Info GxB_Scalar_setElement_FP32(GrB_Scalar, float);
@@ -3419,6 +3473,7 @@ GrB_Info GxB_Scalar_setElement_UINT8(GrB_Scalar, uint8_t);
 GrB_Info GxB_Scalar_setElement_UINT16(GrB_Scalar, uint16_t);
 GrB_Info GxB_Scalar_setElement_UINT32(GrB_Scalar, uint32_t);
 GrB_Info GxB_Scalar_setElement_UINT64(GrB_Scalar, uint64_t);
+GrB_Info GxB_Scalar_set_arenas(GrB_Scalar *Shandle, const int new_header_arena, const int new_data_arena);
 GrB_Info GxB_Scalar_type(GrB_Type *type, const GrB_Scalar s);
 GrB_Info GxB_Scalar_type_name(char *, const GrB_Scalar);
 GrB_Info GxB_Scalar_wait(GrB_Scalar *);
@@ -3433,17 +3488,20 @@ GrB_Info GxB_SelectOp_xtype(GrB_Type *, GxB_SelectOp);
 GrB_Info GxB_Semiring_add(GrB_Monoid *, GrB_Semiring);
 GrB_Info GxB_Semiring_fprint(GrB_Semiring semiring, const char *name, int pr, FILE *f);
 GrB_Info GxB_Semiring_multiply(GrB_BinaryOp *, GrB_Semiring);
+GrB_Info GxB_Semiring_new_arena(GrB_Semiring *semiring, GrB_Monoid add, GrB_BinaryOp multiply, const int header_arena);
 
 /* type */
 GrB_Info GxB_Type_fprint(GrB_Type type, const char *name, int pr, FILE *f);
 GrB_Info GxB_Type_from_name(GrB_Type *type, const char *type_name);
 GrB_Info GxB_Type_name(char *, const GrB_Type);
 GrB_Info GxB_Type_new(GrB_Type *type, size_t sizeof_ctype, const char *type_name, const char *type_defn);
+GrB_Info GxB_Type_new_arena(GrB_Type *type, size_t sizeof_type, const char *type_name, const char *type_defn, const int header_arena);
 GrB_Info GxB_Type_size(size_t *, const GrB_Type);
 
 /* unary */
 GrB_Info GxB_UnaryOp_fprint(GrB_UnaryOp unaryop, const char *name, int pr, FILE *f);
 GrB_Info GxB_UnaryOp_new(GrB_UnaryOp *unaryop, GxB_unary_function function, GrB_Type ztype, GrB_Type xtype, const char *unop_name, const char *unop_defn);
+GrB_Info GxB_UnaryOp_new_arena(GrB_UnaryOp *op_handle, GxB_unary_function function, GrB_Type ztype, GrB_Type xtype, const char *unop_name, const char *unop_defn, const int header_arena);
 GrB_Info GxB_UnaryOp_xtype(GrB_Type *, GrB_UnaryOp);
 GrB_Info GxB_UnaryOp_xtype_name(char *, const GrB_UnaryOp);
 GrB_Info GxB_UnaryOp_ztype(GrB_Type *, GrB_UnaryOp);
@@ -3465,6 +3523,8 @@ GrB_Info GxB_Vector_build_Scalar(GrB_Vector w, const GrB_Index *I_, const GrB_Sc
 GrB_Info GxB_Vector_build_Scalar_Vector(GrB_Vector w, const GrB_Vector I_vector, const GrB_Scalar scalar, const GrB_Descriptor desc);
 GrB_Info GxB_Vector_build_Vector(GrB_Vector w, const GrB_Vector I_vector, const GrB_Vector X_vector, const GrB_BinaryOp dup, const GrB_Descriptor desc);
 GrB_Info GxB_Vector_deserialize(GrB_Vector *w, GrB_Type type, const void *blob, GrB_Index blob_size, const GrB_Descriptor desc);
+GrB_Info GxB_Vector_deserialize_arena(GrB_Vector *w, GrB_Type type, const void *blob, GrB_Index blob_size, const int header_arena, const int data_arena, const GrB_Descriptor desc);
+GrB_Info GxB_Vector_dup_arena(GrB_Vector *w, const GrB_Vector u, const int header_arena, const int data_arena);
 GrB_Info GxB_Vector_eWiseUnion(GrB_Vector w, const GrB_Vector mask, const GrB_BinaryOp accum, const GrB_BinaryOp add, const GrB_Vector u, const GrB_Scalar alpha, const GrB_Vector v, const GrB_Scalar beta, const GrB_Descriptor desc);
 GrB_Info GxB_Vector_export_Bitmap(GrB_Vector *, GrB_Type *, uint64_t *, int8_t **, void **, uint64_t *, uint64_t *, bool *, uint64_t *, const GrB_Descriptor);
 GrB_Info GxB_Vector_export_CSC(GrB_Vector *, GrB_Type *, uint64_t *, uint64_t **, void **, uint64_t *, uint64_t *, bool *, uint64_t *, bool *, const GrB_Descriptor);
@@ -3477,13 +3537,16 @@ GrB_Info GxB_Vector_import_CSC(GrB_Vector *, GrB_Type, uint64_t, uint64_t **, vo
 GrB_Info GxB_Vector_import_Full(GrB_Vector *, GrB_Type, uint64_t, void **, uint64_t, bool, const GrB_Descriptor);
 GrB_Info GxB_Vector_isStoredElement(const GrB_Vector v, GrB_Index i);
 GrB_Info GxB_Vector_iso(bool *, const GrB_Vector);
-GrB_Info GxB_Vector_load(GrB_Vector V, void **X, GrB_Type type, uint64_t n, uint64_t X_size, int handling, const GrB_Descriptor desc);
+GrB_Info GxB_Vector_load(GrB_Vector V, void **X, GrB_Type type, uint64_t n, uint64_t X_memsize, int handling, const GrB_Descriptor desc);
 GrB_Info GxB_Vector_memoryUsage(size_t *size, const GrB_Vector v);
+GrB_Info GxB_Vector_new_arena(GrB_Vector *v, GrB_Type type, GrB_Index n, const int header_arena, const int data_arena);
 GrB_Info GxB_Vector_pack_Bitmap(GrB_Vector, int8_t **, void **, uint64_t, uint64_t, bool, uint64_t, const GrB_Descriptor);
 GrB_Info GxB_Vector_pack_CSC(GrB_Vector, uint64_t **, void **, uint64_t, uint64_t, bool, uint64_t, bool, const GrB_Descriptor);
 GrB_Info GxB_Vector_pack_Full(GrB_Vector, void **, uint64_t, bool, const GrB_Descriptor);
 GrB_Info GxB_Vector_select(GrB_Vector, const GrB_Vector, const GrB_BinaryOp, const GxB_SelectOp, const GrB_Vector, const GrB_Scalar, const GrB_Descriptor);
-GrB_Info GxB_Vector_serialize(void **blob_handle, GrB_Index *blob_size_handle, GrB_Vector u, const GrB_Descriptor desc);
+GrB_Info GxB_Vector_serialize(void **blob_handle, GrB_Index *blob_size, GrB_Vector u, const GrB_Descriptor desc);
+GrB_Info GxB_Vector_serialize_arena(void **blob_handle, GrB_Index *blob_size, GrB_Vector u, const int data_arena, const GrB_Descriptor desc);
+GrB_Info GxB_Vector_set_arenas(GrB_Vector *Vhandle, const int new_header_arena, const int new_data_arena);
 GrB_Info GxB_Vector_sort(GrB_Vector w, GrB_Vector p, GrB_BinaryOp op, GrB_Vector u, const GrB_Descriptor desc);
 GrB_Info GxB_Vector_subassign(GrB_Vector w, const GrB_Vector mask, const GrB_BinaryOp accum, const GrB_Vector u, const GrB_Index *I_, GrB_Index ni, const GrB_Descriptor desc);
 GrB_Info GxB_Vector_subassign_BOOL(GrB_Vector w, const GrB_Vector mask, const GrB_BinaryOp accum, bool x, const GrB_Index *I_, GrB_Index ni, const GrB_Descriptor desc);
@@ -3503,7 +3566,7 @@ GrB_Info GxB_Vector_subassign_UINT64(GrB_Vector w, const GrB_Vector mask, const 
 GrB_Info GxB_Vector_subassign_Vector(GrB_Vector w, const GrB_Vector mask, const GrB_BinaryOp accum, const GrB_Vector u, const GrB_Vector I_vector, const GrB_Descriptor desc);
 GrB_Info GxB_Vector_type(GrB_Type *type, const GrB_Vector v);
 GrB_Info GxB_Vector_type_name(char *, const GrB_Vector);
-GrB_Info GxB_Vector_unload(GrB_Vector V, void **X, GrB_Type *type, uint64_t *n, uint64_t *X_size, int *handling, const GrB_Descriptor desc);
+GrB_Info GxB_Vector_unload(GrB_Vector V, void **X, GrB_Type *type, uint64_t *n, uint64_t *X_memsize, int *handling, const GrB_Descriptor desc);
 GrB_Info GxB_Vector_unpack_Bitmap(GrB_Vector, int8_t **, void **, uint64_t *, uint64_t *, bool *, uint64_t *, const GrB_Descriptor);
 GrB_Info GxB_Vector_unpack_CSC(GrB_Vector, uint64_t **, void **, uint64_t *, uint64_t *, bool *, uint64_t *, bool *, const GrB_Descriptor);
 GrB_Info GxB_Vector_unpack_Full(GrB_Vector, void **, uint64_t *, bool *, const GrB_Descriptor);
@@ -3515,6 +3578,8 @@ GrB_Info GxB_unload_Vector_into_Container(GrB_Vector V, GxB_Container Container,
 #define GRB_VERSION ...
 #define GrB_INDEX_MAX ...
 #define GxB_ANY_SPARSITY ...
+#define GxB_ARENA_DATA ...
+#define GxB_ARENA_HEADER ...
 #define GxB_AUTO_SPARSITY ...
 #define GxB_BACKWARDS ...
 #define GxB_BEGIN ...
@@ -3537,6 +3602,7 @@ GrB_Info GxB_unload_Vector_into_Container(GrB_Vector V, GxB_Container Container,
 #define GxB_INC ...
 #define GxB_INDEX_MAX ...
 #define GxB_MAX_NAME_LEN ...
+#define GxB_NARENAS ...
 #define GxB_NBITMAP_SWITCH ...
 #define GxB_NGPUS ...
 #define GxB_NTHREADS ...

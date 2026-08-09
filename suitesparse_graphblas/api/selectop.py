@@ -51,8 +51,10 @@ def selectop_print(op, name="", level=lib.GxB_COMPLETE):
 
     """
     info = lib.GxB_SelectOp_fprint(
-        op[0], name.encode() if isinstance(name, str) else name,
-        level, ffi.NULL,
+        op[0],
+        name.encode() if isinstance(name, str) else name,
+        level,
+        ffi.NULL,
     )
     if info != lib.GrB_SUCCESS:
         raise _error_code_lookup.get(info, RuntimeError)(
@@ -73,8 +75,10 @@ def selectop_fprint(op, f, name="", level=lib.GxB_COMPLETE):
 
     """
     info = lib.GxB_SelectOp_fprint(
-        op[0], name.encode() if isinstance(name, str) else name,
-        level, f,
+        op[0],
+        name.encode() if isinstance(name, str) else name,
+        level,
+        f,
     )
     if info != lib.GrB_SUCCESS:
         raise _error_code_lookup.get(info, RuntimeError)(

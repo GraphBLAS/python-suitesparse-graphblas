@@ -69,10 +69,15 @@ def semiring_print(s, name="", level=lib.GxB_COMPLETE):
     True
 
     """
-    check_status(s, lib.GxB_Semiring_fprint(
-        s[0], name.encode() if isinstance(name, str) else name,
-        level, ffi.NULL,
-    ))
+    check_status(
+        s,
+        lib.GxB_Semiring_fprint(
+            s[0],
+            name.encode() if isinstance(name, str) else name,
+            level,
+            ffi.NULL,
+        ),
+    )
 
 
 def semiring_fprint(s, f, name="", level=lib.GxB_COMPLETE):
@@ -87,10 +92,15 @@ def semiring_fprint(s, f, name="", level=lib.GxB_COMPLETE):
     True
 
     """
-    check_status(s, lib.GxB_Semiring_fprint(
-        s[0], name.encode() if isinstance(name, str) else name,
-        level, f,
-    ))
+    check_status(
+        s,
+        lib.GxB_Semiring_fprint(
+            s[0],
+            name.encode() if isinstance(name, str) else name,
+            level,
+            f,
+        ),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -112,9 +122,7 @@ def semiring_get_int32(s, field):
 
 
 def semiring_set_int32(s, field, value):
-    """Set a semiring option from an int32.
-
-    """
+    """Set a semiring option from an int32."""
     check_status(s, lib.GrB_Semiring_set_INT32(s[0], ffi.cast("int32_t", value), field))
 
 
@@ -145,9 +153,7 @@ def semiring_get_string(s, field):
 
 
 def semiring_set_string(s, field, value):
-    """Set a semiring option from a string.
-
-    """
+    """Set a semiring option from a string."""
     check_status(s, lib.GrB_Semiring_set_String(s[0], value.encode(), field))
 
 

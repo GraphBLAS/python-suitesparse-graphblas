@@ -4,10 +4,9 @@ import numpy as np
 
 from suitesparse_graphblas import check_status, ffi, lib, supports_complex
 
-from .utils import _capture_c_output  # noqa: F401
-
 from .io.serialize import deserialize_vector as deserialize  # noqa: F401
 from .io.serialize import serialize_vector as serialize  # noqa: F401
+from .utils import _capture_c_output  # noqa: F401
 
 
 def vector_free(v):
@@ -105,9 +104,14 @@ def vector_option_set_int32(v, field, value):
     True
 
     """
-    check_status(v, lib.GxB_Vector_Option_set_INT32(
-        v[0], field, ffi.cast("int32_t", value),
-    ))
+    check_status(
+        v,
+        lib.GxB_Vector_Option_set_INT32(
+            v[0],
+            field,
+            ffi.cast("int32_t", value),
+        ),
+    )
 
 
 def vector_option_get_fp64(v, field):
@@ -132,9 +136,14 @@ def vector_option_set_fp64(v, field, value):
     True
 
     """
-    check_status(v, lib.GxB_Vector_Option_set_FP64(
-        v[0], field, ffi.cast("double", value),
-    ))
+    check_status(
+        v,
+        lib.GxB_Vector_Option_set_FP64(
+            v[0],
+            field,
+            ffi.cast("double", value),
+        ),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -201,10 +210,15 @@ def vector_print(v, name="", level=lib.GxB_COMPLETE):
     True
 
     """
-    check_status(v, lib.GxB_Vector_fprint(
-        v[0], name.encode() if isinstance(name, str) else name,
-        level, ffi.NULL,
-    ))
+    check_status(
+        v,
+        lib.GxB_Vector_fprint(
+            v[0],
+            name.encode() if isinstance(name, str) else name,
+            level,
+            ffi.NULL,
+        ),
+    )
 
 
 def vector_fprint(v, f, name="", level=lib.GxB_COMPLETE):
@@ -223,10 +237,15 @@ def vector_fprint(v, f, name="", level=lib.GxB_COMPLETE):
     True
 
     """
-    check_status(v, lib.GxB_Vector_fprint(
-        v[0], name.encode() if isinstance(name, str) else name,
-        level, f,
-    ))
+    check_status(
+        v,
+        lib.GxB_Vector_fprint(
+            v[0],
+            name.encode() if isinstance(name, str) else name,
+            level,
+            f,
+        ),
+    )
 
 
 def vector_mxv(w, semiring, A, u, mask=None, accum=None, desc=None):
@@ -243,15 +262,18 @@ def vector_mxv(w, semiring, A, u, mask=None, accum=None, desc=None):
     True
 
     """
-    check_status(w, lib.GrB_mxv(
-        w[0],
-        ffi.NULL if mask is None else mask[0],
-        ffi.NULL if accum is None else accum,
-        semiring,
-        A[0],
-        u[0],
-        ffi.NULL if desc is None else desc,
-    ))
+    check_status(
+        w,
+        lib.GrB_mxv(
+            w[0],
+            ffi.NULL if mask is None else mask[0],
+            ffi.NULL if accum is None else accum,
+            semiring,
+            A[0],
+            u[0],
+            ffi.NULL if desc is None else desc,
+        ),
+    )
 
 
 def vector_vxm(w, semiring, u, A, mask=None, accum=None, desc=None):
@@ -268,15 +290,18 @@ def vector_vxm(w, semiring, u, A, mask=None, accum=None, desc=None):
     True
 
     """
-    check_status(w, lib.GrB_vxm(
-        w[0],
-        ffi.NULL if mask is None else mask[0],
-        ffi.NULL if accum is None else accum,
-        semiring,
-        u[0],
-        A[0],
-        ffi.NULL if desc is None else desc,
-    ))
+    check_status(
+        w,
+        lib.GrB_vxm(
+            w[0],
+            ffi.NULL if mask is None else mask[0],
+            ffi.NULL if accum is None else accum,
+            semiring,
+            u[0],
+            A[0],
+            ffi.NULL if desc is None else desc,
+        ),
+    )
 
 
 def vector_ewise_add(w, op, u, v, mask=None, accum=None, desc=None):
@@ -292,15 +317,18 @@ def vector_ewise_add(w, op, u, v, mask=None, accum=None, desc=None):
     True
 
     """
-    check_status(w, lib.GrB_Vector_eWiseAdd_BinaryOp(
-        w[0],
-        ffi.NULL if mask is None else mask[0],
-        ffi.NULL if accum is None else accum,
-        op,
-        u[0],
-        v[0],
-        ffi.NULL if desc is None else desc,
-    ))
+    check_status(
+        w,
+        lib.GrB_Vector_eWiseAdd_BinaryOp(
+            w[0],
+            ffi.NULL if mask is None else mask[0],
+            ffi.NULL if accum is None else accum,
+            op,
+            u[0],
+            v[0],
+            ffi.NULL if desc is None else desc,
+        ),
+    )
 
 
 def vector_ewise_mult(w, op, u, v, mask=None, accum=None, desc=None):
@@ -316,15 +344,18 @@ def vector_ewise_mult(w, op, u, v, mask=None, accum=None, desc=None):
     True
 
     """
-    check_status(w, lib.GrB_Vector_eWiseMult_BinaryOp(
-        w[0],
-        ffi.NULL if mask is None else mask[0],
-        ffi.NULL if accum is None else accum,
-        op,
-        u[0],
-        v[0],
-        ffi.NULL if desc is None else desc,
-    ))
+    check_status(
+        w,
+        lib.GrB_Vector_eWiseMult_BinaryOp(
+            w[0],
+            ffi.NULL if mask is None else mask[0],
+            ffi.NULL if accum is None else accum,
+            op,
+            u[0],
+            v[0],
+            ffi.NULL if desc is None else desc,
+        ),
+    )
 
 
 def vector_ewise_union(w, op, u, alpha, v, beta, mask=None, accum=None, desc=None):
@@ -350,15 +381,20 @@ def vector_ewise_union(w, op, u, alpha, v, beta, mask=None, accum=None, desc=Non
     True
 
     """
-    check_status(w, lib.GxB_Vector_eWiseUnion(
-        w[0],
-        ffi.NULL if mask is None else mask[0],
-        ffi.NULL if accum is None else accum,
-        op,
-        u[0], alpha[0],
-        v[0], beta[0],
-        ffi.NULL if desc is None else desc,
-    ))
+    check_status(
+        w,
+        lib.GxB_Vector_eWiseUnion(
+            w[0],
+            ffi.NULL if mask is None else mask[0],
+            ffi.NULL if accum is None else accum,
+            op,
+            u[0],
+            alpha[0],
+            v[0],
+            beta[0],
+            ffi.NULL if desc is None else desc,
+        ),
+    )
 
 
 def vector_apply(w, op, u, mask=None, accum=None, desc=None):
@@ -372,14 +408,17 @@ def vector_apply(w, op, u, mask=None, accum=None, desc=None):
     True
 
     """
-    check_status(w, lib.GrB_Vector_apply(
-        w[0],
-        ffi.NULL if mask is None else mask[0],
-        ffi.NULL if accum is None else accum,
-        op,
-        u[0],
-        ffi.NULL if desc is None else desc,
-    ))
+    check_status(
+        w,
+        lib.GrB_Vector_apply(
+            w[0],
+            ffi.NULL if mask is None else mask[0],
+            ffi.NULL if accum is None else accum,
+            op,
+            u[0],
+            ffi.NULL if desc is None else desc,
+        ),
+    )
 
 
 def vector_apply_first(w, op, x, u, mask=None, accum=None, desc=None):
@@ -396,15 +435,18 @@ def vector_apply_first(w, op, x, u, mask=None, accum=None, desc=None):
     True
 
     """
-    check_status(w, lib.GrB_Vector_apply_BinaryOp1st_Scalar(
-        w[0],
-        ffi.NULL if mask is None else mask[0],
-        ffi.NULL if accum is None else accum,
-        op,
-        x[0],
-        u[0],
-        ffi.NULL if desc is None else desc,
-    ))
+    check_status(
+        w,
+        lib.GrB_Vector_apply_BinaryOp1st_Scalar(
+            w[0],
+            ffi.NULL if mask is None else mask[0],
+            ffi.NULL if accum is None else accum,
+            op,
+            x[0],
+            u[0],
+            ffi.NULL if desc is None else desc,
+        ),
+    )
 
 
 def vector_apply_second(w, op, u, y, mask=None, accum=None, desc=None):
@@ -421,15 +463,18 @@ def vector_apply_second(w, op, u, y, mask=None, accum=None, desc=None):
     True
 
     """
-    check_status(w, lib.GrB_Vector_apply_BinaryOp2nd_Scalar(
-        w[0],
-        ffi.NULL if mask is None else mask[0],
-        ffi.NULL if accum is None else accum,
-        op,
-        u[0],
-        y[0],
-        ffi.NULL if desc is None else desc,
-    ))
+    check_status(
+        w,
+        lib.GrB_Vector_apply_BinaryOp2nd_Scalar(
+            w[0],
+            ffi.NULL if mask is None else mask[0],
+            ffi.NULL if accum is None else accum,
+            op,
+            u[0],
+            y[0],
+            ffi.NULL if desc is None else desc,
+        ),
+    )
 
 
 def vector_apply_indexop(w, op, u, thunk, mask=None, accum=None, desc=None):
@@ -449,15 +494,18 @@ def vector_apply_indexop(w, op, u, thunk, mask=None, accum=None, desc=None):
     True
 
     """
-    check_status(w, lib.GrB_Vector_apply_IndexOp_Scalar(
-        w[0],
-        ffi.NULL if mask is None else mask[0],
-        ffi.NULL if accum is None else accum,
-        op,
-        u[0],
-        thunk[0],
-        ffi.NULL if desc is None else desc,
-    ))
+    check_status(
+        w,
+        lib.GrB_Vector_apply_IndexOp_Scalar(
+            w[0],
+            ffi.NULL if mask is None else mask[0],
+            ffi.NULL if accum is None else accum,
+            op,
+            u[0],
+            thunk[0],
+            ffi.NULL if desc is None else desc,
+        ),
+    )
 
 
 def vector_select(w, op, u, thunk, mask=None, accum=None, desc=None):
@@ -477,15 +525,18 @@ def vector_select(w, op, u, thunk, mask=None, accum=None, desc=None):
     True
 
     """
-    check_status(w, lib.GrB_Vector_select_Scalar(
-        w[0],
-        ffi.NULL if mask is None else mask[0],
-        ffi.NULL if accum is None else accum,
-        op,
-        u[0],
-        thunk[0],
-        ffi.NULL if desc is None else desc,
-    ))
+    check_status(
+        w,
+        lib.GrB_Vector_select_Scalar(
+            w[0],
+            ffi.NULL if mask is None else mask[0],
+            ffi.NULL if accum is None else accum,
+            op,
+            u[0],
+            thunk[0],
+            ffi.NULL if desc is None else desc,
+        ),
+    )
 
 
 def vector_reduce(s, monoid, u, accum=None, desc=None):
@@ -501,13 +552,16 @@ def vector_reduce(s, monoid, u, accum=None, desc=None):
     True
 
     """
-    check_status(s, lib.GrB_Vector_reduce_Monoid_Scalar(
-        s[0],
-        ffi.NULL if accum is None else accum,
-        monoid,
-        u[0],
-        ffi.NULL if desc is None else desc,
-    ))
+    check_status(
+        s,
+        lib.GrB_Vector_reduce_Monoid_Scalar(
+            s[0],
+            ffi.NULL if accum is None else accum,
+            monoid,
+            u[0],
+            ffi.NULL if desc is None else desc,
+        ),
+    )
 
 
 def vector_diag(v, A, k=0, desc=None):
@@ -530,10 +584,15 @@ def vector_diag(v, A, k=0, desc=None):
     True
 
     """
-    check_status(v, lib.GxB_Vector_diag(
-        v[0], A[0], k,
-        ffi.NULL if desc is None else desc,
-    ))
+    check_status(
+        v,
+        lib.GxB_Vector_diag(
+            v[0],
+            A[0],
+            k,
+            ffi.NULL if desc is None else desc,
+        ),
+    )
 
 
 def vector_assign(w, u, indices, ni, mask=None, accum=None, desc=None):
@@ -548,14 +607,18 @@ def vector_assign(w, u, indices, ni, mask=None, accum=None, desc=None):
     True
 
     """
-    check_status(w, lib.GrB_Vector_assign(
-        w[0],
-        ffi.NULL if mask is None else mask[0],
-        ffi.NULL if accum is None else accum,
-        u[0],
-        indices, ni,
-        ffi.NULL if desc is None else desc,
-    ))
+    check_status(
+        w,
+        lib.GrB_Vector_assign(
+            w[0],
+            ffi.NULL if mask is None else mask[0],
+            ffi.NULL if accum is None else accum,
+            u[0],
+            indices,
+            ni,
+            ffi.NULL if desc is None else desc,
+        ),
+    )
 
 
 def vector_assign_scalar(w, x, indices, ni, mask=None, accum=None, desc=None):
@@ -573,14 +636,18 @@ def vector_assign_scalar(w, x, indices, ni, mask=None, accum=None, desc=None):
     True
 
     """
-    check_status(w, lib.GrB_Vector_assign_Scalar(
-        w[0],
-        ffi.NULL if mask is None else mask[0],
-        ffi.NULL if accum is None else accum,
-        x[0],
-        indices, ni,
-        ffi.NULL if desc is None else desc,
-    ))
+    check_status(
+        w,
+        lib.GrB_Vector_assign_Scalar(
+            w[0],
+            ffi.NULL if mask is None else mask[0],
+            ffi.NULL if accum is None else accum,
+            x[0],
+            indices,
+            ni,
+            ffi.NULL if desc is None else desc,
+        ),
+    )
 
 
 def vector_extract(w, u, indices, ni, mask=None, accum=None, desc=None):
@@ -595,14 +662,18 @@ def vector_extract(w, u, indices, ni, mask=None, accum=None, desc=None):
     True
 
     """
-    check_status(w, lib.GrB_Vector_extract(
-        w[0],
-        ffi.NULL if mask is None else mask[0],
-        ffi.NULL if accum is None else accum,
-        u[0],
-        indices, ni,
-        ffi.NULL if desc is None else desc,
-    ))
+    check_status(
+        w,
+        lib.GrB_Vector_extract(
+            w[0],
+            ffi.NULL if mask is None else mask[0],
+            ffi.NULL if accum is None else accum,
+            u[0],
+            indices,
+            ni,
+            ffi.NULL if desc is None else desc,
+        ),
+    )
 
 
 def vector_build_int64(w, indices, vals, nvals, dup):
@@ -618,12 +689,16 @@ def vector_build_int64(w, indices, vals, nvals, dup):
     True
 
     """
-    check_status(w, lib.GrB_Vector_build_INT64(
-        w[0],
-        ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
-        ffi.cast("int64_t*", ffi.from_buffer(vals)),
-        nvals, dup,
-    ))
+    check_status(
+        w,
+        lib.GrB_Vector_build_INT64(
+            w[0],
+            ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
+            ffi.cast("int64_t*", ffi.from_buffer(vals)),
+            nvals,
+            dup,
+        ),
+    )
 
 
 def vector_build_fp64(w, indices, vals, nvals, dup):
@@ -637,12 +712,16 @@ def vector_build_fp64(w, indices, vals, nvals, dup):
     True
 
     """
-    check_status(w, lib.GrB_Vector_build_FP64(
-        w[0],
-        ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
-        ffi.cast("double*", ffi.from_buffer(vals)),
-        nvals, dup,
-    ))
+    check_status(
+        w,
+        lib.GrB_Vector_build_FP64(
+            w[0],
+            ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
+            ffi.cast("double*", ffi.from_buffer(vals)),
+            nvals,
+            dup,
+        ),
+    )
 
 
 def vector_extract_tuples_int64(v):
@@ -666,11 +745,15 @@ def vector_extract_tuples_int64(v):
     vals = np.empty(n, dtype=np.int64)
     nvals_p = ffi.new("GrB_Index*", n)
     if n > 0:
-        check_status(v, lib.GrB_Vector_extractTuples_INT64(
-            ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
-            ffi.cast("int64_t*", ffi.from_buffer(vals)),
-            nvals_p, v[0],
-        ))
+        check_status(
+            v,
+            lib.GrB_Vector_extractTuples_INT64(
+                ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
+                ffi.cast("int64_t*", ffi.from_buffer(vals)),
+                nvals_p,
+                v[0],
+            ),
+        )
     return indices, vals
 
 
@@ -693,12 +776,17 @@ def vector_extract_tuples_fp64(v):
     vals = np.empty(n, dtype=np.float64)
     nvals_p = ffi.new("GrB_Index*", n)
     if n > 0:
-        check_status(v, lib.GrB_Vector_extractTuples_FP64(
-            ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
-            ffi.cast("double*", ffi.from_buffer(vals)),
-            nvals_p, v[0],
-        ))
+        check_status(
+            v,
+            lib.GrB_Vector_extractTuples_FP64(
+                ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
+                ffi.cast("double*", ffi.from_buffer(vals)),
+                nvals_p,
+                v[0],
+            ),
+        )
     return indices, vals
+
 
 def vector_build_bool(w, indices, vals, nvals, dup):
     """Build a vector from index and bool value arrays.
@@ -711,12 +799,17 @@ def vector_build_bool(w, indices, vals, nvals, dup):
     True
 
     """
-    check_status(w, lib.GrB_Vector_build_BOOL(
-        w[0],
-        ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
-        ffi.cast("bool*", ffi.from_buffer(vals)),
-        nvals, dup,
-    ))
+    check_status(
+        w,
+        lib.GrB_Vector_build_BOOL(
+            w[0],
+            ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
+            ffi.cast("bool*", ffi.from_buffer(vals)),
+            nvals,
+            dup,
+        ),
+    )
+
 
 def vector_build_int8(w, indices, vals, nvals, dup):
     """Build a vector from index and int8 value arrays.
@@ -729,12 +822,17 @@ def vector_build_int8(w, indices, vals, nvals, dup):
     True
 
     """
-    check_status(w, lib.GrB_Vector_build_INT8(
-        w[0],
-        ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
-        ffi.cast("int8_t*", ffi.from_buffer(vals)),
-        nvals, dup,
-    ))
+    check_status(
+        w,
+        lib.GrB_Vector_build_INT8(
+            w[0],
+            ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
+            ffi.cast("int8_t*", ffi.from_buffer(vals)),
+            nvals,
+            dup,
+        ),
+    )
+
 
 def vector_build_int16(w, indices, vals, nvals, dup):
     """Build a vector from index and int16 value arrays.
@@ -747,12 +845,17 @@ def vector_build_int16(w, indices, vals, nvals, dup):
     True
 
     """
-    check_status(w, lib.GrB_Vector_build_INT16(
-        w[0],
-        ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
-        ffi.cast("int16_t*", ffi.from_buffer(vals)),
-        nvals, dup,
-    ))
+    check_status(
+        w,
+        lib.GrB_Vector_build_INT16(
+            w[0],
+            ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
+            ffi.cast("int16_t*", ffi.from_buffer(vals)),
+            nvals,
+            dup,
+        ),
+    )
+
 
 def vector_build_int32(w, indices, vals, nvals, dup):
     """Build a vector from index and int32 value arrays.
@@ -765,12 +868,17 @@ def vector_build_int32(w, indices, vals, nvals, dup):
     True
 
     """
-    check_status(w, lib.GrB_Vector_build_INT32(
-        w[0],
-        ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
-        ffi.cast("int32_t*", ffi.from_buffer(vals)),
-        nvals, dup,
-    ))
+    check_status(
+        w,
+        lib.GrB_Vector_build_INT32(
+            w[0],
+            ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
+            ffi.cast("int32_t*", ffi.from_buffer(vals)),
+            nvals,
+            dup,
+        ),
+    )
+
 
 def vector_build_uint8(w, indices, vals, nvals, dup):
     """Build a vector from index and uint8 value arrays.
@@ -783,12 +891,17 @@ def vector_build_uint8(w, indices, vals, nvals, dup):
     True
 
     """
-    check_status(w, lib.GrB_Vector_build_UINT8(
-        w[0],
-        ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
-        ffi.cast("uint8_t*", ffi.from_buffer(vals)),
-        nvals, dup,
-    ))
+    check_status(
+        w,
+        lib.GrB_Vector_build_UINT8(
+            w[0],
+            ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
+            ffi.cast("uint8_t*", ffi.from_buffer(vals)),
+            nvals,
+            dup,
+        ),
+    )
+
 
 def vector_build_uint16(w, indices, vals, nvals, dup):
     """Build a vector from index and uint16 value arrays.
@@ -801,12 +914,17 @@ def vector_build_uint16(w, indices, vals, nvals, dup):
     True
 
     """
-    check_status(w, lib.GrB_Vector_build_UINT16(
-        w[0],
-        ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
-        ffi.cast("uint16_t*", ffi.from_buffer(vals)),
-        nvals, dup,
-    ))
+    check_status(
+        w,
+        lib.GrB_Vector_build_UINT16(
+            w[0],
+            ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
+            ffi.cast("uint16_t*", ffi.from_buffer(vals)),
+            nvals,
+            dup,
+        ),
+    )
+
 
 def vector_build_uint32(w, indices, vals, nvals, dup):
     """Build a vector from index and uint32 value arrays.
@@ -819,12 +937,17 @@ def vector_build_uint32(w, indices, vals, nvals, dup):
     True
 
     """
-    check_status(w, lib.GrB_Vector_build_UINT32(
-        w[0],
-        ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
-        ffi.cast("uint32_t*", ffi.from_buffer(vals)),
-        nvals, dup,
-    ))
+    check_status(
+        w,
+        lib.GrB_Vector_build_UINT32(
+            w[0],
+            ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
+            ffi.cast("uint32_t*", ffi.from_buffer(vals)),
+            nvals,
+            dup,
+        ),
+    )
+
 
 def vector_build_uint64(w, indices, vals, nvals, dup):
     """Build a vector from index and uint64 value arrays.
@@ -837,12 +960,17 @@ def vector_build_uint64(w, indices, vals, nvals, dup):
     True
 
     """
-    check_status(w, lib.GrB_Vector_build_UINT64(
-        w[0],
-        ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
-        ffi.cast("uint64_t*", ffi.from_buffer(vals)),
-        nvals, dup,
-    ))
+    check_status(
+        w,
+        lib.GrB_Vector_build_UINT64(
+            w[0],
+            ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
+            ffi.cast("uint64_t*", ffi.from_buffer(vals)),
+            nvals,
+            dup,
+        ),
+    )
+
 
 def vector_build_fp32(w, indices, vals, nvals, dup):
     """Build a vector from index and fp32 value arrays.
@@ -855,12 +983,17 @@ def vector_build_fp32(w, indices, vals, nvals, dup):
     True
 
     """
-    check_status(w, lib.GrB_Vector_build_FP32(
-        w[0],
-        ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
-        ffi.cast("float*", ffi.from_buffer(vals)),
-        nvals, dup,
-    ))
+    check_status(
+        w,
+        lib.GrB_Vector_build_FP32(
+            w[0],
+            ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
+            ffi.cast("float*", ffi.from_buffer(vals)),
+            nvals,
+            dup,
+        ),
+    )
+
 
 def vector_extract_tuples_bool(v):
     """Extract all tuples from a vector as numpy arrays.
@@ -881,12 +1014,17 @@ def vector_extract_tuples_bool(v):
     vals = np.empty(n, dtype=np.bool_)
     nvals_p = ffi.new("GrB_Index*", n)
     if n > 0:
-        check_status(v, lib.GrB_Vector_extractTuples_BOOL(
-            ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
-            ffi.cast("bool*", ffi.from_buffer(vals)),
-            nvals_p, v[0],
-        ))
+        check_status(
+            v,
+            lib.GrB_Vector_extractTuples_BOOL(
+                ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
+                ffi.cast("bool*", ffi.from_buffer(vals)),
+                nvals_p,
+                v[0],
+            ),
+        )
     return indices, vals
+
 
 def vector_extract_tuples_int8(v):
     """Extract all tuples from a vector as numpy arrays.
@@ -907,12 +1045,17 @@ def vector_extract_tuples_int8(v):
     vals = np.empty(n, dtype=np.int8)
     nvals_p = ffi.new("GrB_Index*", n)
     if n > 0:
-        check_status(v, lib.GrB_Vector_extractTuples_INT8(
-            ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
-            ffi.cast("int8_t*", ffi.from_buffer(vals)),
-            nvals_p, v[0],
-        ))
+        check_status(
+            v,
+            lib.GrB_Vector_extractTuples_INT8(
+                ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
+                ffi.cast("int8_t*", ffi.from_buffer(vals)),
+                nvals_p,
+                v[0],
+            ),
+        )
     return indices, vals
+
 
 def vector_extract_tuples_int16(v):
     """Extract all tuples from a vector as numpy arrays.
@@ -933,12 +1076,17 @@ def vector_extract_tuples_int16(v):
     vals = np.empty(n, dtype=np.int16)
     nvals_p = ffi.new("GrB_Index*", n)
     if n > 0:
-        check_status(v, lib.GrB_Vector_extractTuples_INT16(
-            ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
-            ffi.cast("int16_t*", ffi.from_buffer(vals)),
-            nvals_p, v[0],
-        ))
+        check_status(
+            v,
+            lib.GrB_Vector_extractTuples_INT16(
+                ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
+                ffi.cast("int16_t*", ffi.from_buffer(vals)),
+                nvals_p,
+                v[0],
+            ),
+        )
     return indices, vals
+
 
 def vector_extract_tuples_int32(v):
     """Extract all tuples from a vector as numpy arrays.
@@ -959,12 +1107,17 @@ def vector_extract_tuples_int32(v):
     vals = np.empty(n, dtype=np.int32)
     nvals_p = ffi.new("GrB_Index*", n)
     if n > 0:
-        check_status(v, lib.GrB_Vector_extractTuples_INT32(
-            ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
-            ffi.cast("int32_t*", ffi.from_buffer(vals)),
-            nvals_p, v[0],
-        ))
+        check_status(
+            v,
+            lib.GrB_Vector_extractTuples_INT32(
+                ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
+                ffi.cast("int32_t*", ffi.from_buffer(vals)),
+                nvals_p,
+                v[0],
+            ),
+        )
     return indices, vals
+
 
 def vector_extract_tuples_uint8(v):
     """Extract all tuples from a vector as numpy arrays.
@@ -985,12 +1138,17 @@ def vector_extract_tuples_uint8(v):
     vals = np.empty(n, dtype=np.uint8)
     nvals_p = ffi.new("GrB_Index*", n)
     if n > 0:
-        check_status(v, lib.GrB_Vector_extractTuples_UINT8(
-            ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
-            ffi.cast("uint8_t*", ffi.from_buffer(vals)),
-            nvals_p, v[0],
-        ))
+        check_status(
+            v,
+            lib.GrB_Vector_extractTuples_UINT8(
+                ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
+                ffi.cast("uint8_t*", ffi.from_buffer(vals)),
+                nvals_p,
+                v[0],
+            ),
+        )
     return indices, vals
+
 
 def vector_extract_tuples_uint16(v):
     """Extract all tuples from a vector as numpy arrays.
@@ -1011,12 +1169,17 @@ def vector_extract_tuples_uint16(v):
     vals = np.empty(n, dtype=np.uint16)
     nvals_p = ffi.new("GrB_Index*", n)
     if n > 0:
-        check_status(v, lib.GrB_Vector_extractTuples_UINT16(
-            ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
-            ffi.cast("uint16_t*", ffi.from_buffer(vals)),
-            nvals_p, v[0],
-        ))
+        check_status(
+            v,
+            lib.GrB_Vector_extractTuples_UINT16(
+                ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
+                ffi.cast("uint16_t*", ffi.from_buffer(vals)),
+                nvals_p,
+                v[0],
+            ),
+        )
     return indices, vals
+
 
 def vector_extract_tuples_uint32(v):
     """Extract all tuples from a vector as numpy arrays.
@@ -1037,12 +1200,17 @@ def vector_extract_tuples_uint32(v):
     vals = np.empty(n, dtype=np.uint32)
     nvals_p = ffi.new("GrB_Index*", n)
     if n > 0:
-        check_status(v, lib.GrB_Vector_extractTuples_UINT32(
-            ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
-            ffi.cast("uint32_t*", ffi.from_buffer(vals)),
-            nvals_p, v[0],
-        ))
+        check_status(
+            v,
+            lib.GrB_Vector_extractTuples_UINT32(
+                ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
+                ffi.cast("uint32_t*", ffi.from_buffer(vals)),
+                nvals_p,
+                v[0],
+            ),
+        )
     return indices, vals
+
 
 def vector_extract_tuples_uint64(v):
     """Extract all tuples from a vector as numpy arrays.
@@ -1063,12 +1231,17 @@ def vector_extract_tuples_uint64(v):
     vals = np.empty(n, dtype=np.uint64)
     nvals_p = ffi.new("GrB_Index*", n)
     if n > 0:
-        check_status(v, lib.GrB_Vector_extractTuples_UINT64(
-            ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
-            ffi.cast("uint64_t*", ffi.from_buffer(vals)),
-            nvals_p, v[0],
-        ))
+        check_status(
+            v,
+            lib.GrB_Vector_extractTuples_UINT64(
+                ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
+                ffi.cast("uint64_t*", ffi.from_buffer(vals)),
+                nvals_p,
+                v[0],
+            ),
+        )
     return indices, vals
+
 
 def vector_extract_tuples_fp32(v):
     """Extract all tuples from a vector as numpy arrays.
@@ -1089,11 +1262,15 @@ def vector_extract_tuples_fp32(v):
     vals = np.empty(n, dtype=np.float32)
     nvals_p = ffi.new("GrB_Index*", n)
     if n > 0:
-        check_status(v, lib.GrB_Vector_extractTuples_FP32(
-            ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
-            ffi.cast("float*", ffi.from_buffer(vals)),
-            nvals_p, v[0],
-        ))
+        check_status(
+            v,
+            lib.GrB_Vector_extractTuples_FP32(
+                ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
+                ffi.cast("float*", ffi.from_buffer(vals)),
+                nvals_p,
+                v[0],
+            ),
+        )
     return indices, vals
 
 
@@ -1444,12 +1621,16 @@ if supports_complex():
         True
 
         """
-        check_status(w, lib.GxB_Vector_build_FC32(
-            w[0],
-            ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
-            ffi.cast("GxB_FC32_t*", ffi.from_buffer(vals)),
-            nvals, dup,
-        ))
+        check_status(
+            w,
+            lib.GxB_Vector_build_FC32(
+                w[0],
+                ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
+                ffi.cast("GxB_FC32_t*", ffi.from_buffer(vals)),
+                nvals,
+                dup,
+            ),
+        )
 
     def vector_extract_tuples_fc32(v):
         """Extract all tuples from a vector as numpy arrays.
@@ -1470,11 +1651,15 @@ if supports_complex():
         vals = np.empty(n, dtype=np.complex64)
         nvals_p = ffi.new("GrB_Index*", n)
         if n > 0:
-            check_status(v, lib.GxB_Vector_extractTuples_FC32(
-                ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
-                ffi.cast("GxB_FC32_t*", ffi.from_buffer(vals)),
-                nvals_p, v[0],
-            ))
+            check_status(
+                v,
+                lib.GxB_Vector_extractTuples_FC32(
+                    ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
+                    ffi.cast("GxB_FC32_t*", ffi.from_buffer(vals)),
+                    nvals_p,
+                    v[0],
+                ),
+            )
         return indices, vals
 
     def vector_build_fc64(w, indices, vals, nvals, dup):
@@ -1488,12 +1673,16 @@ if supports_complex():
         True
 
         """
-        check_status(w, lib.GxB_Vector_build_FC64(
-            w[0],
-            ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
-            ffi.cast("GxB_FC64_t*", ffi.from_buffer(vals)),
-            nvals, dup,
-        ))
+        check_status(
+            w,
+            lib.GxB_Vector_build_FC64(
+                w[0],
+                ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
+                ffi.cast("GxB_FC64_t*", ffi.from_buffer(vals)),
+                nvals,
+                dup,
+            ),
+        )
 
     def vector_extract_tuples_fc64(v):
         """Extract all tuples from a vector as numpy arrays.
@@ -1514,9 +1703,13 @@ if supports_complex():
         vals = np.empty(n, dtype=np.complex128)
         nvals_p = ffi.new("GrB_Index*", n)
         if n > 0:
-            check_status(v, lib.GxB_Vector_extractTuples_FC64(
-                ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
-                ffi.cast("GxB_FC64_t*", ffi.from_buffer(vals)),
-                nvals_p, v[0],
-            ))
+            check_status(
+                v,
+                lib.GxB_Vector_extractTuples_FC64(
+                    ffi.cast("GrB_Index*", ffi.from_buffer(indices)),
+                    ffi.cast("GxB_FC64_t*", ffi.from_buffer(vals)),
+                    nvals_p,
+                    v[0],
+                ),
+            )
         return indices, vals

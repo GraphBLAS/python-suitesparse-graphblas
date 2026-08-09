@@ -138,8 +138,12 @@ jobs:
           # very verbose
           CIBW_BUILD_VERBOSITY: 3
 
-          # cibuildwheel v3: PyPy no longer built by default; enable explicitly
-          # Note: cpython-freethreading not enabled because cffi doesn't support it yet
+          # cibuildwheel v3: PyPy no longer built by default; enable explicitly.
+          # Free-threaded wheels: cibuildwheel only gates cp313t behind
+          # "cpython-freethreading" (see its selector.py), so cp314t is already
+          # built and tested here by default. cp313t stays off because cffi
+          # publishes no cp313t wheels, so enabling it would build cffi from
+          # source in every wheel job.
           CIBW_ENABLE: "pypy"
 
           # Build SuiteSparse

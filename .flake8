@@ -7,3 +7,5 @@ extend-ignore =
 per-file-ignores =
     suitesparse_graphblas/io/binary.py:C408,
     suitesparse_graphblas/tests/test_io.py:E721,
+# The api package re-exports its submodules for `from suitesparse_graphblas import api`
+    suitesparse_graphblas/api/__init__.py:F401,

@@ -104,10 +104,15 @@ def scalar_print(s, name="", level=lib.GxB_COMPLETE):
     True
 
     """
-    check_status(s, lib.GxB_Scalar_fprint(
-        s[0], name.encode() if isinstance(name, str) else name,
-        level, ffi.NULL,
-    ))
+    check_status(
+        s,
+        lib.GxB_Scalar_fprint(
+            s[0],
+            name.encode() if isinstance(name, str) else name,
+            level,
+            ffi.NULL,
+        ),
+    )
 
 
 def scalar_fprint(s, f, name="", level=lib.GxB_COMPLETE):
@@ -125,10 +130,15 @@ def scalar_fprint(s, f, name="", level=lib.GxB_COMPLETE):
     True
 
     """
-    check_status(s, lib.GxB_Scalar_fprint(
-        s[0], name.encode() if isinstance(name, str) else name,
-        level, f,
-    ))
+    check_status(
+        s,
+        lib.GxB_Scalar_fprint(
+            s[0],
+            name.encode() if isinstance(name, str) else name,
+            level,
+            f,
+        ),
+    )
 
 
 def set_bool(s, value):

@@ -24,10 +24,15 @@ def descriptor_print(desc, name="", level=lib.GxB_COMPLETE):
     True
 
     """
-    check_status(desc, lib.GxB_Descriptor_fprint(
-        desc, name.encode() if isinstance(name, str) else name,
-        level, ffi.NULL,
-    ))
+    check_status(
+        desc,
+        lib.GxB_Descriptor_fprint(
+            desc,
+            name.encode() if isinstance(name, str) else name,
+            level,
+            ffi.NULL,
+        ),
+    )
 
 
 def descriptor_fprint(desc, f, name="", level=lib.GxB_COMPLETE):
@@ -41,10 +46,15 @@ def descriptor_fprint(desc, f, name="", level=lib.GxB_COMPLETE):
     True
 
     """
-    check_status(desc, lib.GxB_Descriptor_fprint(
-        desc, name.encode() if isinstance(name, str) else name,
-        level, f,
-    ))
+    check_status(
+        desc,
+        lib.GxB_Descriptor_fprint(
+            desc,
+            name.encode() if isinstance(name, str) else name,
+            level,
+            f,
+        ),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -72,9 +82,14 @@ def descriptor_set_int32(desc, field, value):
     False
 
     """
-    check_status(desc, lib.GrB_Descriptor_set_INT32(
-        desc, ffi.cast("int32_t", value), field,
-    ))
+    check_status(
+        desc,
+        lib.GrB_Descriptor_set_INT32(
+            desc,
+            ffi.cast("int32_t", value),
+            field,
+        ),
+    )
 
 
 def descriptor_get_size(desc, field):

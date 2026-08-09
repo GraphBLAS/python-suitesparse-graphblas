@@ -20,6 +20,8 @@ of these functions in detail, read the [SuiteSparse:GraphBLAS User
 Guide](https://github.com/DrTimothyAldenDavis/GraphBLAS/blob/stable/Doc/GraphBLAS_UserGuide.pdf)
 
 """
+
+from suitesparse_graphblas.api import io  # noqa: F401
 from suitesparse_graphblas.api import (
     binaryop,
     container,
@@ -33,9 +35,8 @@ from suitesparse_graphblas.api import (
     matrix,
     monoid,
     scalar,
-    semiring,
     selectop,
+    semiring,
     unaryop,
     vector,
 )
-from suitesparse_graphblas.api import io  # noqa: F401

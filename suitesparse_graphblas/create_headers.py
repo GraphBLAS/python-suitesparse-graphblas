@@ -302,6 +302,10 @@ DEFINES = {
     "GxB_COMPRESSION_ZSTD",
     "GxB_COMPRESSION_NONE",
     "GxB_USE_VALUES",
+    # Memory arenas, added in version 10.4
+    "GxB_ARENA_DATA",
+    "GxB_ARENA_HEADER",
+    "GxB_NARENAS",
 }
 
 CHAR_DEFINES = {
@@ -340,6 +344,12 @@ IGNORE_LINES = {
     "GxB_cuda_malloc",
     "GxB_cuda_free",
 }
+
+# Declared in GraphBLAS.h, but not actually defined by libgraphblas. cffi would
+# happily bind these, but then importing `_graphblas` fails at dlopen time with
+# "symbol not found in flat namespace". Remove entries here once upstream
+# implements them. This is most common in beta releases.
+NOT_IMPLEMENTED = set()
 IGNORE_ENUMS = {
     "memory_order",
     "RMM_MODE",
@@ -388,6 +398,8 @@ def get_groups(ast):
     groups = {}
     vals = {x for x in lines if "GrB_Info GxB" in x} - seen
     vals |= {x for x in lines if "GxB_Iterator" in x and "GB" not in x} - seen
+    # A few GxB functions return void, e.g. GxB_atfork_* (added in v10.4.0)
+    vals |= {x for x in lines if x.startswith("void GxB")} - seen
     seen.update(vals)
     groups["GxB methods"] = sorted(vals, key=sort_key)
 
@@ -631,11 +643,14 @@ def get_group_info(groups, ast, *, skip_complex=False):
                 self.functions.append(node)
 
     def handle_function_node(node):
-        if generator.visit(node.type.type) != "GrB_Info" and "GxB_Iterator" not in generator.visit(
-            node
+        if (
+            generator.visit(node.type.type) != "GrB_Info"
+            and "GxB_Iterator" not in generator.visit(node)
+            # e.g. GxB_atfork_* (added in v10.4.0) return void
+            and not (node.name.startswith("GxB_") and generator.visit(node.type.type) == "void")
         ):
             raise ValueError(generator.visit(node))
-        if node.name in DEPRECATED:
+        if node.name in DEPRECATED or node.name in NOT_IMPLEMENTED:
             return
         text = generator.visit(node)
         text += ";"
@@ -679,6 +694,10 @@ def get_group_info(groups, ast, *, skip_complex=False):
                 "wait": "core",
                 "deserialize": "core",
                 "Serialized": "core",  # Added in version 9
+                "arena": "core",  # Added in version 10.4
+                "atfork": "core",  # Added in version 10.4
+                "initialized": "core",  # Added in version 10.4
+                "finalized": "core",  # Added in version 10.4
             }[group]
         return {
             "name": node.name,
