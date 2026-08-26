@@ -27,6 +27,20 @@ if [ -z "${NPROC}" ]; then
 fi
 
 cmake_params=()
+
+# Fail the build if OpenMP is missing instead of silently producing a serial
+# library. GraphBLAS only warns and carries on, so a serial build stays
+# invisible until someone measures it: conda-forge's graphblas 10.5.0 shipped
+# that way on osx-arm64 while still depending on llvm-openmp. The matching
+# runtime check on the built wheel is tests/test_package.py::test_openmp.
+cmake_params+=(-DSUITESPARSE_USE_OPENMP=ON)
+cmake_params+=(-DSUITESPARSE_USE_STRICT=ON)
+# STRICT makes any requested-but-missing feature fatal, and SuiteSparsePolicy
+# defaults both of these to ON, so they must be turned off explicitly or the
+# configure step dies on "CUDA required for SuiteSparse but not found".
+cmake_params+=(-DSUITESPARSE_USE_CUDA=OFF)
+cmake_params+=(-DSUITESPARSE_USE_FORTRAN=OFF)
+
 if [ -n "${BREW_LIBOMP}" ]; then
     # macOS OpenMP flags.
     # FindOpenMP doesn't find brew's libomp, so set the necessary configs manually.

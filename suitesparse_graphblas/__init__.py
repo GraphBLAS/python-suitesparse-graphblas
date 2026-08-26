@@ -24,6 +24,15 @@ except Exception as exc:  # pragma: no cover (safety)
     ) from exc
 del importlib, platform
 
+# The SuiteSparse:GraphBLAS C library this binding was built against, as
+# (major, minor, sub). ``__version__`` is the version of *this package*,
+# which should normally match.
+libgraphblas_version = (
+    lib.GxB_IMPLEMENTATION_MAJOR,
+    lib.GxB_IMPLEMENTATION_MINOR,
+    lib.GxB_IMPLEMENTATION_SUB,
+)
+
 # It is strongly recommended to use the non-variadic version of functions to be
 # compatible with the most number of architectures. For example, you should use
 # GxB_Matrix_Option_get_INT32 instead of GxB_Matrix_Option_get.
