@@ -1,8 +1,8 @@
 name: docs
 
+# Disabled: we don't have docs to deploy yet, so this only runs when
+# triggered manually. Restore `push: branches: [main]` to re-enable.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
