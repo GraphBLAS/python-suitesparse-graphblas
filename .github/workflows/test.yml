@@ -46,7 +46,7 @@ jobs:
         echo "  - $variant" >> environment-ci.yml
         cat environment-ci.yml
     - name: Conda
-      uses: conda-incubator/setup-miniconda@v3
+      uses: conda-incubator/setup-miniconda@v4
       with:
         auto-update-conda: true
         environment-file: environment-ci.yml
