@@ -21,20 +21,21 @@ on:
 
   pull_request:
 
+# Cancel superseded runs of a PR only.  Keying on `github.ref` would also let a
+# push to main cancel a running release or manual (workflow_dispatch) upload.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: true
 
 permissions:
-  # For PyPI Trusted Publisher
-  id-token: write
+  contents: read
 
 jobs:
   build_sdist:
     name: Build SDist
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -45,7 +46,7 @@ jobs:
       - name: Check metadata
         run: pipx run twine check dist/*
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: sdist
           path: dist/*.tar.gz
@@ -94,7 +95,7 @@ jobs:
             cibw_archs: "arm64"
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -103,20 +104,20 @@ jobs:
         if: github.event_name == 'push' || github.event_name == 'pull_request'
         # Ask suitesparse.sh to compile in the fastest way possible and provide a GB version to build
         run: |
-          echo "SUITESPARSE_FASTEST_BUILD=1" >> $GITHUB_ENV
+          echo "SUITESPARSE_FASTEST_BUILD=1" >> "$GITHUB_ENV"
         shell: bash
 
       - name: Setup GraphBLAS version from GB_VERSION.txt
         # Use GraphBLAS version specified in GB_VERSION.txt unless specified in a git tag (next workflow step).
         # Git tag method required for uploads to PyPI.
         if: github.event_name != 'release' && github.event.inputs.upload_dest != 'PyPI'
-        run: echo "GB_VERSION_REF=refs/tags/$(cat GB_VERSION.txt).0" >> $GITHUB_ENV
+        run: echo "GB_VERSION_REF=refs/tags/$(cat GB_VERSION.txt).0" >> "$GITHUB_ENV"
         shell: bash
 
       - name: Setup GraphBLAS version from git tag
         if: ${{ startsWith(github.ref, 'refs/tags/') }}
         # If this is a tagged ref, like a release, then use the tag for the graphblas version
-        run: echo "GB_VERSION_REF=${{ github.ref }}" >> $GITHUB_ENV
+        run: echo "GB_VERSION_REF=$GITHUB_REF" >> "$GITHUB_ENV"
         shell: bash
 
       - name: Install tools (macOS)
@@ -129,21 +130,19 @@ jobs:
         run: |
           brew fetch --retry coreutils && brew install coreutils
           brew fetch --retry libomp && brew reinstall libomp
-          echo MACOSX_DEPLOYMENT_TARGET=$(otool -l $(brew --prefix libomp)/lib/libomp.dylib | grep minos | awk '{print $2}') >> $GITHUB_ENV
+          echo "MACOSX_DEPLOYMENT_TARGET=$(otool -l "$(brew --prefix libomp)/lib/libomp.dylib" | grep minos | awk '{print $2}')" >> "$GITHUB_ENV"
 
-      - uses: pypa/cibuildwheel@v3.4
+      - uses: pypa/cibuildwheel@e090b81e30c4d855ea63bf4b6e59204c09a101ae # v4.2.1
         with:
           output-dir: wheelhouse
         env:
           # very verbose
           CIBW_BUILD_VERBOSITY: 3
 
-          # cibuildwheel v3: PyPy no longer built by default; enable explicitly.
-          # Free-threaded wheels: cibuildwheel only gates cp313t behind
-          # "cpython-freethreading" (see its selector.py), so cp314t is already
-          # built and tested here by default. cp313t stays off because cffi
-          # publishes no cp313t wheels, so enabling it would build cffi from
-          # source in every wheel job.
+          # PyPy is not built by default (since cibuildwheel v3); enable explicitly.
+          # Free-threaded wheels (cp314t, cp315t) are built and tested by default.
+          # cibuildwheel v4 dropped cp313t (and its "cpython-freethreading"
+          # enable option) entirely.
           CIBW_ENABLE: "pypy"
 
           # Build SuiteSparse
@@ -171,10 +170,9 @@ jobs:
           # Use delvewheel on Windows.
           # This copies graphblas.dll into the wheel. "repair" in cibuildwheel parlance includes copying any shared
           # libraries from the build host into the wheel to make the wheel self-contained.
-          # Cibuildwheel includes tools for this for Linux and macOS, and they recommend delvewheel for Windows.
-          # Note: Currently using a workaround: --no-mangle instead of stripping graphblas.dll
+          # cibuildwheel v4 installs delvewheel and uses it by default; this overrides its command so it can
+          # find graphblas.dll and to apply a workaround: --no-mangle instead of stripping graphblas.dll
           # see https://github.com/adang1345/delvewheel/issues/33
-          CIBW_BEFORE_BUILD_WINDOWS: "pip install delvewheel"
           CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: "delvewheel repair --add-path \"C:\\GraphBLAS\\bin\" --no-mangle \"libgomp-1.dll;libgcc_s_seh-1.dll\" -w {dest_dir} {wheel}"
 
           # make cibuildwheel install test dependencies from pyproject.toml
@@ -183,48 +181,55 @@ jobs:
           # run tests
           CIBW_TEST_COMMAND: "pytest --pyargs suitesparse_graphblas -s -k test_print_jit_config && pytest -v --pyargs suitesparse_graphblas"
 
-          CIBW_TEST_SKIP: ${{ matrix.cibw_test_skip }}
-
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: wheels-${{ matrix.os }}-${{ matrix.cibw_archs }}${{ matrix.arch_note}}
           path: wheelhouse/*.whl
           if-no-files-found: error
 
 
-  upload_all:
+  # Uploads use PyPI Trusted Publishing (no API token).  Each index trusts this workflow
+  # (wheels.yml) only when it runs in the GitHub environment registered with it.
+  upload_pypi:
     name: Upload to PyPI
     needs: [build_wheels, build_sdist]
     runs-on: ubuntu-latest
-    # only upload releases to PyPI
-    if: github.repository == 'GraphBLAS/python-suitesparse-graphblas' && ((github.event_name == 'release' && github.event.action == 'published') || (github.event_name == 'workflow_dispatch' && github.event.inputs.upload_dest != 'No Upload'))
-
+    # only upload releases (or an explicit manual request) to PyPI
+    if: github.repository == 'GraphBLAS/python-suitesparse-graphblas' && ((github.event_name == 'release' && github.event.action == 'published') || (github.event_name == 'workflow_dispatch' && github.event.inputs.upload_dest == 'PyPI'))
+    environment:
+      name: pypi
+      url: https://pypi.org/p/suitesparse-graphblas
+    permissions:
+      id-token: write  # for Trusted Publishing (and its attestations)
     steps:
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.x"
-
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           path: dist
           merge-multiple: true
 
-      # Upload to PyPI
-      - uses: pypa/gh-action-pypi-publish@v1.13.0
-        name: Upload to PyPI
-        if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && github.event.inputs.upload_dest == 'PyPI')
+      - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
         with:
           # PyPI does not allow replacing a file. Without this flag the entire action fails if even a single duplicate exists.
           skip-existing: true
-          verbose: true
-          password: ${{ secrets.PYPI_TOKEN }}
 
-      # Upload to Test PyPI
-      - uses: pypa/gh-action-pypi-publish@v1.13.0
-        name: Upload to Test PyPI
-        if: github.event_name == 'workflow_dispatch' && github.event.inputs.upload_dest == 'Test PyPI'
+  upload_test_pypi:
+    name: Upload to Test PyPI
+    needs: [build_wheels, build_sdist]
+    runs-on: ubuntu-latest
+    if: github.repository == 'GraphBLAS/python-suitesparse-graphblas' && github.event_name == 'workflow_dispatch' && github.event.inputs.upload_dest == 'Test PyPI'
+    environment:
+      name: test-pypi
+      url: https://test.pypi.org/p/suitesparse-graphblas
+    permissions:
+      id-token: write  # for Trusted Publishing (and its attestations)
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
+          path: dist
+          merge-multiple: true
+
+      - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
+        with:
+          repository-url: https://test.pypi.org/legacy/
           # PyPI does not allow replacing a file. Without this flag the entire action fails if even a single duplicate exists.
           skip-existing: true
-          verbose: true
-          repository-url: https://test.pypi.org/legacy/

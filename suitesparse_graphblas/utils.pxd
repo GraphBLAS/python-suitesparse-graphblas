@@ -1,4 +1,4 @@
-from libc.stdint cimport uint64_t
+from cpython.ref cimport PyObject
 from numpy cimport dtype as dtype_t
 from numpy cimport ndarray, npy_intp
 
@@ -9,6 +9,11 @@ cdef extern from "numpy/arrayobject.h" nogil:
     void *PyDataMem_NEW_ZEROED(size_t nmemb, size_t size)
     void *PyDataMem_RENEW(void *ptr, size_t size)
     void PyDataMem_FREE(void *ptr)
+    # The memory handler (a PyCapsule) whose allocator matches the functions above
+    PyObject *PyDataMem_DefaultHandler
+    # `mem_handler` needs NPY_TARGET_VERSION >= NPY_1_22_API_VERSION (see setup.py)
+    ctypedef struct PyArrayObject_fields:
+        PyObject *mem_handler
     # These are available in newer Cython versions
     void PyArray_ENABLEFLAGS(ndarray array, int flags)
     void PyArray_CLEARFLAGS(ndarray array, int flags)
@@ -21,7 +26,8 @@ ctypedef enum GrB_Mode:
     GrB_NONBLOCKING
     GrB_BLOCKING
 
-ctypedef uint64_t (*GxB_init)(
+# GrB_Info is a C enum (int); errors are negative
+ctypedef int (*GxB_init)(
     GrB_Mode,
     void *(*user_malloc_function)(size_t),
     void *(*user_calloc_function)(size_t, size_t),
@@ -36,5 +42,7 @@ cpdef ndarray claim_buffer(object ffi, object cdata, size_t size, dtype_t dtype)
 cpdef ndarray claim_buffer_2d(
     object ffi, object cdata, size_t cdata_size, size_t nrows, size_t ncols, dtype_t dtype, bint is_c_order
 )
+
+cpdef bint can_unclaim_buffer(ndarray array)
 
 cpdef unclaim_buffer(ndarray array)

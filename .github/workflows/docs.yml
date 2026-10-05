@@ -6,8 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  pages: write
-  id-token: write
+  contents: read
 
 concurrency:
   group: pages
@@ -17,33 +16,38 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Build package in Docker
         run: |
           docker build --target psg \
-            --build-arg SUITESPARSE=v$(cat GB_VERSION.txt) \
+            --build-arg SUITESPARSE="v$(cat GB_VERSION.txt)" \
             --build-arg VERSION=99.0.0.0 \
             --build-arg COMPACT=1 \
             -t psg-docs .
 
       - name: Generate docs with pdoc
         run: |
-          docker run --rm -v ${{ github.workspace }}/site:/out psg-docs \
+          docker run --rm -v "$GITHUB_WORKSPACE/site:/out" psg-docs \
             bash -c "pip install --break-system-packages -q pdoc && \
               pdoc --output-directory /out --no-show-source --docformat numpy \
               suitesparse_graphblas.api"
 
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: site/
 
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      pages: write  # to deploy to GitHub Pages
+      id-token: write  # to prove the deployment comes from this workflow
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/deploy-pages@v4
+      - uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
         id: deployment

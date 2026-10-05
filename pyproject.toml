@@ -56,6 +56,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: Free Threading :: 2 - Beta",
     "Intended Audience :: Developers",
@@ -100,7 +101,7 @@ dirty_template = "{tag}+{ccount}.g{sha}.dirty"
 
 [tool.black]
 line-length = 100
-target-version = ["py311", "py312", "py313", "py314"]
+target-version = ["py311", "py312", "py313", "py314", "py315"]
 
 [tool.isort]
 sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
@@ -132,7 +133,16 @@ exclude_lines = [
 
 [tool.pytest.ini_options]
 testpaths = ["suitesparse_graphblas"]
-addopts = "--doctest-modules"
+addopts = [
+    "--doctest-modules",
+    "--strict-config",  # Error on unknown or misspelled config options
+    "--strict-markers",  # Error on unregistered markers
+    "-ra",  # Summarize all non-passing tests (skips, xfails, ...) at the end
+]
+xfail_strict = true
+# Turn warnings into errors.  On free-threaded builds this also catches
+# "The global interpreter lock (GIL) has been enabled to load module ...".
+filterwarnings = ["error"]
 # NOTE: When running in Docker, use -w /tmp and --pyargs to avoid the source
 # directory shadowing the installed package (compiled extensions aren't in the
-# source tree).  See CLAUDE.md for the full Docker test commands.
+# source tree).  See AGENTS.md for the full Docker test commands.

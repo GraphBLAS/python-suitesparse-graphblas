@@ -1,31 +1,35 @@
-import sys
-from ctypes.util import find_library
 from pathlib import Path
 
-from cffi import FFI
-
-from suitesparse_graphblas import __version__, check_status, ffi, lib
+from suitesparse_graphblas import __version__, _error_code_lookup, check_status, ffi, lib
 from suitesparse_graphblas.api import matrix
-
-stdffi = FFI()
-stdffi.cdef("""
-void *malloc(size_t size);
-""")
-if sys.platform == "win32":
-    stdlib = stdffi.dlopen("ucrtbase")
-else:
-    stdlib = stdffi.dlopen(find_library("c"))
-
-# When "packing" a matrix the owner of the memory buffer is transfered
-# to SuiteSparse, which then becomes responsible for freeing it.  cffi
-# wisely does not allow you to do this without declaring and calling
-# malloc directly.  When SuiteSparse moves over to a more formal
-# memory manager with the cuda work, this will likely change and have
-# to be replaceable with a allocator common to numpy, cuda, and here.
-# Maybe PyDataMem_NEW?
+from suitesparse_graphblas.api.global_options import global_get_int32
 
 
-def readinto_new_buffer(f, typ, size, allocator=stdlib.malloc):
+def graphblas_malloc(size):
+    """Allocate ``size`` bytes with the allocator GraphBLAS uses for matrix data.
+
+    When "packing" a matrix ownership of the memory buffer is transferred to
+    SuiteSparse, which then becomes responsible for freeing it.  It frees with
+    the allocator it was initialized with (NumPy's by default; see
+    ``suitesparse_graphblas.initialize``), so that is the allocator the buffer
+    must come from.  libc ``malloc`` is not a substitute: NumPy's allocator is
+    a different one on free-threaded Python 3.15 and under ``python -X dev``,
+    where freeing a libc buffer with it crashes.
+    """
+    arena = global_get_int32(lib.GxB_ARENA_DATA)
+    malloc = ffi.new("void**")
+    info = lib.GrB_Global_get_VOID(lib.GrB_GLOBAL, malloc, lib.GxB_ARENA_MALLOC + arena)
+    if info != lib.GrB_SUCCESS:
+        raise _error_code_lookup.get(info, RuntimeError)(
+            f"GrB_Global_get_VOID failed with info={info}"
+        )
+    ptr = ffi.cast("void *(*)(size_t)", malloc[0])(size)
+    if ptr == ffi.NULL and size:  # malloc(0) may return NULL
+        raise MemoryError(f"Unable to allocate {size} bytes")
+    return ptr
+
+
+def readinto_new_buffer(f, typ, size, allocator=graphblas_malloc):
     buff = ffi.cast(typ, allocator(size))
     f.readinto(ffi.buffer(buff, size))
     return buff
