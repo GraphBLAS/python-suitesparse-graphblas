@@ -83,10 +83,12 @@ def initialize(*, blocking=False, memory_manager="numpy"):
         Whether to call init with GrB_BLOCKING or GrB_NONBLOCKING.
         Default is False.
     memory_manager : {'numpy', 'c'}, optional
-        Choose which malloc/free functions to use.  'numpy' uses numpy's
-        allocators, which makes it safe to perform zero-copy to and from numpy,
-        and allows Python to track memory usage via tracemalloc (if enabled).
-        'c' uses the default allocators.  Default is 'numpy'.
+        Choose which malloc/free functions GraphBLAS uses.  'numpy' uses NumPy's
+        allocator, so arrays NumPy allocated can be handed to GraphBLAS without
+        copying, and Python can track memory usage via tracemalloc (if enabled).
+        'c' uses the C library's.  Either way, `suitesparse_graphblas.utils` moves
+        buffers between GraphBLAS and NumPy safely, copying when it must.
+        Default is 'numpy'.
 
     The global variable `suitesparse_graphblas.is_initialized` indicates whether
     GraphBLAS has been initialized.

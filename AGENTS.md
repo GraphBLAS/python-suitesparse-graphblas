@@ -150,24 +150,44 @@ The package re-exports `ffi`/`lib` from the compiled extension and adds only thi
 
 ### 4. `utils.pyx` and free-threading
 
-The Cython module exists primarily to (a) call `GxB_init` with NumPy's allocators by
-casting the cffi function pointer through `uintptr_t` into a real C function pointer, and
-(b) wrap NumPy buffers around GraphBLAS-allocated memory with `claim_buffer` /
-`unclaim_buffer`, transferring ownership of the underlying allocation to NumPy.
+The Cython module exists to (a) call `GxB_init` with NumPy's allocators by casting the cffi
+function pointer through `uintptr_t` into a real C function pointer, and (b) move buffers
+between GraphBLAS and NumPy without copying. Its module docstring is the reference for (b).
 
-Memory that changes owner must be freed by the allocator that allocated it. By default
-(`memory_manager="numpy"`) GraphBLAS uses NumPy's allocator (`PyDataMem_NEW` et al.), which
-is **not** libc `malloc` everywhere: with NumPy ≥ 2.5 it is `PyMem_RawMalloc`, which is
-mimalloc on free-threaded Python ≥ 3.15 and gains debug hooks under `python -X dev`. So
-`claim_buffer` gives the array NumPy's default memory handler (without one NumPy frees with
-libc `free`), and a buffer handed *to* GraphBLAS (e.g. `GxB_Matrix_pack_*`) must come from
-`api/io/binary.py::graphblas_malloc`, never libc `malloc`. A NumPy array's buffer may be
-handed over only if `can_unclaim_buffer(array)` is true: the array owns its data and its
-memory handler is the one matching GraphBLAS's allocator (so not views, and not arrays
-from a custom NumPy handler or another library's `malloc`). `unclaim_buffer` runs after
-the handover and can't undo it, so check first and copy otherwise. `tests/test_memory.py`
-checks each direction under `PYTHONMALLOC=debug`, which turns a mismatch into an abort on
-any Python.
+Memory that changes owner must be freed by the allocator that allocated it. GraphBLAS frees
+with the allocator of the buffer's *arena* (arena 0 is NumPy's `PyDataMem_*` allocator for
+`memory_manager="numpy"`, libc's for `"c"`; `GxB_arena_init` adds more). NumPy frees with
+the array's memory handler (NEP 49), or with libc `free` if it has none. Don't assume any
+two of these agree: with NumPy ≥ 2.5, NumPy's allocator is `PyMem_RawMalloc`, which is
+mimalloc on free-threaded Python ≥ 3.15 and gains debug hooks under `python -X dev`. So,
+per arena, `utils.pyx` asks GraphBLAS for the arena's functions and uses NumPy's default
+handler if they are NumPy's, else its own handler that calls them
+(`suitesparse_graphblas_arena<k>`):
+
+- GraphBLAS → NumPy: `claim_buffer` / `claim_buffer_2d` attach that handler.
+- NumPy → GraphBLAS: use `give_buffer` (a context manager) around the GraphBLAS call that
+  takes ownership (`GxB_*_pack_*`, `GxB_*_load` with `GrB_DEFAULT + arena`, ...). It hands
+  over the array itself only if `can_unclaim_buffer` (owns its data, writeable, and its
+  handler is the arena's), otherwise a copy in `empty(...)` memory, and it commits only if
+  GraphBLAS set the pointer to NULL. Never hand GraphBLAS libc `malloc` memory or arrays of
+  unknown provenance; `api/io/binary.py::binread` shows the pattern.
+- `arena` defaults to the *global* data arena. GraphBLAS itself uses the data arena of the
+  Context engaged on the calling thread, which can't be queried, so code that must be right
+  under any Context names the arena: `serialize_*` call `GxB_*_serialize_arena`, and
+  `binread` uses the data arena of the matrix it just created. `GxB_*_unpack_*` and
+  `GxB_*_export_*` move the object to that arena before handing out its arrays, so the arena
+  an object was made in says nothing about them.
+
+`tests/test_memory.py` checks all of this (both managers, a libc arena as an explicit,
+global, and Context arena, threads, `binread`) in a subprocess under `PYTHONMALLOC=debug`,
+which turns a mismatch into an abort on any Python. Its buffers are over 1024 bytes on
+purpose: NumPy caches smaller freed blocks, which hides a wrong free. `conftest.py` also
+makes NumPy warn, failing the test, whenever it frees an array that owns its data but has
+no memory handler; that catches a missing handler even where the allocators happen to agree.
+
+When claiming a buffer from `GxB_*_unload`, use the arena in the returned `handling`
+(`handling - GrB_DEFAULT`), and never claim one with `handling >= GxB_IS_READONLY`: whoever
+loaded it read-only still owns it.
 
 The file is marked `freethreading_compatible=True`. The package does nothing special for
 free-threading itself — correctness depends on SuiteSparse:GraphBLAS being thread-safe,

@@ -178,8 +178,9 @@ jobs:
           # make cibuildwheel install test dependencies from pyproject.toml
           CIBW_TEST_EXTRAS: "test"
 
-          # run tests
-          CIBW_TEST_COMMAND: "pytest --pyargs suitesparse_graphblas -s -k test_print_jit_config && pytest -v --pyargs suitesparse_graphblas"
+          # run tests.  They run from a temporary directory, so pyproject.toml's pytest
+          # config doesn't apply; -W error restores its `filterwarnings = ["error"]`.
+          CIBW_TEST_COMMAND: "pytest --pyargs suitesparse_graphblas -s -k test_print_jit_config && pytest -v -W error --pyargs suitesparse_graphblas"
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:

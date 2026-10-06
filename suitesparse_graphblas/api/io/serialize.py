@@ -1,6 +1,7 @@
 import numpy as np
 
 from suitesparse_graphblas import check_status, ffi, lib
+from suitesparse_graphblas.api.global_options import global_get_int32
 from suitesparse_graphblas.utils import claim_buffer
 
 
@@ -56,10 +57,12 @@ def serialize_matrix(A, compression=lib.GxB_COMPRESSION_DEFAULT, level=None, *, 
     desc = get_serialize_desc(compression, level, nthreads)
     data_ptr = ffi.new("void**")
     size_ptr = ffi.new("GrB_Index*")
-    check_status(
-        A, lib.GxB_Matrix_serialize(data_ptr, size_ptr, A[0], ffi.NULL if desc is None else desc)
-    )
-    return claim_buffer(ffi, data_ptr[0], size_ptr[0], np.dtype(np.uint8))
+    # Name the arena for the result, which is otherwise that of the engaged Context (if
+    # any), so that `claim_buffer` knows which allocator must free it
+    arena = global_get_int32(lib.GxB_ARENA_DATA)
+    desc = ffi.NULL if desc is None else desc
+    check_status(A, lib.GxB_Matrix_serialize_arena(data_ptr, size_ptr, A[0], arena, desc))
+    return claim_buffer(ffi, data_ptr[0], size_ptr[0], np.dtype(np.uint8), arena)
 
 
 def serialize_vector(v, compression=lib.GxB_COMPRESSION_DEFAULT, level=None, *, nthreads=None):
@@ -79,10 +82,10 @@ def serialize_vector(v, compression=lib.GxB_COMPRESSION_DEFAULT, level=None, *, 
     desc = get_serialize_desc(compression, level, nthreads)
     data_ptr = ffi.new("void**")
     size_ptr = ffi.new("GrB_Index*")
-    check_status(
-        v, lib.GxB_Vector_serialize(data_ptr, size_ptr, v[0], ffi.NULL if desc is None else desc)
-    )
-    return claim_buffer(ffi, data_ptr[0], size_ptr[0], np.dtype(np.uint8))
+    arena = global_get_int32(lib.GxB_ARENA_DATA)  # see `serialize_matrix`
+    desc = ffi.NULL if desc is None else desc
+    check_status(v, lib.GxB_Vector_serialize_arena(data_ptr, size_ptr, v[0], arena, desc))
+    return claim_buffer(ffi, data_ptr[0], size_ptr[0], np.dtype(np.uint8), arena)
 
 
 def deserialize_matrix(data, *, free=True, nthreads=None):

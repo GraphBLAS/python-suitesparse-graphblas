@@ -1,39 +1,11 @@
+from contextlib import ExitStack
 from pathlib import Path
 
-from suitesparse_graphblas import __version__, _error_code_lookup, check_status, ffi, lib
+import numpy as np
+
+from suitesparse_graphblas import __version__, check_status, ffi, lib
 from suitesparse_graphblas.api import matrix
-from suitesparse_graphblas.api.global_options import global_get_int32
-
-
-def graphblas_malloc(size):
-    """Allocate ``size`` bytes with the allocator GraphBLAS uses for matrix data.
-
-    When "packing" a matrix ownership of the memory buffer is transferred to
-    SuiteSparse, which then becomes responsible for freeing it.  It frees with
-    the allocator it was initialized with (NumPy's by default; see
-    ``suitesparse_graphblas.initialize``), so that is the allocator the buffer
-    must come from.  libc ``malloc`` is not a substitute: NumPy's allocator is
-    a different one on free-threaded Python 3.15 and under ``python -X dev``,
-    where freeing a libc buffer with it crashes.
-    """
-    arena = global_get_int32(lib.GxB_ARENA_DATA)
-    malloc = ffi.new("void**")
-    info = lib.GrB_Global_get_VOID(lib.GrB_GLOBAL, malloc, lib.GxB_ARENA_MALLOC + arena)
-    if info != lib.GrB_SUCCESS:
-        raise _error_code_lookup.get(info, RuntimeError)(
-            f"GrB_Global_get_VOID failed with info={info}"
-        )
-    ptr = ffi.cast("void *(*)(size_t)", malloc[0])(size)
-    if ptr == ffi.NULL and size:  # malloc(0) may return NULL
-        raise MemoryError(f"Unable to allocate {size} bytes")
-    return ptr
-
-
-def readinto_new_buffer(f, typ, size, allocator=graphblas_malloc):
-    buff = ffi.cast(typ, allocator(size))
-    f.readinto(ffi.buffer(buff, size))
-    return buff
-
+from suitesparse_graphblas.utils import empty, give_buffer
 
 GRB_HEADER_LEN = 512
 NULL = ffi.NULL
@@ -94,6 +66,12 @@ _ss_codetypes = {v: k for k, v in _ss_typecodes.items()}
 
 
 def binwrite(A, filename, comments=None, opener=Path.open):
+    """Write Matrix ``A`` to ``filename`` in SuiteSparse:GraphBLAS's binary format.
+
+    ``opener`` opens the file for writing (e.g. ``gzip.open`` to compress it).  To avoid a
+    copy, ``A`` is unpacked while it is written and packed again afterwards (even if writing
+    fails), so other threads must not use ``A`` meanwhile.
+    """
     if isinstance(filename, str):
         filename = Path(filename)
 
@@ -265,198 +243,45 @@ def binwrite(A, filename, comments=None, opener=Path.open):
     header_content = header_template.format(**vars)
     header = f"{header_content: <{GRB_HEADER_LEN}}".encode("ascii")
 
-    with opener(filename, "wb") as f:
-        fwrite = f.write
-        fwrite(header)
-        fwrite(buff(impl, sizeof("uint64_t")))
-        fwrite(buff(format, sizeof("GxB_Format_Value")))
-        fwrite(buff(sparsity_status, sizeof("int32_t")))
-        fwrite(buff(sparsity_control, sizeof("int32_t")))
-        fwrite(buff(hyper_switch, sizeof("double")))
-        fwrite(buff(bitmap_switch, sizeof("double")))
-        fwrite(buff(nrows, Isize))
-        fwrite(buff(ncols, Isize))
-        fwrite(buff(nvec, Isize))
-        fwrite(buff(nvals, Isize))
-        fwrite(buff(typecode, sizeof("int32_t")))
-        fwrite(buff(typesize, sizeof("size_t")))
-        fwrite(buff(is_iso, sizeof("bool")))
+    try:
+        with opener(filename, "wb") as f:
+            fwrite = f.write
+            fwrite(header)
+            fwrite(buff(impl, sizeof("uint64_t")))
+            fwrite(buff(format, sizeof("GxB_Format_Value")))
+            fwrite(buff(sparsity_status, sizeof("int32_t")))
+            fwrite(buff(sparsity_control, sizeof("int32_t")))
+            fwrite(buff(hyper_switch, sizeof("double")))
+            fwrite(buff(bitmap_switch, sizeof("double")))
+            fwrite(buff(nrows, Isize))
+            fwrite(buff(ncols, Isize))
+            fwrite(buff(nvec, Isize))
+            fwrite(buff(nvals, Isize))
+            fwrite(buff(typecode, sizeof("int32_t")))
+            fwrite(buff(typesize, sizeof("size_t")))
+            fwrite(buff(is_iso, sizeof("bool")))
 
-        Tsize = typesize[0]
-        iso = is_iso[0]
+            Tsize = typesize[0]
+            iso = is_iso[0]
 
-        if is_hyper:
-            fwrite(buff(Ap[0], (nvec[0] + 1) * Isize))
-            fwrite(buff(Ah[0], nvec[0] * Isize))
-            fwrite(buff(Ai[0], nvals[0] * Isize))
-            Axsize = Tsize if iso else nvals[0] * Tsize
-        elif is_sparse:
-            fwrite(buff(Ap[0], (nvec[0] + 1) * Isize))
-            fwrite(buff(Ai[0], nvals[0] * Isize))
-            Axsize = Tsize if iso else nvals[0] * Tsize
-        elif is_bitmap:
-            fwrite(buff(Ab[0], nrows[0] * ncols[0] * ffi.sizeof("int8_t")))
-            Axsize = Tsize if iso else nrows[0] * ncols[0] * Tsize
-        else:
-            Axsize = Tsize if iso else nrows[0] * ncols[0] * Tsize
+            if is_hyper:
+                fwrite(buff(Ap[0], (nvec[0] + 1) * Isize))
+                fwrite(buff(Ah[0], nvec[0] * Isize))
+                fwrite(buff(Ai[0], nvals[0] * Isize))
+                Axsize = Tsize if iso else nvals[0] * Tsize
+            elif is_sparse:
+                fwrite(buff(Ap[0], (nvec[0] + 1) * Isize))
+                fwrite(buff(Ai[0], nvals[0] * Isize))
+                Axsize = Tsize if iso else nvals[0] * Tsize
+            elif is_bitmap:
+                fwrite(buff(Ab[0], nrows[0] * ncols[0] * ffi.sizeof("int8_t")))
+                Axsize = Tsize if iso else nrows[0] * ncols[0] * Tsize
+            else:
+                Axsize = Tsize if iso else nrows[0] * ncols[0] * Tsize
 
-        fwrite(buff(Ax[0], Axsize))
-
-    if by_col and is_hyper:
-        check_status(
-            A,
-            lib.GxB_Matrix_pack_HyperCSC(
-                A[0],
-                Ap,
-                Ah,
-                Ai,
-                Ax,
-                Ap_size[0],
-                Ah_size[0],
-                Ai_size[0],
-                Ax_size[0],
-                is_iso[0],
-                nvec[0],
-                is_jumbled[0],
-                NULL,
-            ),
-        )
-
-    elif by_row and is_hyper:
-        check_status(
-            A,
-            lib.GxB_Matrix_pack_HyperCSR(
-                A[0],
-                Ap,
-                Ah,
-                Ai,
-                Ax,
-                Ap_size[0],
-                Ah_size[0],
-                Ai_size[0],
-                Ax_size[0],
-                is_iso[0],
-                nvec[0],
-                is_jumbled[0],
-                NULL,
-            ),
-        )
-
-    elif by_col and is_sparse:
-        check_status(
-            A,
-            lib.GxB_Matrix_pack_CSC(
-                A[0], Ap, Ai, Ax, Ap_size[0], Ai_size[0], Ax_size[0], is_iso[0], is_jumbled[0], NULL
-            ),
-        )
-
-    elif by_row and is_sparse:
-        check_status(
-            A,
-            lib.GxB_Matrix_pack_CSR(
-                A[0], Ap, Ai, Ax, Ap_size[0], Ai_size[0], Ax_size[0], is_iso[0], is_jumbled[0], NULL
-            ),
-        )
-
-    elif by_col and is_bitmap:
-        check_status(
-            A,
-            lib.GxB_Matrix_pack_BitmapC(
-                A[0], Ab, Ax, Ab_size[0], Ax_size[0], is_iso[0], nvals[0], NULL
-            ),
-        )
-
-    elif by_row and is_bitmap:
-        check_status(
-            A,
-            lib.GxB_Matrix_pack_BitmapR(
-                A[0], Ab, Ax, Ab_size[0], Ax_size[0], is_iso[0], nvals[0], NULL
-            ),
-        )
-
-    elif by_col and is_full:
-        check_status(A, lib.GxB_Matrix_pack_FullC(A[0], Ax, Ax_size[0], is_iso[0], NULL))
-
-    elif by_row and is_full:
-        check_status(A, lib.GxB_Matrix_pack_FullR(A[0], Ax, Ax_size[0], is_iso[0], NULL))
-    else:
-        raise TypeError("This should hever happen")
-
-
-def binread(filename, opener=Path.open):
-    if isinstance(filename, str):
-        filename = Path(filename)
-
-    with opener(filename, "rb") as f:
-        fread = f.read
-
-        fread(GRB_HEADER_LEN)
-        impl = frombuff("uint64_t*", fread(sizeof("uint64_t")))
-
-        assert impl[0] == lib.GxB_IMPLEMENTATION
-
-        format = frombuff("GxB_Format_Value*", fread(sizeof("GxB_Format_Value")))
-        sparsity_status = frombuff("int32_t*", fread(sizeof("int32_t")))
-        sparsity_control = frombuff("int32_t*", fread(sizeof("int32_t")))
-        hyper_switch = frombuff("double*", fread(sizeof("double")))
-        bitmap_switch = frombuff("double*", fread(sizeof("double")))
-        nrows = frombuff("GrB_Index*", fread(Isize))
-        ncols = frombuff("GrB_Index*", fread(Isize))
-        nvec = frombuff("GrB_Index*", fread(Isize))
-        nvals = frombuff("GrB_Index*", fread(Isize))
-        typecode = frombuff("int32_t*", fread(sizeof("int32_t")))
-        typesize = frombuff("size_t*", fread(sizeof("size_t")))
-        is_iso = frombuff("bool*", fread(sizeof("bool")))
-        is_jumbled = ffi.new("bool*", 0)
-
-        by_row = format[0] == lib.GxB_BY_ROW
-        by_col = format[0] == lib.GxB_BY_COL
-
-        is_hyper = sparsity_status[0] == lib.GxB_HYPERSPARSE
-        is_sparse = sparsity_status[0] == lib.GxB_SPARSE
-        is_bitmap = sparsity_status[0] == lib.GxB_BITMAP
-        is_full = sparsity_status[0] == lib.GxB_FULL
-
-        atype = _ss_codetypes[typecode[0]]
-
-        Ap = ffinew("GrB_Index**")
-        Ai = ffinew("GrB_Index**")
-        Ah = ffinew("GrB_Index**")
-        Ax = ffinew("void**")
-        Ab = ffinew("int8_t**")
-
-        Ap_size = ffinew("GrB_Index*")
-        Ai_size = ffinew("GrB_Index*")
-        Ah_size = ffinew("GrB_Index*")
-        Ax_size = ffinew("GrB_Index*")
-        Ab_size = ffinew("GrB_Index*")
-
-        if is_hyper:
-            Ap_size[0] = (nvec[0] + 1) * Isize
-            Ah_size[0] = nvec[0] * Isize
-            Ai_size[0] = nvals[0] * Isize
-            Ax_size[0] = nvals[0] * typesize[0]
-
-            Ap[0] = readinto_new_buffer(f, "GrB_Index*", Ap_size[0])
-            Ah[0] = readinto_new_buffer(f, "GrB_Index*", Ah_size[0])
-            Ai[0] = readinto_new_buffer(f, "GrB_Index*", Ai_size[0])
-        elif is_sparse:
-            Ap_size[0] = (nvec[0] + 1) * Isize
-            Ai_size[0] = nvals[0] * Isize
-            Ax_size[0] = nvals[0] * typesize[0]
-            Ap[0] = readinto_new_buffer(f, "GrB_Index*", Ap_size[0])
-            Ai[0] = readinto_new_buffer(f, "GrB_Index*", Ai_size[0])
-        elif is_bitmap:
-            Ab_size[0] = nrows[0] * ncols[0] * ffi.sizeof("int8_t")
-            Ax_size[0] = nrows[0] * ncols[0] * typesize[0]
-            Ab[0] = readinto_new_buffer(f, "int8_t*", Ab_size[0])
-        elif is_full:
-            Ax_size[0] = nrows[0] * ncols[0] * typesize[0]
-
-        Ax[0] = readinto_new_buffer(f, "uint8_t*", typesize[0] if is_iso[0] else Ax_size[0])
-
-        A = matrix.matrix_new(atype, nrows[0], ncols[0])
-
+            fwrite(buff(Ax[0], Axsize))
+    finally:
+        # The matrix was unpacked to write its arrays, so give them back even if that failed
         if by_col and is_hyper:
             check_status(
                 A,
@@ -553,7 +378,101 @@ def binread(filename, opener=Path.open):
         elif by_row and is_full:
             check_status(A, lib.GxB_Matrix_pack_FullR(A[0], Ax, Ax_size[0], is_iso[0], NULL))
         else:
-            raise TypeError("Unknown format {format[0]}")
+            raise TypeError("This should never happen")
+
+
+def binread(filename, opener=Path.open):
+    """Read a Matrix from ``filename``, written by ``binwrite``.
+
+    ``opener`` opens the file for reading (e.g. ``gzip.open``).
+    """
+    if isinstance(filename, str):
+        filename = Path(filename)
+
+    with opener(filename, "rb") as f:
+        fread = f.read
+
+        fread(GRB_HEADER_LEN)
+        impl = frombuff("uint64_t*", fread(sizeof("uint64_t")))
+
+        assert impl[0] == lib.GxB_IMPLEMENTATION
+
+        format = frombuff("GxB_Format_Value*", fread(sizeof("GxB_Format_Value")))
+        sparsity_status = frombuff("int32_t*", fread(sizeof("int32_t")))
+        sparsity_control = frombuff("int32_t*", fread(sizeof("int32_t")))
+        hyper_switch = frombuff("double*", fread(sizeof("double")))
+        bitmap_switch = frombuff("double*", fread(sizeof("double")))
+        nrows = frombuff("GrB_Index*", fread(Isize))
+        ncols = frombuff("GrB_Index*", fread(Isize))
+        nvec = frombuff("GrB_Index*", fread(Isize))
+        nvals = frombuff("GrB_Index*", fread(Isize))
+        typecode = frombuff("int32_t*", fread(sizeof("int32_t")))
+        typesize = frombuff("size_t*", fread(sizeof("size_t")))
+        is_iso = frombuff("bool*", fread(sizeof("bool")))
+
+        by_row = format[0] == lib.GxB_BY_ROW
+        by_col = format[0] == lib.GxB_BY_COL
+
+        is_hyper = sparsity_status[0] == lib.GxB_HYPERSPARSE
+        is_sparse = sparsity_status[0] == lib.GxB_SPARSE
+        is_bitmap = sparsity_status[0] == lib.GxB_BITMAP
+        is_full = sparsity_status[0] == lib.GxB_FULL
+
+        atype = _ss_codetypes[typecode[0]]
+
+        if not (by_row or by_col):
+            raise TypeError(f"Unknown format {format[0]}")
+
+        A = matrix.matrix_new(atype, nrows[0], ncols[0])
+        # GraphBLAS will own the buffers we read into, and takes them to be from the data
+        # arena that new matrices use
+        arena = ffinew("int32_t*")
+        check_status(A, lib.GrB_Matrix_get_INT32(A[0], arena, lib.GxB_ARENA_DATA))
+        arena = arena[0]
+        buffers = []  # (array, ctype), in the order the file and `GxB_Matrix_pack_*` have them
+
+        def read(nbytes, ctype):
+            array = empty(nbytes, np.uint8, arena=arena)
+            if f.readinto(array) != nbytes:
+                raise EOFError(f"{filename} is truncated")
+            buffers.append((array, ctype))
+
+        if is_hyper:
+            pack = lib.GxB_Matrix_pack_HyperCSC if by_col else lib.GxB_Matrix_pack_HyperCSR
+            read((nvec[0] + 1) * Isize, "GrB_Index*")  # Ap
+            read(nvec[0] * Isize, "GrB_Index*")  # Ah
+            read(nvals[0] * Isize, "GrB_Index*")  # Ai
+            nx = nvals[0]
+            args = [nvec[0], False]  # False: not jumbled
+        elif is_sparse:
+            pack = lib.GxB_Matrix_pack_CSC if by_col else lib.GxB_Matrix_pack_CSR
+            read((nvec[0] + 1) * Isize, "GrB_Index*")  # Ap
+            read(nvals[0] * Isize, "GrB_Index*")  # Ai
+            nx = nvals[0]
+            args = [False]  # not jumbled
+        elif is_bitmap:
+            pack = lib.GxB_Matrix_pack_BitmapC if by_col else lib.GxB_Matrix_pack_BitmapR
+            read(nrows[0] * ncols[0], "int8_t*")  # Ab
+            nx = nrows[0] * ncols[0]
+            args = [nvals[0]]
+        elif is_full:
+            pack = lib.GxB_Matrix_pack_FullC if by_col else lib.GxB_Matrix_pack_FullR
+            nx = nrows[0] * ncols[0]
+            args = []
+        else:
+            raise TypeError(f"Unknown sparsity status {sparsity_status[0]}")
+        # An iso matrix stores a single value, and GraphBLAS must be told its true size
+        read(typesize[0] if is_iso[0] else nx * typesize[0], "void*")  # Ax
+
+        with ExitStack() as stack:
+            # The buffers become GraphBLAS's only if the pack succeeds
+            given = [
+                stack.enter_context(give_buffer(array, ctype, copy=False, arena=arena))
+                for array, ctype in buffers
+            ]
+            ptrs = [ptr for ptr, _, _ in given]
+            sizes = [nbytes for _, nbytes, _ in given]
+            check_status(A, pack(A[0], *ptrs, *sizes, is_iso[0], *args, NULL))
 
         matrix.matrix_set_sparsity_control(A, sparsity_control[0])
         matrix.matrix_set_hyper_switch(A, hyper_switch[0])
