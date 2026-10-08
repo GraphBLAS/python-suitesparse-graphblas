@@ -198,3 +198,12 @@ def test_matrix_binfile_read_write(tmp_path):
                     )
 
                     assert is_eq[0]
+
+
+def test_binwrite_failure_keeps_matrix(tmp_path):
+    # `binwrite` unpacks the matrix to write its arrays, and must put them back regardless
+    A = matrix.matrix_new(lib.GrB_INT64, 2, 2)
+    check_status(A, lib.GrB_Matrix_setElement_INT64(A[0], 1, 0, 0))
+    with pytest.raises(OSError):
+        binary.binwrite(A, tmp_path / "missing_directory" / "matrix.binfile")
+    assert matrix.matrix_nvals(A) == 1

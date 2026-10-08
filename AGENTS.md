@@ -1,16 +1,17 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to AI coding agents (e.g., Claude Code) when working with code in this repository.
 
 ## What this package is
 
 `suitesparse-graphblas` is a low-level Python CFFI binding around the C library
 [SuiteSparse:GraphBLAS](https://github.com/DrTimothyAldenDavis/GraphBLAS). It exposes the
-raw `ffi` and `lib` symbols and, on top of them, a small **functional API** in
-`suitesparse_graphblas.matrix`, `suitesparse_graphblas.vector`, and
-`suitesparse_graphblas.scalar`. These three modules are the **main entry point for users
-of this library directly** — they are module-level functions operating on opaque CFFI
-handles, e.g. `A = matrix.new(lib.GrB_BOOL, 3, 3); matrix.set_bool(A, True, 2, 2)`. Higher-level
+raw `ffi` and `lib` symbols and, on top of them, a **functional API** in the
+`suitesparse_graphblas.api` package (`matrix`, `vector`, `scalar`, plus `binaryop`, `monoid`,
+`semiring`, `descriptor`, `iterator`, …). `matrix`, `vector`, and `scalar` (also re-exported as
+`suitesparse_graphblas.matrix` etc. for backward compatibility) are the **main entry point for
+users of this library directly** — they are module-level functions operating on opaque CFFI
+handles, e.g. `A = matrix.matrix_new(lib.GrB_BOOL, 3, 3); matrix.set_bool(A, True, 2, 2)`. Higher-level
 syntax wrappers ([python-graphblas](https://github.com/python-graphblas/python-graphblas)
 and [pygraphblas](https://github.com/Graphegon/pygraphblas)) build on top of this same
 package for users who want a more Pythonic, OO-style interface.
@@ -131,25 +132,62 @@ The package re-exports `ffi`/`lib` from the compiled extension and adds only thi
 - `libget(name)` — fallback that retries a `GrB_*` lookup as `GxB_*` when SuiteSparse moves
   a symbol between standard and extension namespaces.
 - `burble` — context manager / global toggle for `GxB_BURBLE` diagnostic output.
-- `matrix.py`, `vector.py`, `scalar.py` — **the functional API** of the package, and the
-  primary user-facing surface for code that uses `suitesparse-graphblas` directly. Each
-  module follows the same convention: `<module>.new(...)` returns an `ffi.gc`-managed
+- `api/matrix.py`, `api/vector.py`, `api/scalar.py` (and the other `api/` modules) —
+  **the functional API** of the package, and the primary user-facing surface for code that
+  uses `suitesparse-graphblas` directly. `__init__.py` re-exports `matrix`, `vector`,
+  `scalar`, and `iterator` at the bottom of the file (to avoid a circular import) so
+  `suitesparse_graphblas.matrix` keeps working. Each module follows the same convention:
+  `<module>.<module>_new(...)` (e.g. `matrix.matrix_new`) returns an `ffi.gc`-managed
   cdata handle (`GrB_Matrix*`, `GrB_Vector*`, or `GxB_Scalar*`) and every other function
   takes that handle as its first argument and routes errors through `check_status`. The
   design is deliberately functional rather than class-based so the same handles can be
   passed through higher-level wrappers without object-identity friction. When adding
   features to this package, this is the layer where new user-facing helpers belong.
-- `io/serialize.py`, `io/binary.py` — supporting I/O helpers (compressed serialize /
-  deserialize, binary format read/write). `matrix.py` and `vector.py` already re-export
-  `serialize` / `deserialize` from `io/serialize.py` so callers can reach them as
-  `matrix.serialize(A)` etc.
+- `api/io/serialize.py`, `api/io/binary.py` — supporting I/O helpers (compressed serialize /
+  deserialize, binary format read/write), also importable as `suitesparse_graphblas.io`.
+  `api/matrix.py` and `api/vector.py` already re-export `serialize` / `deserialize` from
+  `api/io/serialize.py` so callers can reach them as `matrix.serialize(A)` etc.
 
 ### 4. `utils.pyx` and free-threading
 
-The Cython module exists primarily to (a) call `GxB_init` with NumPy's allocators by
-casting the cffi function pointer through `uintptr_t` into a real C function pointer, and
-(b) wrap NumPy buffers around GraphBLAS-allocated memory with `claim_buffer` /
-`unclaim_buffer`, transferring ownership of the underlying allocation to NumPy.
+The Cython module exists to (a) call `GxB_init` with NumPy's allocators by casting the cffi
+function pointer through `uintptr_t` into a real C function pointer, and (b) move buffers
+between GraphBLAS and NumPy without copying. Its module docstring is the reference for (b).
+
+Memory that changes owner must be freed by the allocator that allocated it. GraphBLAS frees
+with the allocator of the buffer's *arena* (arena 0 is NumPy's `PyDataMem_*` allocator for
+`memory_manager="numpy"`, libc's for `"c"`; `GxB_arena_init` adds more). NumPy frees with
+the array's memory handler (NEP 49), or with libc `free` if it has none. Don't assume any
+two of these agree: with NumPy ≥ 2.5, NumPy's allocator is `PyMem_RawMalloc`, which is
+mimalloc on free-threaded Python ≥ 3.15 and gains debug hooks under `python -X dev`. So,
+per arena, `utils.pyx` asks GraphBLAS for the arena's functions and uses NumPy's default
+handler if they are NumPy's, else its own handler that calls them
+(`suitesparse_graphblas_arena<k>`):
+
+- GraphBLAS → NumPy: `claim_buffer` / `claim_buffer_2d` attach that handler.
+- NumPy → GraphBLAS: use `give_buffer` (a context manager) around the GraphBLAS call that
+  takes ownership (`GxB_*_pack_*`, `GxB_*_load` with `GrB_DEFAULT + arena`, ...). It hands
+  over the array itself only if `can_unclaim_buffer` (owns its data, writeable, and its
+  handler is the arena's), otherwise a copy in `empty(...)` memory, and it commits only if
+  GraphBLAS set the pointer to NULL. Never hand GraphBLAS libc `malloc` memory or arrays of
+  unknown provenance; `api/io/binary.py::binread` shows the pattern.
+- `arena` defaults to the *global* data arena. GraphBLAS itself uses the data arena of the
+  Context engaged on the calling thread, which can't be queried, so code that must be right
+  under any Context names the arena: `serialize_*` call `GxB_*_serialize_arena`, and
+  `binread` uses the data arena of the matrix it just created. `GxB_*_unpack_*` and
+  `GxB_*_export_*` move the object to that arena before handing out its arrays, so the arena
+  an object was made in says nothing about them.
+
+`tests/test_memory.py` checks all of this (both managers, a libc arena as an explicit,
+global, and Context arena, threads, `binread`) in a subprocess under `PYTHONMALLOC=debug`,
+which turns a mismatch into an abort on any Python. Its buffers are over 1024 bytes on
+purpose: NumPy caches smaller freed blocks, which hides a wrong free. `conftest.py` also
+makes NumPy warn, failing the test, whenever it frees an array that owns its data but has
+no memory handler; that catches a missing handler even where the allocators happen to agree.
+
+When claiming a buffer from `GxB_*_unload`, use the arena in the returned `handling`
+(`handling - GrB_DEFAULT`), and never claim one with `handling >= GxB_IS_READONLY`: whoever
+loaded it read-only still owns it.
 
 The file is marked `freethreading_compatible=True`. The package does nothing special for
 free-threading itself — correctness depends on SuiteSparse:GraphBLAS being thread-safe,
@@ -160,7 +198,14 @@ which it is required to be.
 - Black, isort, flake8 (config in `.flake8`, line length 100, double quotes), pyupgrade
   (`--py311-plus`), autoflake, shellcheck — all wired through `pre-commit`. Run
   `pre-commit run --all-files` before pushing.
+- `pre-commit` also lints GitHub Actions workflows (actionlint, zizmor) and scans
+  dependencies for known vulnerabilities (pysentry). actionlint runs shellcheck on `run:`
+  scripts only when `shellcheck` is on `PATH` — it is on the CI runner, so quote `$(...)`
+  and `"$GITHUB_ENV"` even if it passes locally. Don't expand `${{ ... }}` contexts inside
+  `run:` scripts (zizmor's template-injection audit); pass them through `env:` instead.
 - `pre-commit` also blocks direct commits to `main`.
+- pytest is strict (see `[tool.pytest.ini_options]`): warnings are errors, markers must be
+  registered, and xfails must fail.
 - Python ≥ 3.11. NumPy ≥ 2.0 is required at build time (CFFI extension), ≥ 1.24 at runtime.
 - Generated headers (`suitesparse_graphblas.h`, `suitesparse_graphblas_no_complex.h`,
   `source.c`) are checked in and **must be regenerated via `create_headers.py`** rather

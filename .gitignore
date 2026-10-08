@@ -33,6 +33,10 @@ wheelhouse
 # Wheel building stuff
 GraphBLAS-*/
 
+# Left behind by create_headers.py
+suitesparse_graphblas/GraphBLAS-orig.h
+suitesparse_graphblas/GraphBLAS-processed.h
+
 # PyInstaller
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.

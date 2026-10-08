@@ -17,7 +17,12 @@ try:
 except ImportError:
     use_cython = False
 
-define_macros = [("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")]
+define_macros = [
+    ("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION"),
+    # utils.pyx needs `PyArrayObject_fields.mem_handler`, added in NumPy 1.22.  The NumPy
+    # version targeted by default depends on the NumPy being built against (1.19 for 2.0).
+    ("NPY_TARGET_VERSION", "NPY_1_22_API_VERSION"),
+]
 
 # /d2FH4- flag needed only for early Python 3.8 builds on Windows.
 # See https://cibuildwheel.readthedocs.io/en/stable/faq/

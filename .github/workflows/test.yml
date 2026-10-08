@@ -5,12 +5,22 @@ on:
     branches: [ main ]
   pull_request:
 
+permissions:
+  contents: read
+
+# Cancel superseded runs of a PR; never cancel runs on main.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: ${{ matrix.os }}
     defaults:
       run:
-        shell: bash -l {0}
+        # -e: a custom shell gets no errexit, so without it a multi-command step
+        # (e.g. "Test") would only report the exit status of its last command.
+        shell: bash -el {0}
     strategy:
       fail-fast: false
       matrix:
@@ -19,14 +29,17 @@ jobs:
         # os: ["ubuntu-latest"]
         # source: ["source"]
         # A trailing "t" means the free-threaded (no-GIL) build of that version.
-        python-version: ["3.11", "3.12", "3.13", "3.14", "3.14t"]
+        # TODO: add "3.15t" once conda-forge builds cffi and numpy for cp315t.
+        python-version: ["3.11", "3.12", "3.13", "3.14", "3.14t", "3.15"]
     steps:
     - name: Checkout
-      uses: actions/checkout@v6
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         fetch-depth: 0
         persist-credentials: false
     - name: Compose conda environment file
+      env:
+        PYVER: ${{ matrix.python-version }}
       run: |
         # conda-forge ships two ABIs for CPython 3.13+ ("cp314" and "cp314t"),
         # and `python=3.14` alone lets the solver pick either one: it resolved
@@ -34,35 +47,48 @@ jobs:
         # The `python-gil` and `python-freethreading` metapackages pin
         # `python_abi` to one or the other, so ask for the one this matrix
         # entry wants instead of leaving it to the solver.
-        pyver="${{ matrix.python-version }}"
+        pyver=$PYVER
         if [[ $pyver == *t ]]; then
           variant=python-freethreading
           pyver=${pyver%t}
         else
           variant=python-gil
         fi
-        cp continuous_integration/environment.yml environment-ci.yml
+        channels=conda-forge,nodefaults
+        if [[ $pyver == 3.15 ]]; then
+          # TODO: drop this branch once Python 3.15.0 final is on conda-forge.
+          # Until then the 3.15 release candidates need `_python_rc`, which only
+          # the `python_rc` label provides.  The label must rank *below*
+          # conda-forge: it also holds older `python` rc builds (but no 3.15), and
+          # strict channel priority would then hide conda-forge's 3.15 rc.
+          channels=conda-forge,conda-forge/label/python_rc,nodefaults
+          awk '{ print } /^  - conda-forge$/ { print "  - conda-forge/label/python_rc" }' \
+            continuous_integration/environment.yml > environment-ci.yml
+        else
+          cp continuous_integration/environment.yml environment-ci.yml
+        fi
+        echo "CONDA_CHANNELS=$channels" >> "$GITHUB_ENV"
         echo "  - python=$pyver" >> environment-ci.yml
         echo "  - $variant" >> environment-ci.yml
         cat environment-ci.yml
     - name: Conda
-      uses: conda-incubator/setup-miniconda@v3
+      uses: conda-incubator/setup-miniconda@be893c923ea9cf1cf7cd510fbdde27c7e18cbdcb # v4.1.0
       with:
         auto-update-conda: true
         environment-file: environment-ci.yml
-        channels: conda-forge,nodefaults
+        channels: ${{ env.CONDA_CHANNELS }}
         channel-priority: strict
         activate-environment: suitesparse-graphblas
         auto-activate-base: false
     - name: GraphBLAS (from conda-forge)
       if: (contains(matrix.source, 'conda-forge'))
       run: |
-        conda install graphblas=$(cat GB_VERSION.txt)
+        conda install "graphblas=$(cat GB_VERSION.txt)"
     - name: GraphBLAS (from source)
       if: (contains(matrix.source, 'source'))
       run: |
         # From release (also works with beta versions)
-        GRAPHBLAS_PREFIX=${CONDA_PREFIX} bash suitesparse.sh refs/tags/$(cat GB_VERSION.txt).0
+        GRAPHBLAS_PREFIX="${CONDA_PREFIX}" bash suitesparse.sh "refs/tags/$(cat GB_VERSION.txt).0"
 
         # From tag
         # curl -L https://github.com/DrTimothyAldenDavis/GraphBLAS/archive/refs/tags/v$(cat GB_VERSION.txt).tar.gz | tar xzf -
@@ -84,18 +110,18 @@ jobs:
     - name: Configure coverage
       run: |
         # Cython's coverage plugin (see [tool.coverage.run] in pyproject.toml)
-        # needs coverage's C tracer.  conda-forge builds coverage without its C
-        # extension for free-threaded Python, and conda resolves `python=3.14`
-        # to the free-threaded build (3.14t) on some platforms.  There, loading
-        # the plugin raises ImportError and every `coverage run` dies before it
-        # runs anything, so run the tests directly instead.
+        # needs coverage's C tracer.  Where conda-forge has no compiled build of
+        # coverage for a Python (3.15, for now), it installs a pure-Python build
+        # that lacks the tracer.  There, loading the plugin raises ImportError and
+        # every `coverage run` dies before it runs anything, so run the tests
+        # directly instead.
         if python -c "import Cython.Coverage" 2>/dev/null; then
           coverage erase
-          echo "COV=coverage run -a --branch" >> $GITHUB_ENV
+          echo "COV=coverage run -a --branch" >> "$GITHUB_ENV"
         else
           echo "Cython coverage plugin unusable here; running without coverage"
           python -VV
-          echo "COV=python" >> $GITHUB_ENV
+          echo "COV=python" >> "$GITHUB_ENV"
         fi
     - name: Test
       env:

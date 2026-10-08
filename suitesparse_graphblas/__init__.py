@@ -83,10 +83,12 @@ def initialize(*, blocking=False, memory_manager="numpy"):
         Whether to call init with GrB_BLOCKING or GrB_NONBLOCKING.
         Default is False.
     memory_manager : {'numpy', 'c'}, optional
-        Choose which malloc/free functions to use.  'numpy' uses numpy's
-        allocators, which makes it safe to perform zero-copy to and from numpy,
-        and allows Python to track memory usage via tracemalloc (if enabled).
-        'c' uses the default allocators.  Default is 'numpy'.
+        Choose which malloc/free functions GraphBLAS uses.  'numpy' uses NumPy's
+        allocator, so arrays NumPy allocated can be handed to GraphBLAS without
+        copying, and Python can track memory usage via tracemalloc (if enabled).
+        'c' uses the C library's.  Either way, `suitesparse_graphblas.utils` moves
+        buffers between GraphBLAS and NumPy safely, copying when it must.
+        Default is 'numpy'.
 
     The global variable `suitesparse_graphblas.is_initialized` indicates whether
     GraphBLAS has been initialized.
@@ -96,11 +98,15 @@ def initialize(*, blocking=False, memory_manager="numpy"):
     blocking = lib.GrB_BLOCKING if blocking else lib.GrB_NONBLOCKING
     memory_manager = memory_manager.lower()
     if memory_manager == "numpy":
-        utils.call_gxb_init(ffi, lib, blocking)
+        info = utils.call_gxb_init(ffi, lib, blocking)
     elif memory_manager == "c":
-        lib.GrB_init(blocking)
+        info = lib.GrB_init(blocking)
     else:
         raise ValueError(f'memory_manager argument must be "numpy" or "c"; got: {memory_manager!r}')
+    if info != lib.GrB_SUCCESS:
+        raise _error_code_lookup.get(info, RuntimeError)(
+            f"Failed to initialize GraphBLAS (info={info})"
+        )
     # See: https://github.com/GraphBLAS/python-suitesparse-graphblas/issues/40
     for attr in dir(lib):
         getattr(lib, attr)

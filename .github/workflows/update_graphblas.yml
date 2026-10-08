@@ -1,12 +1,7 @@
 # Checks for latest SuiteSparse:GraphBLAS version on GitHub and creates a PR to update the version used by this repo.
 name: Check for GraphBLAS updates
 
-# In addition to permissions below, must explicitly allow GitHub Actions to create pull requests.
-# This setting can be found in a repository's settings under Actions > General > Workflow permissions.
-# https://github.com/peter-evans/create-pull-request#workflow-permissions
-permissions:
-  contents: write
-  pull-requests: write
+permissions: {}
 
 on:
   # Note: Workflow must run at least once to appear in workflows list.
@@ -26,24 +21,30 @@ jobs:
     name: Check for GraphBLAS update
     if: github.repository == 'GraphBLAS/python-suitesparse-graphblas' || github.repository == 'alugowski/python-suitesparse-graphblas'
     runs-on: ubuntu-latest
+    # In addition to these permissions, must explicitly allow GitHub Actions to create pull requests.
+    # This setting can be found in a repository's settings under Actions > General > Workflow permissions.
+    # https://github.com/peter-evans/create-pull-request#workflow-permissions
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.11"
 
       - name: Get latest GraphBLAS version
         run: |
           python latest_suitesparse_graphblas_version.py > GB_VERSION.txt
-          echo "GB_VERSION=$(cat GB_VERSION.txt)" >> $GITHUB_ENV
+          echo "GB_VERSION=$(cat GB_VERSION.txt)" >> "$GITHUB_ENV"
         shell: bash
 
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v8
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
           # See documentation: https://github.com/peter-evans/create-pull-request
           # Action behavior: https://github.com/peter-evans/create-pull-request#action-behaviour
