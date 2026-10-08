@@ -33,7 +33,12 @@ cmake_params=()
 # invisible until someone measures it: conda-forge's graphblas 10.5.0 shipped
 # that way on osx-arm64 while still depending on llvm-openmp. The matching
 # runtime check on the built wheel is tests/test_package.py::test_openmp.
-cmake_params+=(-DSUITESPARSE_USE_OPENMP=ON)
+if [ -n "${SUITESPARSE_EMSCRIPTEN}" ]; then
+    # ...except for WebAssembly, which has no threads in Pyodide
+    cmake_params+=(-DSUITESPARSE_USE_OPENMP=OFF)
+else
+    cmake_params+=(-DSUITESPARSE_USE_OPENMP=ON)
+fi
 cmake_params+=(-DSUITESPARSE_USE_STRICT=ON)
 # STRICT makes any requested-but-missing feature fatal, and SuiteSparsePolicy
 # defaults both of these to ON, so they must be turned off explicitly or the
@@ -66,17 +71,35 @@ if [ -n "${CMAKE_GNUtoMS}" ]; then
     cmake_params+=(-DCMAKE_STATIC_LIBRARY_PREFIX=)
 fi
 
+cmake_cmd=(cmake)
+if [ -n "${SUITESPARSE_EMSCRIPTEN}" ]; then
+    # WebAssembly for Pyodide (emcc and pyodide must be on PATH, as in cibuildwheel's
+    # before-build).  Build a static library to link into the extension module, with Pyodide's
+    # compiler flags (-fPIC and its exception handling ABI).  Its -Oz is overridden by
+    # CMake's Release flags (-O3), or by EMCC_CFLAGS if that sets one (see wheels.yml).
+    cmake_cmd=(emcmake cmake)
+    CFLAGS="$(pyodide config get cflags)" || exit 1
+    export CFLAGS
+    cmake_params+=(-DBUILD_SHARED_LIBS=OFF -DBUILD_STATIC_LIBS=ON)
+    # No CPU features to detect
+    cmake_params+=(-DGBNCPUFEAT=1)
+fi
+
 if [ -n "${GRAPHBLAS_PREFIX}" ]; then
     echo "GRAPHBLAS_PREFIX=${GRAPHBLAS_PREFIX}"
     cmake_params+=(-DCMAKE_INSTALL_PREFIX="${GRAPHBLAS_PREFIX}")
 fi
 
+# Start clean: this may run more than once (e.g., per Python version for Pyodide)
+rm -rf "GraphBLAS-${VERSION}"
 curl -L "https://github.com/DrTimothyAldenDavis/GraphBLAS/archive/refs/tags/v${VERSION}.tar.gz" | tar xzf -
 cd "GraphBLAS-${VERSION}/build" || exit
 
 # Disable optimizing some rarely-used types for significantly faster builds and significantly smaller wheel size.
 # Also the build with all types enabled sometimes stalls on GitHub Actions. Probably due to exceeded resource limits.
 # These can still be used, they'll just have reduced performance (AFAIK similar to UDTs).
+# GraphBLAS's own GB_control.h (as of 10.5.1) already disables INT8, INT16, UINT8 and UINT16, so
+# the types left without FactoryKernels here are those four plus FC32, FC64 and UINT32.
 # shellcheck disable=SC2129
 # echo "#define GxB_NO_BOOL      1" >> ../Source/GB_control.h #
 # echo "#define GxB_NO_FP32      1" >> ../Source/GB_control.h #
@@ -132,12 +155,8 @@ if [ -n "${SUITESPARSE_FASTEST_BUILD}" ]; then
     echo "#define GxB_NO_UINT64    1" >> ../Source/GB_control.h
     echo "#define GxB_NO_UINT8     1" >> ../Source/GB_control.h
 
-    # Setting COMPACT probably makes setting config in GB_control.h above unnecessary
-    cmake_params+=(-DCOMPACT=1)
-    # Also no JIT for the fastest possible build
-    cmake_params+=(-DNJIT=1)
-    # Disable all Source/Generated2 kernels. For workflow development only.
-    cmake_params+=(-DCMAKE_CUDA_DEV=1)
+    # No FactoryKernels at all, which probably makes the GB_control.h settings above unnecessary
+    cmake_params+=(-DGRAPHBLAS_COMPACT=ON)
 fi
 
 if [ -n "${CMAKE_GNUtoMS}" ]; then
@@ -145,24 +164,26 @@ if [ -n "${CMAKE_GNUtoMS}" ]; then
     echo "Skipping JIT on Windows for now because it fails to build."
     cmake_params+=(-DGRAPHBLAS_USE_JIT=OFF)
 else
-    # Use `-DJITINIT=2` so that the JIT functionality is available, but disabled by default.
+    # Use `GRAPHBLAS_JITINIT=2` so that the JIT functionality is available, but disabled by default.
     # Level 2, "run", means that pre-JIT kernels may be used, which does not require a compiler at runtime.
-    cmake_params+=(-DJITINIT=2)
+    cmake_params+=(-DGRAPHBLAS_JITINIT=2)
 
     # Disable JIT here too to not segfault in tests
     cmake_params+=(-DGRAPHBLAS_USE_JIT=OFF)
 fi
 
 # some platforms require sudo for installation, some don't have sudo at all
-if [ "$(uname)" == "Darwin" ]; then
+if [ "$(uname)" == "Darwin" ] && [ -z "${SUITESPARSE_EMSCRIPTEN}" ]; then
     SUDO=sudo
 else
     SUDO=""
 fi
 
-cmake .. -DCMAKE_BUILD_TYPE=Release -G 'Unix Makefiles' "${cmake_params[@]}"
-make -j"$NPROC"
-$SUDO make install
+# Stop at the first failure.  Carrying on would hide it until the wheel fails to link, or let
+# the wheel link against a library left by an earlier run (e.g., for another Python).
+"${cmake_cmd[@]}" .. -DCMAKE_BUILD_TYPE=Release -G 'Unix Makefiles' "${cmake_params[@]}" || exit 1
+make -j"$NPROC" || exit 1
+$SUDO make install || exit 1
 
 if [ -n "${CMAKE_GNUtoMS}" ]; then
     if [ -z "${GRAPHBLAS_PREFIX}" ]; then
