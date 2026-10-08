@@ -71,17 +71,17 @@ SCRIPT = textwrap.dedent("""
         # NumPy -> GraphBLAS -> NumPy: without a copy (if "numpy"), with one, and from `empty`
         ones = empty(N, int64, **kwargs)
         ones[:] = 1
-        for array in [np.arange(N), np.arange(2 * N)[::2], ones]:
+        for array in [np.arange(N, dtype=int64), np.arange(2 * N, dtype=int64)[::2], ones]:
             total = array.sum()
             assert unload(load(array, **kwargs)).sum() == total
-        v = load(np.arange(N), **kwargs)
+        v = load(np.arange(N, dtype=int64), **kwargs)
         data = vector.serialize(v, lib.GxB_COMPRESSION_NONE)
         assert data.nbytes > N * 8
         assert vector.vector_nvals(vector.deserialize(data)) == N
 
 
     def main():
-        array = np.arange(N)
+        array = np.arange(N, dtype=int64)
         assert can_unclaim_buffer(array) == (memory_manager == "numpy")
         load(array)
         assert array.flags.owndata == (memory_manager != "numpy")  # was it copied?
@@ -186,6 +186,7 @@ SCRIPT = textwrap.dedent("""
     """)
 
 
+@pytest.mark.skipif(sys.platform == "emscripten", reason="needs a subprocess")
 @pytest.mark.parametrize("memory_manager", ["numpy", "c"])
 def test_allocators_match(memory_manager, tmp_path):
     """Memory must be freed by the allocator that allocated it, whoever ends up owning it.
@@ -265,7 +266,7 @@ def test_unclaim_buffer():
         check_status(v, info)
         return v
 
-    array = np.arange(10)
+    array = np.arange(10, dtype=np.int64)
     assert can_unclaim_buffer(array)
     v = handover(array)
     unclaim_buffer(array)
@@ -274,7 +275,7 @@ def test_unclaim_buffer():
     assert vector.vector_nvals(v) == 10
 
     # GraphBLAS should not have been given this, but it now has it, so NumPy must let go
-    array = np.arange(10)
+    array = np.arange(10, dtype=np.int64)
     array.flags.writeable = False
     assert not can_unclaim_buffer(array)
     v = handover(array)
@@ -316,7 +317,7 @@ def test_empty():
 
 def test_give_buffer():
     # Zero-copy: the array no longer owns the data GraphBLAS took
-    array = np.arange(5)
+    array = np.arange(5, dtype=np.int64)
     v = load(array)
     assert not array.flags.owndata
     assert not array.flags.writeable
@@ -325,7 +326,10 @@ def test_give_buffer():
     assert x[0] == 4
 
     # A copy, so the array is unchanged
-    for array, kwargs in [(np.arange(10)[::2], {}), (np.arange(5), {"copy": True})]:
+    for array, kwargs in [
+        (np.arange(10, dtype=np.int64)[::2], {}),
+        (np.arange(5, dtype=np.int64), {"copy": True}),
+    ]:
         v = load(array, **kwargs)
         assert array.flags.writeable
         check_status(v, lib.GrB_Vector_extractElement_INT64(x, v[0], 4))
@@ -334,7 +338,7 @@ def test_give_buffer():
         load(np.arange(10)[::2], copy=False)
 
     # GraphBLAS didn't take ownership, so the array keeps it
-    array = np.arange(5)
+    array = np.arange(5, dtype=np.int64)
     v = vector.vector_new(lib.GrB_INT64)
     with pytest.raises(exceptions.InvalidValue):
         with give_buffer(array) as (X, nbytes, arena):
@@ -347,7 +351,7 @@ def test_give_buffer():
     assert array.flags.writeable
 
     # The same array twice: the second is a copy, or an error if it may not be
-    array = np.arange(5)
+    array = np.arange(5, dtype=np.int64)
     with give_buffer(array) as (X, _, _), give_buffer(array) as (Y, _, _):
         assert X[0] != Y[0]
     with pytest.raises(ValueError, match="already being given"):

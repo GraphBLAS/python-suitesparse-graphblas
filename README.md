@@ -27,6 +27,20 @@ or
 conda install -c conda-forge python-suitesparse-graphblas
 ```
 
+### In the browser (Pyodide)
+PyPI also has WebAssembly wheels for [Pyodide](https://pyodide.org) 314 (Python 3.14) and
+0.29.4 or later (Python 3.13), the `pyemscripten` platform of
+[PEP 783](https://peps.python.org/pep-0783/). So, in Pyodide or JupyterLite
+(jupyterlite-pyodide-kernel 0.8 uses Pyodide 314):
+
+```python
+import micropip
+await micropip.install("suitesparse-graphblas")
+```
+
+Older versions of Pyodide don't recognize these wheels: micropip says it can't find a pure
+Python 3 wheel. GraphBLAS runs single-threaded in Pyodide, which has no threads (so no OpenMP).
+
 ## Installation from source
 If you wish to link against your own copy of SuiteSparse:GraphBLAS you may build from source.
 

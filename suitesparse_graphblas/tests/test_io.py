@@ -1,6 +1,5 @@
 import bz2
 import gzip
-import lzma
 import platform
 from pathlib import Path
 
@@ -20,6 +19,11 @@ from suitesparse_graphblas import (
     unsigned_integer_types,
     vector,
 )
+
+try:
+    import lzma
+except ImportError:  # Pyodide before 314 has it as a separate package
+    lzma = None
 
 if platform.system() == "Windows":
     pytest.skip("skipping windows-only tests", allow_module_level=True)
@@ -136,7 +140,10 @@ def test_serialize_vector():
 
 
 def test_matrix_binfile_read_write(tmp_path):
-    for opener in (Path.open, gzip.open, bz2.open, lzma.open):
+    openers = [Path.open, gzip.open, bz2.open]
+    if lzma is not None:
+        openers.append(lzma.open)
+    for opener in openers:
         for format in (lib.GxB_BY_ROW, lib.GxB_BY_COL):
             for T in grb_types:
                 for sparsity in (lib.GxB_HYPERSPARSE, lib.GxB_SPARSE, lib.GxB_BITMAP, lib.GxB_FULL):

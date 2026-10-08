@@ -429,7 +429,7 @@ def give_buffer(array, ctype="void*", *, copy=None, arena=None):
     >>> from suitesparse_graphblas import check_status, ffi, lib, vector
     >>> from suitesparse_graphblas.utils import give_buffer
     >>> v = vector.vector_new(lib.GrB_INT64)
-    >>> values = np.arange(3)
+    >>> values = np.arange(3, dtype=np.int64)
     >>> with give_buffer(values) as (X, nbytes, arena):
     ...     info = lib.GxB_Vector_load(
     ...         v[0], X, lib.GrB_INT64, values.size, nbytes, lib.GrB_DEFAULT + arena, ffi.NULL

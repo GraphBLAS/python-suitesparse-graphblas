@@ -94,6 +94,17 @@ jobs:
           - os: macos-14
             cibw_archs: "arm64"
 
+          # WebAssembly for Pyodide (PEP 783 `pyemscripten_*` wheels).  GraphBLAS is built in
+          # before-build (see CIBW_*_PYODIDE below).
+          - os: ubuntu-latest
+            cibw_platform: "pyodide"
+            cibw_archs: "wasm32"
+            arch_note: "pyodide"
+            # Pyodide for 3.15 is an alpha, and building for it names the cffi module with
+            # the build machine's abi3 suffix (e.g., `_graphblas.abi3-x86_64-linux-gnu.so`),
+            # which Pyodide can't import.
+            cibw_skip: "cp315-*"
+
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -145,10 +156,24 @@ jobs:
           # enable option) entirely.
           CIBW_ENABLE: "pypy"
 
+          CIBW_PLATFORM: ${{ matrix.cibw_platform || 'auto' }}
+
           # Build SuiteSparse
           CIBW_BEFORE_ALL: bash suitesparse.sh ${{ env.GB_VERSION_REF }}
 
           CIBW_BEFORE_BUILD_LINUX: ${{ matrix.cibw_before_build_linux }}
+
+          # Pyodide: cibuildwheel sets up Emscripten for each Python version (each Pyodide
+          # version has its own) after before-all, so build GraphBLAS in before-build instead.
+          # SUITESPARSE_EMSCRIPTEN=1 asks suitesparse.sh for a static library to link into the
+          # extension module.  The empty before-all overrides the one above.
+          # EMCC_CFLAGS=-O2: Pyodide links with -Oz, and binaryen's wasm-opt -Oz had not
+          # finished with GraphBLAS after 30 CPU-minutes; -O2 takes about a minute.  emcc
+          # appends EMCC_CFLAGS to every command, so its -O2 is the one that counts (also for
+          # compiling GraphBLAS, which is then smaller and no slower).
+          CIBW_BEFORE_ALL_PYODIDE: ""
+          CIBW_BEFORE_BUILD_PYODIDE: bash suitesparse.sh ${{ env.GB_VERSION_REF }}
+          CIBW_ENVIRONMENT_PYODIDE: SUITESPARSE_EMSCRIPTEN=1 GRAPHBLAS_PREFIX=/tmp/graphblas-wasm GraphBLAS_ROOT=/tmp/graphblas-wasm EMCC_CFLAGS=-O2
 
           CIBW_ENVIRONMENT_PASS_LINUX: SUITESPARSE_FASTEST_BUILD
 
@@ -180,7 +205,8 @@ jobs:
 
           # run tests.  They run from a temporary directory, so pyproject.toml's pytest
           # config doesn't apply; -W error restores its `filterwarnings = ["error"]`.
-          CIBW_TEST_COMMAND: "pytest --pyargs suitesparse_graphblas -s -k test_print_jit_config && pytest -v -W error --pyargs suitesparse_graphblas"
+          # `python -m pytest`, because the `pytest` script doesn't work in a Pyodide venv.
+          CIBW_TEST_COMMAND: "python -m pytest --pyargs suitesparse_graphblas -s -k test_print_jit_config && python -m pytest -v -W error --pyargs suitesparse_graphblas"
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
