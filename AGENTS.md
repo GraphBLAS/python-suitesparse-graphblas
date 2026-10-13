@@ -38,6 +38,21 @@ source instead, run `bash suitesparse.sh refs/tags/$(cat GB_VERSION.txt).0`. Tha
 honors `SUITESPARSE_FAST_BUILD` / `SUITESPARSE_FASTEST_BUILD` env vars to disable many type
 specializations for much faster local builds.
 
+### WebAssembly (Pyodide)
+
+`wheels.yml` builds `pyemscripten` wheels for Pyodide with cibuildwheel
+(`CIBW_PLATFORM=pyodide`). With `SUITESPARSE_EMSCRIPTEN=1`, `suitesparse.sh` builds GraphBLAS
+as a static library (no OpenMP: Pyodide has no threads) with `emcmake` and Pyodide's compiler
+flags, so `emcc` and `pyodide` must be on `PATH`; cibuildwheel provides them only in
+before-build, once per Python. Two things that native builds forgive break on wasm32:
+
+- Calling a C function through a pointer of the wrong type traps ("function signature
+  mismatch"), so each function pointer type in `utils.pxd`/`utils.pyx` must match the
+  function's C declaration exactly, return type included (10.5.1.0 typed `GxB_init` as
+  returning `uint64_t`, which fails on import there).
+- NumPy's default integer is int32, so give `dtype=np.int64` to arrays that GraphBLAS reads as
+  `GrB_INT64`.
+
 ## Tests, lint, and other commands
 
 Testing requires the compiled CFFI extension and the SuiteSparse:GraphBLAS C library, so

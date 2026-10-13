@@ -1,3 +1,5 @@
+import sys
+
 import pytest
 
 import suitesparse_graphblas
@@ -16,6 +18,9 @@ def test_version():
     assert version > [9, 4, 4, 0]
 
 
+@pytest.mark.skipif(
+    sys.platform == "emscripten", reason="WebAssembly (Pyodide) has no threads, so no OpenMP"
+)
 def test_openmp():
     # GraphBLAS only warns at configure time when OpenMP is missing and still
     # builds a working, but serial, library, so a serial build is invisible

@@ -47,6 +47,7 @@ keywords = [
 ]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
+    "Environment :: WebAssembly :: Emscripten",
     "Operating System :: MacOS :: MacOS X",
     "Operating System :: POSIX :: Linux",
     "Operating System :: Microsoft :: Windows",
@@ -93,6 +94,11 @@ packages = [
     'suitesparse_graphblas.tests',
     'suitesparse_graphblas.io',
 ]
+
+# Build inputs that MANIFEST.in puts in the sdist.  Nothing reads them at runtime, so keep them
+# out of wheels (`utils.c` alone is about 1 MB, which matters most for Pyodide's downloads).
+[tool.setuptools.exclude-package-data]
+suitesparse_graphblas = ["*.c", "*.h"]
 
 [tool.setuptools-git-versioning]
 enabled = true
