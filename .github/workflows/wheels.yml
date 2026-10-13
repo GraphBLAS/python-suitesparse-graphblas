@@ -61,6 +61,10 @@ jobs:
         include:
           - os: windows-latest
             cibw_archs: "auto64"
+            # No PyPy: NumPy has no wheels for PyPy 8.0, and a NumPy built from source here
+            # uses MinGW, which warns on import that it is experimental ("CRASHES ARE TO BE
+            # EXPECTED"), failing the tests.
+            cibw_skip: "pp*"
 
           # Linux x86_64 manylinux
           - os: ubuntu-latest
