@@ -134,10 +134,7 @@ SCRIPT = textwrap.dedent("""
             check_status(B, lib.GrB_Matrix_wait(B[0], lib.GrB_MATERIALIZE))
             assert matrix.matrix_nvals(B) == 900
 
-        # Another arena, using libc's allocator.  The last one, since GraphBLAS means to give
-        # CUDA an arena of its own (the first 10.4.0 betas reserved arena 1).  It needs a realloc:
-        # without one, GraphBLAS (10.4.0 to 10.5.1) frees the arena's memory with arena 0's
-        # free when it grows a buffer.
+        # Another arena, using libc's allocator
         k = lib.GxB_NARENAS - 1
         import cffi
 
