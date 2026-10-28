@@ -148,7 +148,7 @@ jobs:
           brew fetch --retry libomp && brew reinstall libomp
           echo "MACOSX_DEPLOYMENT_TARGET=$(otool -l "$(brew --prefix libomp)/lib/libomp.dylib" | grep minos | awk '{print $2}')" >> "$GITHUB_ENV"
 
-      - uses: pypa/cibuildwheel@b3395e271a35f73dad77f21802abe9b986dfe299 # v4.3.1
+      - uses: pypa/cibuildwheel@8c2dcd2e96041a619f5ff03c9638d7941e2553a4 # v4.3.3
         with:
           output-dir: wheelhouse
         env:
@@ -243,7 +243,7 @@ jobs:
           path: dist
           merge-multiple: true
 
-      - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
+      - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
         with:
           # PyPI does not allow replacing a file. Without this flag the entire action fails if even a single duplicate exists.
           skip-existing: true
@@ -264,7 +264,7 @@ jobs:
           path: dist
           merge-multiple: true
 
-      - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
+      - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
         with:
           repository-url: https://test.pypi.org/legacy/
           # PyPI does not allow replacing a file. Without this flag the entire action fails if even a single duplicate exists.

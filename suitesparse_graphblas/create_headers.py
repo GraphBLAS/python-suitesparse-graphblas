@@ -306,6 +306,7 @@ DEFINES = {
     "GxB_ARENA_DATA",
     "GxB_ARENA_HEADER",
     "GxB_NARENAS",
+    "GxB_NARENAS_GPU",  # Added in version 10.5.2
 }
 
 CHAR_DEFINES = {
@@ -337,6 +338,8 @@ IGNORE_DEFINES = {
     "GxB_HAVE_COMPLEX_C99",
     # deprecated
     "GxB_HYPER",
+    "GxB_NONBLOCKING_GPU",  # GrB_Mode values until 10.5.2; now aliases of GrB_NONBLOCKING
+    "GxB_BLOCKING_GPU",  # and GrB_BLOCKING
 }
 
 IGNORE_LINES = {

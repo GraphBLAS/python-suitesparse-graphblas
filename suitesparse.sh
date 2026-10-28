@@ -98,7 +98,7 @@ cd "GraphBLAS-${VERSION}/build" || exit
 # Disable optimizing some rarely-used types for significantly faster builds and significantly smaller wheel size.
 # Also the build with all types enabled sometimes stalls on GitHub Actions. Probably due to exceeded resource limits.
 # These can still be used, they'll just have reduced performance (AFAIK similar to UDTs).
-# GraphBLAS's own GB_control.h (as of 10.5.1) already disables INT8, INT16, UINT8 and UINT16, so
+# GraphBLAS's own GB_control.h (as of 10.5.2) already disables INT8, INT16, UINT8 and UINT16, so
 # the types left without FactoryKernels here are those four plus FC32, FC64 and UINT32.
 # shellcheck disable=SC2129
 # echo "#define GxB_NO_BOOL      1" >> ../Source/GB_control.h #
