@@ -106,7 +106,9 @@ This script regenerates **`suitesparse_graphblas.h`**, **`suitesparse_graphblas_
 and **`source.c`** from an upstream `GraphBLAS.h`. It:
 
 - Copies `GraphBLAS.h` from the install, runs the C preprocessor (using pycparser's
-  `fake_libc_include`), and parses the result with pycparser.
+  `fake_libc_include`), and parses the result with pycparser. Use conda-forge's pycparser:
+  the wheels on PyPI leave `fake_libc_include` out. Pass `--graphblas <path to GraphBLAS.h>`
+  unless GraphBLAS is installed in `sys.prefix`.
 - Emits a cleaned-up header that cffi can `cdef()`, plus a complex-free variant for
   platforms (notably MSVC) where `_Complex` types don't work.
 - Manually tracks `DEFINES`, `CHAR_DEFINES`, `IGNORE_DEFINES`, and `DEPRECATED` sets.
