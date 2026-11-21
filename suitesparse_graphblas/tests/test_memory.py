@@ -7,6 +7,7 @@ import numpy as np
 import pytest
 
 from suitesparse_graphblas import check_status, exceptions, ffi, lib, matrix, vector
+from suitesparse_graphblas.api import grb_type
 from suitesparse_graphblas.utils import (
     can_unclaim_buffer,
     claim_buffer,
@@ -230,6 +231,53 @@ def test_claim_buffer():
         claim_buffer(ffi, ffi.NULL, 3, int64)
     with pytest.raises(ValueError, match="NULL pointer"):
         claim_buffer_2d(ffi, ffi.NULL, 6, 2, 3, int64, True)
+
+
+@pytest.mark.parametrize(
+    "dtype", ["<i8", ("<i8", (4,)), ("<i4", (2, 3))], ids=["i8", "i8x4", "i4x2x3"]
+)
+@pytest.mark.parametrize("is_c_order", [True, False])
+@pytest.mark.parametrize("spare", [False, True])
+def test_claim_buffer_2d(dtype, is_c_order, spare):
+    # A full matrix of a user-defined type the size of `dtype`, whose element (i, j) holds
+    # 100 * i + 10 * j + k as its k-th scalar, so that the expected array doesn't depend on
+    # how GraphBLAS lays out the buffer.  With a subarray dtype, the result must have the
+    # element axes last.
+    dtype = np.dtype(dtype)
+    nrows, ncols = (2, 3) if is_c_order else (3, 2)
+    i = np.arange(3)[:, None, None]
+    j = np.arange(3)[None, :, None]
+    k = np.arange(max(1, dtype.itemsize // dtype.base.itemsize))
+    values = (100 * i + 10 * j + k).astype(dtype.base).reshape((3, 3) + dtype.shape)
+    shape = (3, 3) if spare else (nrows, ncols)
+    T = grb_type.grb_type_new(dtype.itemsize)
+    A = matrix.matrix_new(T[0], *shape)
+    matrix.matrix_set_format(A, lib.GxB_BY_ROW if is_c_order else lib.GxB_BY_COL)
+    for r in range(shape[0]):
+        for c in range(shape[1]):
+            x = ffi.from_buffer(values[r, c : c + 1])
+            check_status(A, lib.GrB_Matrix_setElement_UDT(A[0], x, r, c))
+    if spare:
+        # Dropping the last row of a by-row matrix (or column of a by-column one) keeps its
+        # buffer, which then has spare values at the end
+        check_status(A, lib.GrB_Matrix_resize(A[0], nrows, ncols))
+    Ax = ffi.new("void**")
+    Ax_size = ffi.new("GrB_Index*")
+    export = lib.GxB_Matrix_export_FullR if is_c_order else lib.GxB_Matrix_export_FullC
+    info = export(
+        A, T, ffi.new("GrB_Index*"), ffi.new("GrB_Index*"), Ax, Ax_size, ffi.NULL, ffi.NULL
+    )
+    check_status(A, info)
+    n = Ax_size[0] // dtype.itemsize
+    assert (n > nrows * ncols) if spare else (n == nrows * ncols)
+    array = claim_buffer_2d(ffi, Ax[0], n, nrows, ncols, dtype, is_c_order)
+    assert array.shape == (nrows, ncols) + dtype.shape
+    assert array.dtype == dtype.base
+    np.testing.assert_array_equal(array, values[:nrows, :ncols])
+    # An exact fit owns the buffer, so it can be given back without a copy; otherwise its
+    # base does.  Either way NumPy must free it with the allocator that allocated it.
+    assert array.flags.owndata != spare
+    assert can_unclaim_buffer(array if array.flags.owndata else array.base)
 
 
 def test_can_unclaim_buffer():

@@ -271,13 +271,17 @@ cpdef ndarray claim_buffer_2d(
     bint is_c_order,
     object arena=None,
 ):
-    """Like ``claim_buffer``, but return a 2-d ``nrows`` by ``ncols`` array."""
+    """Like ``claim_buffer``, but return a 2-d ``nrows`` by ``ncols`` array.
+
+    For a subarray dtype, the element axes come last: shape ``(nrows, ncols) + dtype.shape``.
+    """
     cdef:
         size_t size = nrows * ncols
         ndarray array
         uintptr_t ptr
         npy_intp dims[2]
-        int flags = NPY_ARRAY_WRITEABLE
+        npy_intp strides[2]
+        npy_intp *strides_ptr = NULL
     if cdata_size == size:
         handler = _handler(_resolve_arena(arena))
         ptr = int(ffi.cast("uintptr_t", cdata))
@@ -286,18 +290,23 @@ cpdef ndarray claim_buffer_2d(
         dims[0] = nrows
         dims[1] = ncols
         if not is_c_order:
-            flags |= NPY_ARRAY_F_CONTIGUOUS
+            # Strides, not NPY_ARRAY_F_CONTIGUOUS: NumPy appends the element axes of a
+            # subarray dtype, which that flag would make the slowest-varying axes
+            strides[0] = dtype.itemsize
+            strides[1] = <npy_intp>nrows * dtype.itemsize
+            strides_ptr = strides
         Py_INCREF(dtype)
         array = PyArray_NewFromDescr(
-            ndarray, dtype, 2, dims, NULL, <void*>ptr, flags, <object>NULL
+            ndarray, dtype, 2, dims, strides_ptr, <void*>ptr, NPY_ARRAY_WRITEABLE, <object>NULL
         )
         own_data(array, handler)
-    elif cdata_size > size:  # pragma: no cover
+    elif cdata_size > size:
         array = claim_buffer(ffi, cdata, cdata_size, dtype, arena)
+        # claim_buffer appends the element axes of a subarray dtype; keep them last
         if is_c_order:
-            array = array[:size].reshape((nrows, ncols))
+            array = array[:size].reshape((nrows, ncols) + dtype.shape)
         else:
-            array = array[:size].reshape((ncols, nrows)).T
+            array = array[:size].reshape((ncols, nrows) + dtype.shape).swapaxes(0, 1)
     else:  # pragma: no cover
         raise ValueError(
             f"Buffer size too small: {cdata_size}.  "
