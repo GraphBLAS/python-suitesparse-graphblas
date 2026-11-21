@@ -29,8 +29,7 @@ jobs:
         # os: ["ubuntu-latest"]
         # source: ["source"]
         # A trailing "t" means the free-threaded (no-GIL) build of that version.
-        # TODO: add "3.15t" once conda-forge builds cffi and numpy for cp315t.
-        python-version: ["3.11", "3.12", "3.13", "3.14", "3.14t", "3.15"]
+        python-version: ["3.11", "3.12", "3.13", "3.14", "3.14t", "3.15", "3.15t"]
     steps:
     - name: Checkout
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -63,10 +62,13 @@ jobs:
       with:
         auto-update-conda: true
         environment-file: environment-ci.yml
-        channels: conda-forge,nodefaults
+        # setup-miniconda deprecated a `nodefaults` channel here in favor of
+        # conda-remove-defaults (environment.yml keeps it for conda itself).
+        channels: conda-forge
+        conda-remove-defaults: true
         channel-priority: strict
         activate-environment: suitesparse-graphblas
-        auto-activate-base: false
+        auto-activate: false
     - name: GraphBLAS (from conda-forge)
       if: (contains(matrix.source, 'conda-forge'))
       run: |
@@ -98,7 +100,7 @@ jobs:
       run: |
         # Cython's coverage plugin (see [tool.coverage.run] in pyproject.toml)
         # needs coverage's C tracer.  Where conda-forge has no compiled build of
-        # coverage for a Python (3.15, for now), it installs a pure-Python build
+        # coverage for a Python (3.15t, for now), it installs a pure-Python build
         # that lacks the tracer.  There, loading the plugin raises ImportError and
         # every `coverage run` dies before it runs anything, so run the tests
         # directly instead.
