@@ -292,39 +292,47 @@ def test_claim_buffer_2d(dtype, is_c_order, spare):
     # element axes last.
     dtype = np.dtype(dtype)
     nrows, ncols = (2, 3) if is_c_order else (3, 2)
-    i = np.arange(3)[:, None, None]
-    j = np.arange(3)[None, :, None]
+    i = np.arange(nrows)[:, None, None]
+    j = np.arange(ncols)[None, :, None]
     k = np.arange(max(1, dtype.itemsize // dtype.base.itemsize))
-    values = (100 * i + 10 * j + k).astype(dtype.base).reshape((3, 3) + dtype.shape)
-    shape = (3, 3) if spare else (nrows, ncols)
+    values = (100 * i + 10 * j + k).astype(dtype.base).reshape((nrows, ncols) + dtype.shape)
     T = grb_type.grb_type_new(dtype.itemsize)
-    A = matrix.matrix_new(T[0], *shape)
+    A = matrix.matrix_new(T[0], nrows, ncols)
     matrix.matrix_set_format(A, lib.GxB_BY_ROW if is_c_order else lib.GxB_BY_COL)
-    for r in range(shape[0]):
-        for c in range(shape[1]):
+    for r in range(nrows):
+        for c in range(ncols):
             x = ffi.from_buffer(values[r, c : c + 1])
             check_status(A, lib.GrB_Matrix_setElement_UDT(A[0], x, r, c))
-    if spare:
-        # Dropping the last row of a by-row matrix (or column of a by-column one) keeps its
-        # buffer, which then has spare values at the end
-        check_status(A, lib.GrB_Matrix_resize(A[0], nrows, ncols))
+    export = lib.GxB_Matrix_export_FullR if is_c_order else lib.GxB_Matrix_export_FullC
+    pack = lib.GxB_Matrix_pack_FullR if is_c_order else lib.GxB_Matrix_pack_FullC
     Ax = ffi.new("void**")
     Ax_size = ffi.new("GrB_Index*")
-    export = lib.GxB_Matrix_export_FullR if is_c_order else lib.GxB_Matrix_export_FullC
-    info = export(
-        A, T, ffi.new("GrB_Index*"), ffi.new("GrB_Index*"), Ax, Ax_size, ffi.NULL, ffi.NULL
-    )
-    check_status(A, info)
+    args = (T, ffi.new("GrB_Index*"), ffi.new("GrB_Index*"), Ax, Ax_size, ffi.NULL, ffi.NULL)
+    check_status(A, export(A, *args))
+    # Pack the values GraphBLAS laid out back in a buffer of exactly the size to test (with
+    # room for two more if `spare`), which export then hands back as it is
+    nbytes = nrows * ncols * dtype.itemsize
+    buf = empty(nbytes + 2 * spare * dtype.itemsize, np.uint8)
+    buf[:nbytes] = claim_buffer(ffi, Ax[0], Ax_size[0], np.dtype(np.uint8))[:nbytes]
+    A = matrix.matrix_new(T[0], nrows, ncols)
+    with give_buffer(buf) as (X, size, _):
+        check_status(A, pack(A[0], X, size, False, ffi.NULL))
+    check_status(A, export(A, *args))
     n = Ax_size[0] // dtype.itemsize
-    assert (n > nrows * ncols) if spare else (n == nrows * ncols)
     array = claim_buffer_2d(ffi, Ax[0], n, nrows, ncols, dtype, is_c_order)
+    assert n == nrows * ncols + 2 * spare
     assert array.shape == (nrows, ncols) + dtype.shape
     assert array.dtype == dtype.base
-    np.testing.assert_array_equal(array, values[:nrows, :ncols])
+    np.testing.assert_array_equal(array, values)
     # An exact fit owns the buffer, so it can be given back without a copy; otherwise its
     # base does.  Either way NumPy must free it with the allocator that allocated it.
     assert array.flags.owndata != spare
     assert can_unclaim_buffer(array if array.flags.owndata else array.base)
+    # Given back, as itself or as a copy, it has the layout GraphBLAS exported
+    layout = values if is_c_order else values.swapaxes(0, 1)
+    for copy in [None, True]:
+        with give_buffer(array, copy=copy) as (X, nbytes, _):
+            assert ffi.buffer(X[0], nbytes)[:] == np.ascontiguousarray(layout).tobytes()
 
 
 def test_can_unclaim_buffer():
