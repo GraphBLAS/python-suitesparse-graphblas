@@ -233,6 +233,53 @@ def test_claim_buffer():
         claim_buffer_2d(ffi, ffi.NULL, 6, 2, 3, int64, True)
 
 
+# An arena that records the addresses it frees, made once (arenas can't be changed)
+_recording_arena = {}
+
+
+def recording_arena():
+    if not _recording_arena:
+        blocks = {}
+        freed = []
+
+        @ffi.callback("void *(size_t)")
+        def malloc(size):
+            block = ffi.new("char[]", size or 1)
+            blocks[int(ffi.cast("uintptr_t", block))] = block
+            return block
+
+        @ffi.callback("void (void *)")
+        def free(ptr):
+            address = int(ffi.cast("uintptr_t", ptr))
+            blocks.pop(address, None)
+            freed.append(address)
+
+        k = lib.GxB_NARENAS - 2  # not arena 5: test_can_unclaim_buffer needs it uninitialized
+        assert lib.GxB_arena_init(k, malloc, ffi.NULL, ffi.NULL, free) == lib.GrB_SUCCESS
+        _recording_arena.update(k=k, freed=freed, callbacks=(malloc, free))
+    return _recording_arena["k"], _recording_arena["freed"]
+
+
+@pytest.mark.skipif(sys.platform == "emscripten", reason="needs cffi callbacks")
+def test_claim_buffer_frees_on_error():
+    # GraphBLAS has handed the buffer over, so if claiming it fails, nothing else frees it
+    k, freed = recording_arena()
+    int64 = np.dtype(np.int64)
+    huge = sys.maxsize // 4  # too many int64s for NumPy
+    for claim, match in [
+        (lambda ptr: claim_buffer(ffi, ptr, huge, int64, k), "too big"),
+        (lambda ptr: claim_buffer_2d(ffi, ptr, huge, 1, huge, int64, False, k), "too big"),
+        (lambda ptr: claim_buffer_2d(ffi, ptr, 5, 2, 3, int64, True, k), "too small"),
+    ]:
+        array = empty(6, int64, arena=k)
+        ptr = ffi.cast("void*", array.ctypes.data)
+        unclaim_buffer(array, arena=k)  # now nothing owns it, as after a GraphBLAS export
+        freed.clear()
+        with pytest.raises(ValueError, match=match):
+            claim(ptr)
+        assert freed == [int(ffi.cast("uintptr_t", ptr))]
+
+
 @pytest.mark.parametrize(
     "dtype", ["<i8", ("<i8", (4,)), ("<i4", (2, 3))], ids=["i8", "i8x4", "i4x2x3"]
 )

@@ -199,6 +199,13 @@ cdef inline void own_data(ndarray array, object handler):
     PyArray_ENABLEFLAGS(array, NPY_ARRAY_OWNDATA)
 
 
+cdef inline void _free_claimed(int k, uintptr_t ptr) noexcept:
+    # Free memory from arena `k` (whose handler has been made) that was being claimed when
+    # claiming failed: GraphBLAS has handed it over, so nothing else will
+    if ptr != 0:
+        arenas[k].free(<void *>ptr)
+
+
 cdef str _why_not_ownable(object array, object handler):
     # Why GraphBLAS can't take ownership of the data of `array` (to free with `handler`),
     # or None if it can.
@@ -245,18 +252,26 @@ cpdef ndarray claim_buffer(object ffi, object cdata, size_t size, dtype_t dtype,
 
     ``arena`` is the GraphBLAS arena that allocated the memory (default: the global data
     arena); NumPy will free the memory with that arena's allocator.
+
+    The memory is claimed even if this raises: then it is freed, since nothing else owns
+    it.  Only an invalid ``arena`` (or ``cdata``) leaves it alone, since then it can't be.
     """
     cdef:
         npy_intp dims = size
         uintptr_t ptr = int(ffi.cast("uintptr_t", cdata))
+        int k = _resolve_arena(arena)
         ndarray array
-    handler = _handler(_resolve_arena(arena))
+    handler = _handler(k)
     if ptr == 0 and size != 0:
         raise ValueError(f"Unable to claim {size} elements from a NULL pointer")
     Py_INCREF(dtype)
-    array = PyArray_NewFromDescr(
-        ndarray, dtype, 1, &dims, NULL, <void*>ptr, NPY_ARRAY_WRITEABLE, <object>NULL
-    )
+    try:
+        array = PyArray_NewFromDescr(
+            ndarray, dtype, 1, &dims, NULL, <void*>ptr, NPY_ARRAY_WRITEABLE, <object>NULL
+        )
+    except BaseException:
+        _free_claimed(k, ptr)
+        raise
     own_data(array, handler)
     return array
 
@@ -274,44 +289,50 @@ cpdef ndarray claim_buffer_2d(
     """Like ``claim_buffer``, but return a 2-d ``nrows`` by ``ncols`` array.
 
     For a subarray dtype, the element axes come last: shape ``(nrows, ncols) + dtype.shape``.
+    If the buffer holds more than ``nrows * ncols`` elements, the array is a view of a 1-d
+    array that owns the buffer.
+    As with ``claim_buffer``, the memory is freed if this raises.
     """
     cdef:
         size_t size = nrows * ncols
+        uintptr_t ptr = int(ffi.cast("uintptr_t", cdata))
+        int k = _resolve_arena(arena)
         ndarray array
-        uintptr_t ptr
         npy_intp dims[2]
         npy_intp strides[2]
         npy_intp *strides_ptr = NULL
-    if cdata_size == size:
-        handler = _handler(_resolve_arena(arena))
-        ptr = int(ffi.cast("uintptr_t", cdata))
-        if ptr == 0 and size != 0:
-            raise ValueError(f"Unable to claim {size} elements from a NULL pointer")
-        dims[0] = nrows
-        dims[1] = ncols
-        if not is_c_order:
-            # Strides, not NPY_ARRAY_F_CONTIGUOUS: NumPy appends the element axes of a
-            # subarray dtype, which that flag would make the slowest-varying axes
-            strides[0] = dtype.itemsize
-            strides[1] = <npy_intp>nrows * dtype.itemsize
-            strides_ptr = strides
-        Py_INCREF(dtype)
-        array = PyArray_NewFromDescr(
-            ndarray, dtype, 2, dims, strides_ptr, <void*>ptr, NPY_ARRAY_WRITEABLE, <object>NULL
-        )
-        own_data(array, handler)
-    elif cdata_size > size:
-        array = claim_buffer(ffi, cdata, cdata_size, dtype, arena)
+    if cdata_size > size:
+        array = claim_buffer(ffi, cdata, cdata_size, dtype, k)
         # claim_buffer appends the element axes of a subarray dtype; keep them last
         if is_c_order:
-            array = array[:size].reshape((nrows, ncols) + dtype.shape)
-        else:
-            array = array[:size].reshape((ncols, nrows) + dtype.shape).swapaxes(0, 1)
-    else:  # pragma: no cover
+            return array[:size].reshape((nrows, ncols) + dtype.shape)
+        return array[:size].reshape((ncols, nrows) + dtype.shape).swapaxes(0, 1)
+    handler = _handler(k)
+    if cdata_size < size:
+        _free_claimed(k, ptr)
         raise ValueError(
             f"Buffer size too small: {cdata_size}.  "
             f"Unable to create matrix of size {nrows}x{ncols} = {size}"
         )
+    if ptr == 0 and size != 0:
+        raise ValueError(f"Unable to claim {size} elements from a NULL pointer")
+    dims[0] = nrows
+    dims[1] = ncols
+    if not is_c_order:
+        # Strides, not NPY_ARRAY_F_CONTIGUOUS: NumPy appends the element axes of a
+        # subarray dtype, which that flag would make the slowest-varying axes
+        strides[0] = dtype.itemsize
+        strides[1] = <npy_intp>nrows * dtype.itemsize
+        strides_ptr = strides
+    Py_INCREF(dtype)
+    try:
+        array = PyArray_NewFromDescr(
+            ndarray, dtype, 2, dims, strides_ptr, <void*>ptr, NPY_ARRAY_WRITEABLE, <object>NULL
+        )
+    except BaseException:
+        _free_claimed(k, ptr)
+        raise
+    own_data(array, handler)
     return array
 
 
