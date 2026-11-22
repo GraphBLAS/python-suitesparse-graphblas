@@ -231,6 +231,23 @@ cdef str _why_not_ownable(object array, object handler):
     )
 
 
+cdef list _memory_order(object array):
+    # The axes of `array` from slowest- to fastest-varying in memory if its elements fill
+    # its data without gaps, every axis running forwards (C or F order, or, with a subarray
+    # dtype, the column order of `claim_buffer_2d`), else in C order.  Copied in this order,
+    # its bytes stay the same.
+    shape = array.shape
+    strides = array.strides
+    axes = sorted(range(array.ndim), key=strides.__getitem__, reverse=True)
+    stride = array.itemsize
+    for i in reversed(axes):
+        if shape[i] != 1:
+            if strides[i] != stride:
+                return list(range(array.ndim))
+            stride *= shape[i]
+    return axes
+
+
 cpdef int call_gxb_init(object ffi, object lib, int mode):
     # We need to call `GxB_init`, but we didn't compile Cython against GraphBLAS.  So, we get it from cffi.
     # Step 1: ffi.addressof(lib, "GxB_init")
@@ -446,6 +463,9 @@ def give_buffer(array, ctype="void*", *, copy=None, arena=None):
         None (default): hand over the data of ``array`` itself if GraphBLAS can own it
         (see ``can_unclaim_buffer``), else a copy.  True: always hand over a copy, leaving
         ``array`` unchanged.  False: never copy; raise ValueError if GraphBLAS can't own it.
+        A copy has the elements in the order ``array`` has them in memory, so GraphBLAS
+        reads the same bytes either way; C order if they have gaps or an axis runs backwards
+        (e.g., a strided or reversed view).
     arena : int, optional
         The GraphBLAS arena that will own the data (default: the global data arena).
 
@@ -482,9 +502,9 @@ def give_buffer(array, ctype="void*", *, copy=None, arena=None):
             f"GraphBLAS cannot take ownership of the data of this array without copying: {why_not}"
         )
     if copy or why_not is not None:
-        order = "F" if array.flags.f_contiguous and not array.flags.c_contiguous else "C"
-        buf = empty(array.shape, array.dtype, order, k)
-        np.copyto(buf, array, casting="no")
+        axes = _memory_order(array)
+        buf = empty([array.shape[i] for i in axes], array.dtype, "C", k)
+        np.copyto(buf, array.transpose(axes), casting="no")
     else:
         buf = array
     ptr = _ffi.new(f"{ctype}*", _ffi.cast(ctype, <uintptr_t>PyArray_DATA(buf)))

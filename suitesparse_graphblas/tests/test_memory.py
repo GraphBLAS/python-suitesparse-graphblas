@@ -429,6 +429,20 @@ def test_give_buffer():
     with pytest.raises(ValueError, match="without copying: it does not own its data"):
         load(np.arange(10)[::2], copy=False)
 
+    # A copy has the elements in the order the array has them in memory, or C order if
+    # they have gaps
+    data = np.arange(24, dtype=np.int64)
+    for array, expected in [
+        (data.reshape(2, 3, 4), data),
+        (data.reshape(4, 3, 2).T, data),
+        (data.reshape(3, 2, 4).swapaxes(0, 1), data),
+        (data.reshape(6, 1, 4)[::2].T, data.reshape(6, 1, 4)[::2].T.ravel()),
+        (np.broadcast_to(data[:4], (3, 4)), np.tile(data[:4], 3)),
+        (np.asarray(data[5]), data[5:6]),
+    ]:
+        with give_buffer(array, copy=True) as (X, nbytes, _):
+            assert ffi.buffer(X[0], nbytes)[:] == expected.tobytes()
+
     # GraphBLAS didn't take ownership, so the array keeps it
     array = np.arange(5, dtype=np.int64)
     v = vector.vector_new(lib.GrB_INT64)
