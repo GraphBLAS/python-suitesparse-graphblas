@@ -85,8 +85,15 @@ jobs:
           # Linux aarch64 — native ARM runner (no QEMU emulation needed)
           - os: ubuntu-24.04-arm
             cibw_archs: "auto"
-            # numpy wheels not available for aarch64 musllinux
+            # skip musllinux (built in the next job)
             cibw_skip: "*musl*"
+
+          # Linux aarch64 musllinux, on its own runner for the same reason as x86_64's
+          - os: ubuntu-24.04-arm
+            cibw_archs: "auto"
+            arch_note: "musl"
+            # skip manylinux (built in the previous job)
+            cibw_skip: "*many*"
 
           # macOS x86_64 — macos-15-intel is the last Intel macOS runner.
           # libomp from Homebrew determines the minimum supported macOS version.
