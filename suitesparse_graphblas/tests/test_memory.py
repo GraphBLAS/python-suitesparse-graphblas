@@ -261,6 +261,13 @@ def recording_arena():
 
 
 @pytest.mark.skipif(sys.platform == "emscripten", reason="needs cffi callbacks")
+# PyPy runs C extension code (utils.pyx here) holding the GIL, and a cffi callback takes the
+# GIL on entry without checking whether its own thread holds it, so the first call into this
+# arena from utils.pyx (`empty`) never returns.
+@pytest.mark.skipif(
+    sys.implementation.name == "pypy",
+    reason="on PyPy, a cffi callback called from a C extension module deadlocks",
+)
 def test_claim_buffer_frees_on_error():
     # GraphBLAS has handed the buffer over, so if claiming it fails, nothing else frees it
     k, freed = recording_arena()
