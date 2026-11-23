@@ -305,7 +305,8 @@ cpdef ndarray claim_buffer_2d(
 ):
     """Like ``claim_buffer``, but return a 2-d ``nrows`` by ``ncols`` array.
 
-    For a subarray dtype, the element axes come last: shape ``(nrows, ncols) + dtype.shape``.
+    For a subarray dtype, the element axes come last: shape ``(nrows, ncols) + dtype.shape``,
+    followed by the axes of ``dtype.base`` if it is a subarray dtype too.
     If the buffer holds more than ``nrows * ncols`` elements, the array is a view of a 1-d
     array that owns the buffer.
     As with ``claim_buffer``, the memory is freed if this raises.
@@ -319,11 +320,13 @@ cpdef ndarray claim_buffer_2d(
         npy_intp strides[2]
         npy_intp *strides_ptr = NULL
     if cdata_size > size:
-        array = claim_buffer(ffi, cdata, cdata_size, dtype, k)
-        # claim_buffer appends the element axes of a subarray dtype; keep them last
+        values = claim_buffer(ffi, cdata, cdata_size, dtype, k)[:size]
+        # claim_buffer appends the element axes of a subarray dtype (more than dtype.shape
+        # if its base is one too); keep them last
+        element_shape = values.shape[1:]
         if is_c_order:
-            return array[:size].reshape((nrows, ncols) + dtype.shape)
-        return array[:size].reshape((ncols, nrows) + dtype.shape).swapaxes(0, 1)
+            return values.reshape((nrows, ncols) + element_shape)
+        return values.reshape((ncols, nrows) + element_shape).swapaxes(0, 1)
     handler = _handler(k)
     if cdata_size < size:
         _free_claimed(k, ptr)

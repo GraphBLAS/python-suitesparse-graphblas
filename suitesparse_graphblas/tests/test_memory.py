@@ -281,7 +281,9 @@ def test_claim_buffer_frees_on_error():
 
 
 @pytest.mark.parametrize(
-    "dtype", ["<i8", ("<i8", (4,)), ("<i4", (2, 3))], ids=["i8", "i8x4", "i4x2x3"]
+    "dtype",
+    ["<i8", ("<i8", (4,)), ("<i4", (2, 3)), (("<i2", (3,)), (2,))],
+    ids=["i8", "i8x4", "i4x2x3", "nested"],
 )
 @pytest.mark.parametrize("is_c_order", [True, False])
 @pytest.mark.parametrize("spare", [False, True])
@@ -291,11 +293,14 @@ def test_claim_buffer_2d(dtype, is_c_order, spare):
     # how GraphBLAS lays out the buffer.  With a subarray dtype, the result must have the
     # element axes last.
     dtype = np.dtype(dtype)
+    # The element axes and scalar type NumPy makes of `dtype`: for a nested subarray dtype,
+    # its base's axes follow dtype.shape
+    element_shape, scalar = np.empty(0, dtype).shape[1:], np.empty(0, dtype).dtype
     nrows, ncols = (2, 3) if is_c_order else (3, 2)
     i = np.arange(nrows)[:, None, None]
     j = np.arange(ncols)[None, :, None]
-    k = np.arange(max(1, dtype.itemsize // dtype.base.itemsize))
-    values = (100 * i + 10 * j + k).astype(dtype.base).reshape((nrows, ncols) + dtype.shape)
+    k = np.arange(dtype.itemsize // scalar.itemsize)
+    values = (100 * i + 10 * j + k).astype(scalar).reshape((nrows, ncols) + element_shape)
     T = grb_type.grb_type_new(dtype.itemsize)
     A = matrix.matrix_new(T[0], nrows, ncols)
     matrix.matrix_set_format(A, lib.GxB_BY_ROW if is_c_order else lib.GxB_BY_COL)
@@ -321,8 +326,8 @@ def test_claim_buffer_2d(dtype, is_c_order, spare):
     n = Ax_size[0] // dtype.itemsize
     array = claim_buffer_2d(ffi, Ax[0], n, nrows, ncols, dtype, is_c_order)
     assert n == nrows * ncols + 2 * spare
-    assert array.shape == (nrows, ncols) + dtype.shape
-    assert array.dtype == dtype.base
+    assert array.shape == (nrows, ncols) + element_shape
+    assert array.dtype == scalar
     np.testing.assert_array_equal(array, values)
     # An exact fit owns the buffer, so it can be given back without a copy; otherwise its
     # base does.  Either way NumPy must free it with the allocator that allocated it.
