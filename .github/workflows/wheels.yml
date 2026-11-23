@@ -165,6 +165,8 @@ jobs:
           brew fetch --retry coreutils && brew install coreutils
           prefix="$RUNNER_TEMP/libomp"
           micromamba create --yes --prefix "$prefix" --override-channels --channel conda-forge "llvm-openmp=23.1.6"
+          # The build string (the pin is on the version only) and the minimum macOS it supports
+          micromamba list --prefix "$prefix"
           otool -l "$prefix/lib/libomp.dylib" | grep -A3 LC_BUILD_VERSION
           echo "LIBOMP_PREFIX=$prefix" >> "$GITHUB_ENV"
           echo "MACOSX_DEPLOYMENT_TARGET=$DEPLOYMENT_TARGET" >> "$GITHUB_ENV"
