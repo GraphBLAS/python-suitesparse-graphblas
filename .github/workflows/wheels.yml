@@ -99,15 +99,16 @@ jobs:
             cibw_skip: "*many*"
 
           # macOS x86_64 — macos-15-intel is the last Intel macOS runner.
-          # libomp from Homebrew determines the minimum supported macOS version.
+          # macos_deployment_target is the oldest macOS the wheels support (see "Install
+          # tools (macOS)" below); the runner's own macOS doesn't matter.
           - os: macos-15-intel
             cibw_archs: "x86_64"
+            macos_deployment_target: "14.0"
 
-          # macOS Apple Silicon
-          # Keep runner version as old as possible: libomp determines minimum macOS version.
-          # macos-14 is retired on 2026-11-02 (and fails jobs during brownouts before then).
+          # macOS Apple Silicon.  12.0, as SciPy and scikit-learn use.
           - os: macos-15
             cibw_archs: "arm64"
+            macos_deployment_target: "12.0"
 
           # WebAssembly for Pyodide (PEP 783 `pyemscripten_*` wheels).  GraphBLAS is built in
           # before-build (see CIBW_*_PYODIDE below).
@@ -146,17 +147,27 @@ jobs:
         run: echo "GB_VERSION_REF=$GITHUB_REF" >> "$GITHUB_ENV"
         shell: bash
 
+      - uses: mamba-org/setup-micromamba@d7c9bd84e824b79d2af72a2d4196c7f4300d3476 # v3.0.0
+        if: contains(matrix.os, 'macos')
+        with:
+          micromamba-version: '2.8.1-0'
+
       - name: Install tools (macOS)
         if: contains(matrix.os, 'macos')
-        # Install coreutils which includes `nproc` used by `make -j` in suitesparse.sh
+        # coreutils has `nproc`, which suitesparse.sh uses for `make -j`.
         #
-        # Explicitly install libomp to be clear about the dependency.
-        #
-        # libomp determines the minimum macOS version that we can build for
+        # The wheels bundle libomp (delocate copies it in), so they can't support an older
+        # macOS than it does.  Homebrew's libomp is built for the runner's macOS (15 on
+        # macos-15), so take conda-forge's llvm-openmp, which supports macOS 11.0 and later.
+        env:
+          DEPLOYMENT_TARGET: ${{ matrix.macos_deployment_target }}
         run: |
           brew fetch --retry coreutils && brew install coreutils
-          brew fetch --retry libomp && brew reinstall libomp
-          echo "MACOSX_DEPLOYMENT_TARGET=$(otool -l "$(brew --prefix libomp)/lib/libomp.dylib" | grep minos | awk '{print $2}')" >> "$GITHUB_ENV"
+          prefix="$RUNNER_TEMP/libomp"
+          micromamba create --yes --prefix "$prefix" --override-channels --channel conda-forge "llvm-openmp=23.1.6"
+          otool -l "$prefix/lib/libomp.dylib" | grep -A3 LC_BUILD_VERSION
+          echo "LIBOMP_PREFIX=$prefix" >> "$GITHUB_ENV"
+          echo "MACOSX_DEPLOYMENT_TARGET=$DEPLOYMENT_TARGET" >> "$GITHUB_ENV"
 
       - uses: pypa/cibuildwheel@f9b966cfadf4109556cadc5bb39ddb72d0ce664e # v4.3.5
         with:
@@ -205,9 +216,10 @@ jobs:
           # CMAKE_GNUtoMS=ON asks suitesparse.sh to build libraries in MSVC style on Windows.
           CIBW_ENVIRONMENT_WINDOWS: CMAKE_GNUtoMS=ON GRAPHBLAS_PREFIX="C:/GraphBLAS"
 
-          # macOS libomp requires special configs. BREW_LIBOMP=1 asks suitesparse.sh to include them.
+          # macOS: suitesparse.sh finds libomp through LIBOMP_PREFIX (set above), and
+          # MACOSX_DEPLOYMENT_TARGET (also set above) applies to GraphBLAS and the wheels.
           # SUITESPARSE_MACOS_ARCH asks to build a particular architecture. Either x86 or arm64.
-          CIBW_ENVIRONMENT_MACOS: BREW_LIBOMP="1" SUITESPARSE_MACOS_ARCH=${{ matrix.cibw_archs }}
+          CIBW_ENVIRONMENT_MACOS: SUITESPARSE_MACOS_ARCH=${{ matrix.cibw_archs }}
 
           # Uncomment to only build CPython wheels
           # CIBW_BUILD: "cp*"
