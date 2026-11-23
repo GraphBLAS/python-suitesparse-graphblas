@@ -20,6 +20,10 @@ array with the array's memory handler (NEP 49).  So:
   ``unclaim_buffer`` are the lower-level pieces.
 - ``empty`` makes an array that GraphBLAS can always take ownership of.
 
+On PyPy, an arena's functions must be C functions: PyPy runs extension modules (this one,
+and NumPy when it frees an array) holding the GIL, and a Python cffi callback they call
+waits for the GIL forever.
+
 Each function takes an optional ``arena``.  It defaults to GraphBLAS's global data arena
 (``GxB_ARENA_DATA`` of ``GrB_GLOBAL``; 0 unless changed), which is where GraphBLAS
 allocates, and where it expects memory it is given to be from, unless the calling thread
