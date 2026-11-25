@@ -26,6 +26,12 @@ def test_invalid_field(func, args):
         func(INVALID_FIELD, *args)
 
 
+def test_global_get_string_names_the_call_that_failed():
+    # The size is asked for first, so an invalid field fails there
+    with pytest.raises(exceptions.InvalidValue, match="^GrB_Global_get_SIZE failed with"):
+        go.global_get_string(INVALID_FIELD)
+
+
 @pytest.mark.parametrize("field", ["GxB_API_ABOUT", "GxB_LIBRARY_LICENSE"])
 def test_global_get_string_longer_than_256(field):
     # Both are longer than 256 characters in every build
