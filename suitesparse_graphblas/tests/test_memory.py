@@ -240,11 +240,18 @@ _recording_arena = {}
 _recording_arena_lock = threading.Lock()
 
 
+class _FreedInThisThread(threading.local):
+    # Every thread starts with an empty list, so a free in any thread is recorded: an
+    # AttributeError in the cffi callback would only be printed, and the free not seen.
+    def __init__(self):
+        self.addresses = []
+
+
 def recording_arena():
     with _recording_arena_lock:
         if not _recording_arena:
             blocks = {}
-            freed = threading.local()
+            freed = _FreedInThisThread()
 
             @ffi.callback("void *(size_t)")
             def malloc(size):
