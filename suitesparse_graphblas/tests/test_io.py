@@ -377,3 +377,14 @@ def test_binwrite_keeps_matrix_settings(tmp_path, sparsity, fails):
         binary.binwrite(A, path)
     assert _settings(A) == expected
     _assert_matrices_equal(A, _make_matrix(lib.GrB_INT64, "full"))
+
+
+def test_binwrite_header_error_keeps_matrix(tmp_path):
+    # The header (which must be ASCII) is made after the matrix is unpacked, so a failure there
+    # must also put the arrays back
+    A = _make_matrix(lib.GrB_INT64, "sparse")
+    path = tmp_path / "matrix.binfile"
+    with pytest.raises(UnicodeEncodeError):
+        binary.binwrite(A, path, comments="café")
+    assert not path.exists()
+    _assert_matrices_equal(A, _make_matrix(lib.GrB_INT64, "sparse"))

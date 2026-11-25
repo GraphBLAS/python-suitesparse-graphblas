@@ -227,23 +227,23 @@ def binwrite(A, filename, comments=None, opener=Path.open):
         f"{lib.GxB_IMPLEMENTATION_SUB}"
     )
 
-    vars = dict(  # noqa: C408
-        suitesparse_version=suitesparse_version,
-        user_agent="pygraphblas-" + __version__,
-        nrows=nrows[0],
-        ncols=ncols[0],
-        nvals=nvals[0],
-        nvec=nvec[0],
-        format=fmt_string,
-        size=typesize[0],
-        type=_ss_typenames[matrix_type[0]],
-        iso=int(is_iso[0]),
-        comments=comments,
-    )
-    header_content = header_template.format(**vars)
-    header = f"{header_content: <{GRB_HEADER_LEN}}".encode("ascii")
-
     try:
+        vars = dict(  # noqa: C408
+            suitesparse_version=suitesparse_version,
+            user_agent="pygraphblas-" + __version__,
+            nrows=nrows[0],
+            ncols=ncols[0],
+            nvals=nvals[0],
+            nvec=nvec[0],
+            format=fmt_string,
+            size=typesize[0],
+            type=_ss_typenames[matrix_type[0]],
+            iso=int(is_iso[0]),
+            comments=comments,
+        )
+        header_content = header_template.format(**vars)
+        header = f"{header_content: <{GRB_HEADER_LEN}}".encode("ascii")
+
         with opener(filename, "wb") as f:
             fwrite = f.write
             fwrite(header)
