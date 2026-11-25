@@ -238,7 +238,9 @@ def check_status(obj, response_code):
     string = ffi.new("char**")
     error_func(string, obj)
     text = ffi.string(string[0]).decode()
-    raise _error_code_lookup[response_code](text)
+    # Codes without a class of their own (GrB_ALREADY_SET, GxB_OUTPUT_IS_READONLY,
+    # GxB_GPU_ERROR, or any new one) raise the base class
+    raise _error_code_lookup.get(response_code, ex.GraphBLASException)(text)
 
 
 class burble:
