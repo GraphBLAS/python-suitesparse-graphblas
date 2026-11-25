@@ -152,28 +152,18 @@ def test_matrix_binfile_read_write(tmp_path):
                 for sparsity in (lib.GxB_HYPERSPARSE, lib.GxB_SPARSE, lib.GxB_BITMAP, lib.GxB_FULL):
                     A = matrix.matrix_new(T, 2, 2)
 
-                    if T is not lib.GxB_FULL:
+                    if sparsity == lib.GxB_FULL:
+                        # A matrix can only be full if it has a value everywhere
+                        values = _test_elements(T)[0]
+                        for k, (i, j) in enumerate([(0, 0), (0, 1), (1, 0), (1, 1)]):
+                            check_status(A, _element_setters[T](A[0], values[k % 2], i, j))
+                    else:
                         for args in zip(*_test_elements(T)):
                             f = _element_setters[T]
                             check_status(A, f(A[0], *args))
-                    else:
-                        Tone = _test_elements(T)[0][0]
-                        check_status(
-                            A[0],
-                            lib.GrB_assign(
-                                A,
-                                NULL,
-                                NULL,
-                                Tone,
-                                lib.GrB_ALL,
-                                0,
-                                lib.GrB_ALL,
-                                0,
-                                NULL,
-                            ),
-                        )
                     matrix.matrix_set_sparsity_control(A, sparsity)
                     matrix.matrix_set_format(A, format)
+                    assert matrix.matrix_sparsity_status(A) == sparsity
 
                     binfilef = tmp_path / "binfilewrite_test.binfile"
                     binary.binwrite(A, binfilef, opener=opener)
@@ -185,6 +175,8 @@ def test_matrix_binfile_read_write(tmp_path):
                     assert matrix.matrix_hyper_switch(A) == matrix.matrix_hyper_switch(B)
                     assert matrix.matrix_bitmap_switch(A) == matrix.matrix_bitmap_switch(B)
                     # assert matrix.matrix_sparsity_control(A) == matrix.matrix_sparsity_control(B)
+                    assert matrix.matrix_sparsity_status(B) == sparsity
+                    assert matrix.matrix_format(B) == format
 
                     C = matrix.matrix_new(lib.GrB_BOOL, 2, 2)
 
