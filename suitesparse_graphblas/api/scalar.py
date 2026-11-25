@@ -449,7 +449,7 @@ def get_fp64(s):
     return value[0]
 
 
-if supports_complex():
+if supports_complex():  # pragma: no branch (the build always declares complex types)
 
     def set_fc32(s, value):
         """Set an fc32 value to the scalar.

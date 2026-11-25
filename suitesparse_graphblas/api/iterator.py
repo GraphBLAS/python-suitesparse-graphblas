@@ -616,7 +616,7 @@ def iterator_get_fp64(it):
     return lib.GxB_Iterator_get_FP64(it[0])
 
 
-if supports_complex():
+if supports_complex():  # pragma: no branch (the build always declares complex types)
 
     def iterator_get_fc32(it):
         """Get the current fc32 value from the iterator."""
