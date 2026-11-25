@@ -379,7 +379,7 @@ def monoid_terminal_new_udt(op, identity, terminal, *, free=monoid_free):
     return m
 
 
-if supports_complex():
+if supports_complex():  # pragma: no branch (the build always declares complex types)
 
     def monoid_new_fc32(op, identity, *, free=monoid_free):
         """Create a new GrB_Monoid with an fc32 identity.

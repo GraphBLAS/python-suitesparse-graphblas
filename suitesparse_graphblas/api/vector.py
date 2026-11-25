@@ -1560,7 +1560,7 @@ def get_fp64(v, i):
     return value[0]
 
 
-if supports_complex():
+if supports_complex():  # pragma: no branch (the build always declares complex types)
 
     def set_fc32(v, value, i):
         """Set an fc32 value to the vector at position `i`.
