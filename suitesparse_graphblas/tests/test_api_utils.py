@@ -50,3 +50,18 @@ def test_capture_c_output_of_nothing():
     fds = _free_fds()
     assert _capture_c_output(lambda: None) == ""
     assert _free_fds() == fds
+
+
+@pytest.mark.thread_unsafe(reason="patches os.dup2")
+def test_capture_c_output_closes_fds_when_redirecting_fails(monkeypatch):
+    def failing_dup2(fd, fd2):
+        raise OSError("dup2 failed")
+
+    fds = _free_fds()
+    stdout = _stdout_id()
+    monkeypatch.setattr(os, "dup2", failing_dup2)
+    with pytest.raises(OSError, match="dup2 failed"):
+        _capture_c_output(lambda: None)
+    monkeypatch.undo()
+    assert _stdout_id() == stdout
+    assert _free_fds() == fds
