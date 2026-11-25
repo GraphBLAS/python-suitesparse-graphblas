@@ -30,7 +30,8 @@ except ImportError:  # Pyodide before 314 has it as a separate package
 if platform.system() == "Windows":
     pytest.skip("skipping windows-only tests", allow_module_level=True)
 
-from suitesparse_graphblas.io import binary  # isort:skip
+from suitesparse_graphblas.exceptions import InvalidObject, InvalidValue  # isort:skip
+from suitesparse_graphblas.io import binary, serialize  # isort:skip
 
 NULL = ffi.NULL
 
@@ -444,3 +445,163 @@ def test_binwrite_long_comments(tmp_path):
     else:
         _assert_matrices_equal(A, binary.binread(path))
     _assert_matrices_equal(A, _make_matrix(lib.GrB_INT64, "sparse"))
+
+
+def _compression(desc):
+    value = ffi.new("int32_t*")
+    check_status(desc, lib.GrB_Descriptor_get_INT32(desc, value, lib.GxB_COMPRESSION))
+    return value[0]
+
+
+def test_get_serialize_desc():
+    # The default needs no descriptor, whatever the level
+    assert serialize.get_serialize_desc() is None
+    assert serialize.get_serialize_desc(None) is None
+    assert serialize.get_serialize_desc(lib.GxB_COMPRESSION_DEFAULT, 5) is None
+    # A level is added to the methods that have levels, and ignored by the others
+    get = serialize.get_serialize_desc
+    ZSTD, LZ4HC = lib.GxB_COMPRESSION_ZSTD, lib.GxB_COMPRESSION_LZ4HC
+    assert _compression(get(ZSTD)) == ZSTD
+    assert _compression(get(ZSTD, 19)) == ZSTD + 19
+    assert _compression(get(LZ4HC, 9)) == LZ4HC + 9
+    assert _compression(get(lib.GxB_COMPRESSION_LZ4, 9)) == lib.GxB_COMPRESSION_LZ4
+    assert _compression(get(lib.GxB_COMPRESSION_NONE, 9)) == lib.GxB_COMPRESSION_NONE
+
+
+_serialize_options = {
+    "none": (lib.GxB_COMPRESSION_NONE, None),
+    "default": (lib.GxB_COMPRESSION_DEFAULT, None),
+    "lz4": (lib.GxB_COMPRESSION_LZ4, None),
+    "lz4hc": (lib.GxB_COMPRESSION_LZ4HC, None),
+    "lz4hc-9": (lib.GxB_COMPRESSION_LZ4HC, 9),
+    "zstd": (lib.GxB_COMPRESSION_ZSTD, None),
+    "zstd-1": (lib.GxB_COMPRESSION_ZSTD, 1),
+    "zstd-19": (lib.GxB_COMPRESSION_ZSTD, 19),
+    "unset": (None, None),
+}
+
+
+def _numbered_matrix(n):
+    """An n-by-n INT64 matrix whose entries are 0, 1, ..., n*n - 1, by row."""
+    A = matrix.matrix_new(lib.GrB_INT64, n, n)
+    rows = np.repeat(np.arange(n, dtype=np.uint64), n)
+    cols = np.tile(np.arange(n, dtype=np.uint64), n)
+    values = np.arange(n * n, dtype=np.int64)
+    matrix.matrix_build_int64(A, rows, cols, values, n * n, lib.GrB_PLUS_INT64)
+    return A
+
+
+@pytest.mark.parametrize("option", _serialize_options)
+def test_serialize_matrix_compression(option):
+    compression, level = _serialize_options[option]
+    for kind in ("empty", "sparse", "full", "iso_full"):
+        A = _make_matrix(lib.GrB_FP64, kind)
+        data = serialize.serialize_matrix(A, compression, level)
+        assert data.dtype == np.uint8
+        _assert_matrices_equal(A, serialize.deserialize_matrix(data))
+        # Anything with the buffer protocol will do
+        _assert_matrices_equal(A, serialize.deserialize_matrix(data.tobytes()))
+
+
+@pytest.mark.parametrize("option", _serialize_options)
+def test_serialize_vector_compression(option):
+    compression, level = _serialize_options[option]
+    v = vector.vector_new(lib.GrB_FP64, 5)
+    vector.set_fp64(v, 1.5, 1)
+    vector.set_fp64(v, -2.5, 4)
+    w = serialize.deserialize_vector(serialize.serialize_vector(v, compression, level))
+    assert vector.vector_type(w) == lib.GrB_FP64
+    assert vector.vector_size(w) == 5
+    for x, y in zip(
+        vector.vector_extract_tuples_fp64(v), vector.vector_extract_tuples_fp64(w), strict=True
+    ):
+        np.testing.assert_array_equal(x, y)
+
+
+def test_serialize_compression_reaches_graphblas():
+    # The compression and level change the result, so they get to GraphBLAS
+    A = _numbered_matrix(100)
+    size = {
+        option: serialize.serialize_matrix(A, compression, level).nbytes
+        for option, compression, level in [
+            ("none", lib.GxB_COMPRESSION_NONE, None),
+            ("lz4", lib.GxB_COMPRESSION_LZ4, None),
+            ("lz4hc-1", lib.GxB_COMPRESSION_LZ4HC, 1),
+            ("lz4hc-9", lib.GxB_COMPRESSION_LZ4HC, 9),
+            ("zstd-1", lib.GxB_COMPRESSION_ZSTD, 1),
+            ("zstd-19", lib.GxB_COMPRESSION_ZSTD, 19),
+        ]
+    }
+    assert size["none"] > 100 * 100 * 8
+    assert size["none"] > size["lz4"] > size["zstd-1"] > size["zstd-19"]
+    assert size["lz4hc-1"] > size["lz4hc-9"]
+    v = vector.vector_new(lib.GrB_INT64, 1000)
+    for i in range(0, 1000, 3):
+        vector.set_int64(v, i, i)
+    none = serialize.serialize_vector(v, lib.GxB_COMPRESSION_NONE).nbytes
+    assert none > serialize.serialize_vector(v, lib.GxB_COMPRESSION_ZSTD).nbytes
+
+
+@pytest.mark.parametrize("free", [None, False], ids=["None", "False"])
+def test_deserialize_without_free(free):
+    # The caller frees the result
+    A = _make_matrix(lib.GrB_INT64, "sparse")
+    B = serialize.deserialize_matrix(serialize.serialize_matrix(A), free=free)
+    _assert_matrices_equal(A, B)
+    matrix.matrix_free(B)
+    assert B[0] == NULL
+    v = vector.vector_new(lib.GrB_INT64, 3)
+    vector.set_int64(v, 7, 2)
+    w = serialize.deserialize_vector(serialize.serialize_vector(v), free=free)
+    assert vector.vector_nvals(w) == 1
+    vector.vector_free(w)
+    assert w[0] == NULL
+
+
+def test_deserialize_with_free():
+    # `free` is called with the result once it is released
+    freed = []
+
+    def free_matrix(A):
+        freed.append(matrix.matrix_nvals(A))
+        matrix.matrix_free(A)
+
+    def free_vector(v):
+        freed.append(vector.vector_nvals(v))
+        vector.vector_free(v)
+
+    A = _make_matrix(lib.GrB_INT64, "sparse")
+    B = serialize.deserialize_matrix(serialize.serialize_matrix(A), free=free_matrix)
+    _assert_matrices_equal(A, B)
+    v = vector.vector_new(lib.GrB_INT64, 3)
+    vector.set_int64(v, 7, 2)
+    w = serialize.deserialize_vector(serialize.serialize_vector(v), free=free_vector)
+    assert freed == []
+    ffi.release(B)
+    ffi.release(w)
+    assert freed == [3, 1]
+
+
+def test_deserialize_invalid():
+    for deserialize in (serialize.deserialize_matrix, serialize.deserialize_vector):
+        with pytest.raises(InvalidObject):
+            deserialize(bytes(64))
+
+
+@pytest.mark.xfail(
+    strict=True,
+    raises=InvalidValue,
+    reason="serialize sets nthreads on a descriptor, which GraphBLAS 10 rejects with "
+    "GrB_INVALID_VALUE: the number of threads is a GxB_Context setting now",
+)
+@pytest.mark.parametrize("kind", ["matrix", "vector"])
+def test_serialize_nthreads(kind):
+    if kind == "matrix":
+        A = _make_matrix(lib.GrB_INT64, "sparse")
+        B = serialize.deserialize_matrix(serialize.serialize_matrix(A, nthreads=1), nthreads=1)
+        _assert_matrices_equal(A, B)
+    else:
+        v = vector.vector_new(lib.GrB_INT64, 3)
+        vector.set_int64(v, 7, 2)
+        w = serialize.deserialize_vector(serialize.serialize_vector(v, nthreads=1), nthreads=1)
+        assert vector.vector_nvals(w) == 1
