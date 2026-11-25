@@ -16,6 +16,9 @@ concurrency:
 jobs:
   test:
     runs-on: ${{ matrix.os }}
+    # A hung test would otherwise hold the runner for GitHub's default of 6 hours.  These
+    # jobs take a few minutes.
+    timeout-minutes: 30
     defaults:
       run:
         # -e: a custom shell gets no errexit, so without it a multi-command step

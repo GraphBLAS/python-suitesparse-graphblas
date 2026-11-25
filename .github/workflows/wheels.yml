@@ -55,6 +55,9 @@ jobs:
   build_wheels:
     name: Wheels - ${{ matrix.cibw_archs }} ${{ matrix.arch_note}} - ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    # A hung test would otherwise hold the runner for GitHub's default of 6 hours.  The
+    # slowest job, a full (release) build on macos-15-intel, has taken up to 35 minutes.
+    timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
