@@ -14,7 +14,10 @@ def _capture_c_output(fn, *args):
         finally:
             os.dup2(old, 1)
             os.close(w)
-        return os.read(r, 100000).decode()
+        try:
+            return os.read(r, 100000).decode()
+        except BlockingIOError:  # pragma: no cover (Emscripten: an empty pipe has no EOF)
+            return ""
     finally:
         os.close(old)
         os.close(r)

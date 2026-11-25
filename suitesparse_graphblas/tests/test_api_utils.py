@@ -43,3 +43,10 @@ def test_capture_c_output_restores_stdout_on_error():
     assert ctx[0] == ffi.NULL
     assert _stdout_id() == stdout
     assert _free_fds() == fds
+
+
+@pytest.mark.thread_unsafe(reason="redirects file descriptor 1")
+def test_capture_c_output_of_nothing():
+    fds = _free_fds()
+    assert _capture_c_output(lambda: None) == ""
+    assert _free_fds() == fds
