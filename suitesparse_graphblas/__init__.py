@@ -285,7 +285,7 @@ class burble:
         val_ptr = ffi.new("int32_t*")
         info = lib.GxB_Global_Option_get_INT32(lib.GxB_BURBLE, val_ptr)
         if info != lib.GrB_SUCCESS:
-            raise _error_code_lookup[info](
+            raise _error_code_lookup.get(info, ex.GraphBLASException)(
                 "Failed to get burble status (has GraphBLAS been initialized?)"
             )
         return bool(val_ptr[0])
@@ -294,7 +294,7 @@ class burble:
         """Enable diagnostic output"""
         info = lib.GxB_Global_Option_set_INT32(lib.GxB_BURBLE, ffi.cast("int32_t", 1))
         if info != lib.GrB_SUCCESS:
-            raise _error_code_lookup[info](
+            raise _error_code_lookup.get(info, ex.GraphBLASException)(
                 "Failed to enable burble (has GraphBLAS been initialized?)"
             )
 
@@ -302,7 +302,7 @@ class burble:
         """Disable diagnostic output"""
         info = lib.GxB_Global_Option_set_INT32(lib.GxB_BURBLE, ffi.cast("int32_t", 0))
         if info != lib.GrB_SUCCESS:
-            raise _error_code_lookup[info](
+            raise _error_code_lookup.get(info, ex.GraphBLASException)(
                 "Failed to disable burble (has GraphBLAS been initialized?)"
             )
 
