@@ -1,9 +1,11 @@
 # cython: freethreading_compatible=True
 #
-# We don't do anything special to support free-threading, but GraphBLAS C
-# libraries are required to be thread-safe, so things should "just work".
-# Of course, users writing multithreaded code can find many creative ways
-# to fail, but python-suitesparse-graphblas shouldn't crash.
+# GraphBLAS C libraries are required to be thread-safe, so free-threading needs
+# little here: the per-arena state below (`arenas`, `arena_handlers`,
+# `_handlers`) is filled once, under `_handlers_lock` (`_handler`), so threads
+# racing an arena's first use share one handler, and is only read after that.
+# Of course, users writing multithreaded code can find many creative ways to
+# fail, but python-suitesparse-graphblas shouldn't crash.
 """Move memory between GraphBLAS and NumPy without copying.
 
 Memory must be freed by the allocator that allocated it.  GraphBLAS frees the memory it
@@ -19,6 +21,10 @@ array with the array's memory handler (NEP 49).  So:
   (copying it first if GraphBLAS can't own it).  ``can_unclaim_buffer`` and
   ``unclaim_buffer`` are the lower-level pieces.
 - ``empty`` makes an array that GraphBLAS can always take ownership of.
+
+On PyPy, an arena's functions must be C functions: PyPy runs extension modules (this one,
+and NumPy when it frees an array) holding the GIL, and a Python cffi callback they call
+waits for the GIL forever.
 
 Each function takes an optional ``arena``.  It defaults to GraphBLAS's global data arena
 (``GxB_ARENA_DATA`` of ``GrB_GLOBAL``; 0 unless changed), which is where GraphBLAS
@@ -199,6 +205,13 @@ cdef inline void own_data(ndarray array, object handler):
     PyArray_ENABLEFLAGS(array, NPY_ARRAY_OWNDATA)
 
 
+cdef inline void _free_claimed(int k, uintptr_t ptr) noexcept:
+    # Free memory from arena `k` (whose handler has been made) that was being claimed when
+    # claiming failed: GraphBLAS has handed it over, so nothing else will
+    if ptr != 0:
+        arenas[k].free(<void *>ptr)
+
+
 cdef str _why_not_ownable(object array, object handler):
     # Why GraphBLAS can't take ownership of the data of `array` (to free with `handler`),
     # or None if it can.
@@ -224,6 +237,23 @@ cdef str _why_not_ownable(object array, object handler):
     )
 
 
+cdef list _memory_order(object array):
+    # The axes of `array` from slowest- to fastest-varying in memory if its elements fill
+    # its data without gaps, every axis running forwards (C or F order, or, with a subarray
+    # dtype, the column order of `claim_buffer_2d`), else in C order.  Copied in this order,
+    # its bytes stay the same.
+    shape = array.shape
+    strides = array.strides
+    axes = sorted(range(array.ndim), key=strides.__getitem__, reverse=True)
+    stride = array.itemsize
+    for i in reversed(axes):
+        if shape[i] != 1:
+            if strides[i] != stride:
+                return list(range(array.ndim))
+            stride *= shape[i]
+    return axes
+
+
 cpdef int call_gxb_init(object ffi, object lib, int mode):
     # We need to call `GxB_init`, but we didn't compile Cython against GraphBLAS.  So, we get it from cffi.
     # Step 1: ffi.addressof(lib, "GxB_init")
@@ -245,18 +275,26 @@ cpdef ndarray claim_buffer(object ffi, object cdata, size_t size, dtype_t dtype,
 
     ``arena`` is the GraphBLAS arena that allocated the memory (default: the global data
     arena); NumPy will free the memory with that arena's allocator.
+
+    The memory is claimed even if this raises: then it is freed, since nothing else owns
+    it.  Only an invalid ``arena`` (or ``cdata``) leaves it alone, since then it can't be.
     """
     cdef:
         npy_intp dims = size
         uintptr_t ptr = int(ffi.cast("uintptr_t", cdata))
+        int k = _resolve_arena(arena)
         ndarray array
-    handler = _handler(_resolve_arena(arena))
+    handler = _handler(k)
     if ptr == 0 and size != 0:
         raise ValueError(f"Unable to claim {size} elements from a NULL pointer")
     Py_INCREF(dtype)
-    array = PyArray_NewFromDescr(
-        ndarray, dtype, 1, &dims, NULL, <void*>ptr, NPY_ARRAY_WRITEABLE, <object>NULL
-    )
+    try:
+        array = PyArray_NewFromDescr(
+            ndarray, dtype, 1, &dims, NULL, <void*>ptr, NPY_ARRAY_WRITEABLE, <object>NULL
+        )
+    except BaseException:
+        _free_claimed(k, ptr)
+        raise
     own_data(array, handler)
     return array
 
@@ -271,38 +309,56 @@ cpdef ndarray claim_buffer_2d(
     bint is_c_order,
     object arena=None,
 ):
-    """Like ``claim_buffer``, but return a 2-d ``nrows`` by ``ncols`` array."""
+    """Like ``claim_buffer``, but return a 2-d ``nrows`` by ``ncols`` array.
+
+    For a subarray dtype, the element axes come last: shape ``(nrows, ncols) + dtype.shape``,
+    followed by the axes of ``dtype.base`` if it is a subarray dtype too.
+    If the buffer holds more than ``nrows * ncols`` elements, the array is a view of a 1-d
+    array that owns the buffer.
+    As with ``claim_buffer``, the memory is freed if this raises.
+    """
     cdef:
         size_t size = nrows * ncols
+        uintptr_t ptr = int(ffi.cast("uintptr_t", cdata))
+        int k = _resolve_arena(arena)
         ndarray array
-        uintptr_t ptr
         npy_intp dims[2]
-        int flags = NPY_ARRAY_WRITEABLE
-    if cdata_size == size:
-        handler = _handler(_resolve_arena(arena))
-        ptr = int(ffi.cast("uintptr_t", cdata))
-        if ptr == 0 and size != 0:
-            raise ValueError(f"Unable to claim {size} elements from a NULL pointer")
-        dims[0] = nrows
-        dims[1] = ncols
-        if not is_c_order:
-            flags |= NPY_ARRAY_F_CONTIGUOUS
-        Py_INCREF(dtype)
-        array = PyArray_NewFromDescr(
-            ndarray, dtype, 2, dims, NULL, <void*>ptr, flags, <object>NULL
-        )
-        own_data(array, handler)
-    elif cdata_size > size:  # pragma: no cover
-        array = claim_buffer(ffi, cdata, cdata_size, dtype, arena)
+        npy_intp strides[2]
+        npy_intp *strides_ptr = NULL
+    if cdata_size > size:
+        values = claim_buffer(ffi, cdata, cdata_size, dtype, k)[:size]
+        # claim_buffer appends the element axes of a subarray dtype (more than dtype.shape
+        # if its base is one too); keep them last
+        element_shape = values.shape[1:]
         if is_c_order:
-            array = array[:size].reshape((nrows, ncols))
-        else:
-            array = array[:size].reshape((ncols, nrows)).T
-    else:  # pragma: no cover
+            return values.reshape((nrows, ncols) + element_shape)
+        return values.reshape((ncols, nrows) + element_shape).swapaxes(0, 1)
+    handler = _handler(k)
+    if cdata_size < size:
+        _free_claimed(k, ptr)
         raise ValueError(
             f"Buffer size too small: {cdata_size}.  "
             f"Unable to create matrix of size {nrows}x{ncols} = {size}"
         )
+    if ptr == 0 and size != 0:
+        raise ValueError(f"Unable to claim {size} elements from a NULL pointer")
+    dims[0] = nrows
+    dims[1] = ncols
+    if not is_c_order:
+        # Strides, not NPY_ARRAY_F_CONTIGUOUS: NumPy appends the element axes of a
+        # subarray dtype, which that flag would make the slowest-varying axes
+        strides[0] = dtype.itemsize
+        strides[1] = <npy_intp>nrows * dtype.itemsize
+        strides_ptr = strides
+    Py_INCREF(dtype)
+    try:
+        array = PyArray_NewFromDescr(
+            ndarray, dtype, 2, dims, strides_ptr, <void*>ptr, NPY_ARRAY_WRITEABLE, <object>NULL
+        )
+    except BaseException:
+        _free_claimed(k, ptr)
+        raise
+    own_data(array, handler)
     return array
 
 
@@ -416,6 +472,9 @@ def give_buffer(array, ctype="void*", *, copy=None, arena=None):
         None (default): hand over the data of ``array`` itself if GraphBLAS can own it
         (see ``can_unclaim_buffer``), else a copy.  True: always hand over a copy, leaving
         ``array`` unchanged.  False: never copy; raise ValueError if GraphBLAS can't own it.
+        A copy has the elements in the order ``array`` has them in memory, so GraphBLAS
+        reads the same bytes either way; C order if they have gaps or an axis runs backwards
+        (e.g., a strided or reversed view).
     arena : int, optional
         The GraphBLAS arena that will own the data (default: the global data arena).
 
@@ -452,9 +511,9 @@ def give_buffer(array, ctype="void*", *, copy=None, arena=None):
             f"GraphBLAS cannot take ownership of the data of this array without copying: {why_not}"
         )
     if copy or why_not is not None:
-        order = "F" if array.flags.f_contiguous and not array.flags.c_contiguous else "C"
-        buf = empty(array.shape, array.dtype, order, k)
-        np.copyto(buf, array, casting="no")
+        axes = _memory_order(array)
+        buf = empty([array.shape[i] for i in axes], array.dtype, "C", k)
+        np.copyto(buf, array.transpose(axes), casting="no")
     else:
         buf = array
     ptr = _ffi.new(f"{ctype}*", _ffi.cast(ctype, <uintptr_t>PyArray_DATA(buf)))

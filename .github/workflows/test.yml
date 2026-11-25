@@ -16,6 +16,9 @@ concurrency:
 jobs:
   test:
     runs-on: ${{ matrix.os }}
+    # A hung test would otherwise hold the runner for GitHub's default of 6 hours.  These
+    # jobs take a few minutes.
+    timeout-minutes: 30
     defaults:
       run:
         # -e: a custom shell gets no errexit, so without it a multi-command step
@@ -29,8 +32,7 @@ jobs:
         # os: ["ubuntu-latest"]
         # source: ["source"]
         # A trailing "t" means the free-threaded (no-GIL) build of that version.
-        # TODO: add "3.15t" once conda-forge builds cffi and numpy for cp315t.
-        python-version: ["3.11", "3.12", "3.13", "3.14", "3.14t", "3.15"]
+        python-version: ["3.11", "3.12", "3.13", "3.14", "3.14t", "3.15", "3.15t"]
     steps:
     - name: Checkout
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -57,16 +59,22 @@ jobs:
         cp continuous_integration/environment.yml environment-ci.yml
         echo "  - python=$pyver" >> environment-ci.yml
         echo "  - $variant" >> environment-ci.yml
+        if [[ $PYVER == *t ]]; then
+          echo "  - pytest-run-parallel" >> environment-ci.yml  # see "Test"
+        fi
         cat environment-ci.yml
     - name: Conda
       uses: conda-incubator/setup-miniconda@be893c923ea9cf1cf7cd510fbdde27c7e18cbdcb # v4.1.0
       with:
         auto-update-conda: true
         environment-file: environment-ci.yml
-        channels: conda-forge,nodefaults
+        # setup-miniconda deprecated a `nodefaults` channel here in favor of
+        # conda-remove-defaults (environment.yml keeps it for conda itself).
+        channels: conda-forge
+        conda-remove-defaults: true
         channel-priority: strict
         activate-environment: suitesparse-graphblas
-        auto-activate-base: false
+        auto-activate: false
     - name: GraphBLAS (from conda-forge)
       if: (contains(matrix.source, 'conda-forge'))
       run: |
@@ -98,7 +106,7 @@ jobs:
       run: |
         # Cython's coverage plugin (see [tool.coverage.run] in pyproject.toml)
         # needs coverage's C tracer.  Where conda-forge has no compiled build of
-        # coverage for a Python (3.15, for now), it installs a pure-Python build
+        # coverage for a Python (3.15t, for now), it installs a pure-Python build
         # that lacks the tracer.  There, loading the plugin raises ImportError and
         # every `coverage run` dies before it runs anything, so run the tests
         # directly instead.
@@ -113,10 +121,18 @@ jobs:
     - name: Test
       env:
         CYTHON_COVERAGE: true
+        PYVER: ${{ matrix.python-version }}
       run: |
         pytest -s -k test_print_jit_config
         $COV -m pytest
         $COV suitesparse_graphblas/tests/test_initialize.py
+        if [[ $PYVER == *t ]]; then
+          # Without a GIL, threads run Python code in parallel, so also run each test in 4
+          # threads at once, 10 times each, to find races (in psg, GraphBLAS, or a test).
+          # pytest-run-parallel ignores warnings raised in its threads, so this adds to the
+          # run above rather than replacing it.
+          pytest --parallel-threads=4 --iterations=10
+        fi
     - name: create_headers.py check
       if: (! contains(matrix.os, 'windows'))
       run: |

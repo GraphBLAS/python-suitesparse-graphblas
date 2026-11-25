@@ -2,11 +2,13 @@ import os
 import subprocess
 import sys
 import textwrap
+import threading
 
 import numpy as np
 import pytest
 
 from suitesparse_graphblas import check_status, exceptions, ffi, lib, matrix, vector
+from suitesparse_graphblas.api import grb_type
 from suitesparse_graphblas.utils import (
     can_unclaim_buffer,
     claim_buffer,
@@ -232,6 +234,130 @@ def test_claim_buffer():
         claim_buffer_2d(ffi, ffi.NULL, 6, 2, 3, int64, True)
 
 
+# An arena that records the addresses it frees, made once (arenas can't be changed).  Tests may
+# run in several threads at once, so each thread records only its own frees.
+_recording_arena = {}
+_recording_arena_lock = threading.Lock()
+
+
+class _FreedInThisThread(threading.local):
+    # Every thread starts with an empty list, so a free in any thread is recorded: an
+    # AttributeError in the cffi callback would only be printed, and the free not seen.
+    def __init__(self):
+        self.addresses = []
+
+
+def recording_arena():
+    with _recording_arena_lock:
+        if not _recording_arena:
+            blocks = {}
+            freed = _FreedInThisThread()
+
+            @ffi.callback("void *(size_t)")
+            def malloc(size):
+                block = ffi.new("char[]", size or 1)
+                blocks[int(ffi.cast("uintptr_t", block))] = block
+                return block
+
+            @ffi.callback("void (void *)")
+            def free(ptr):
+                address = int(ffi.cast("uintptr_t", ptr))
+                blocks.pop(address, None)
+                freed.addresses.append(address)
+
+            k = lib.GxB_NARENAS - 2  # not 5: test_can_unclaim_buffer needs it uninitialized
+            assert lib.GxB_arena_init(k, malloc, ffi.NULL, ffi.NULL, free) == lib.GrB_SUCCESS
+            _recording_arena.update(k=k, freed=freed, callbacks=(malloc, free))
+    return _recording_arena["k"], _recording_arena["freed"]
+
+
+@pytest.mark.skipif(sys.platform == "emscripten", reason="needs cffi callbacks")
+# PyPy runs C extension code (utils.pyx here) holding the GIL, and a cffi callback takes the
+# GIL on entry without checking whether its own thread holds it, so the first call into this
+# arena from utils.pyx (`empty`) never returns.
+@pytest.mark.skipif(
+    sys.implementation.name == "pypy",
+    reason="on PyPy, a cffi callback called from a C extension module deadlocks",
+)
+def test_claim_buffer_frees_on_error():
+    # GraphBLAS has handed the buffer over, so if claiming it fails, nothing else frees it
+    k, freed = recording_arena()
+    int64 = np.dtype(np.int64)
+    huge = sys.maxsize // 4  # too many int64s for NumPy
+    for claim, match in [
+        (lambda ptr: claim_buffer(ffi, ptr, huge, int64, k), "too big"),
+        (lambda ptr: claim_buffer_2d(ffi, ptr, huge, 1, huge, int64, False, k), "too big"),
+        (lambda ptr: claim_buffer_2d(ffi, ptr, 5, 2, 3, int64, True, k), "too small"),
+    ]:
+        array = empty(6, int64, arena=k)
+        ptr = ffi.cast("void*", array.ctypes.data)
+        unclaim_buffer(array, arena=k)  # now nothing owns it, as after a GraphBLAS export
+        freed.addresses = []
+        with pytest.raises(ValueError, match=match):
+            claim(ptr)
+        assert freed.addresses == [int(ffi.cast("uintptr_t", ptr))]
+
+
+@pytest.mark.parametrize(
+    "dtype",
+    ["<i8", ("<i8", (4,)), ("<i4", (2, 3)), (("<i2", (3,)), (2,))],
+    ids=["i8", "i8x4", "i4x2x3", "nested"],
+)
+@pytest.mark.parametrize("is_c_order", [True, False])
+@pytest.mark.parametrize("spare", [False, True])
+def test_claim_buffer_2d(dtype, is_c_order, spare):
+    # A full matrix of a user-defined type the size of `dtype`, whose element (i, j) holds
+    # 100 * i + 10 * j + k as its k-th scalar, so that the expected array doesn't depend on
+    # how GraphBLAS lays out the buffer.  With a subarray dtype, the result must have the
+    # element axes last.
+    dtype = np.dtype(dtype)
+    # The element axes and scalar type NumPy makes of `dtype`: for a nested subarray dtype,
+    # its base's axes follow dtype.shape
+    element_shape, scalar = np.empty(0, dtype).shape[1:], np.empty(0, dtype).dtype
+    nrows, ncols = (2, 3) if is_c_order else (3, 2)
+    i = np.arange(nrows)[:, None, None]
+    j = np.arange(ncols)[None, :, None]
+    k = np.arange(dtype.itemsize // scalar.itemsize)
+    values = (100 * i + 10 * j + k).astype(scalar).reshape((nrows, ncols) + element_shape)
+    T = grb_type.grb_type_new(dtype.itemsize)
+    A = matrix.matrix_new(T[0], nrows, ncols)
+    matrix.matrix_set_format(A, lib.GxB_BY_ROW if is_c_order else lib.GxB_BY_COL)
+    for r in range(nrows):
+        for c in range(ncols):
+            x = ffi.from_buffer(values[r, c : c + 1])
+            check_status(A, lib.GrB_Matrix_setElement_UDT(A[0], x, r, c))
+    export = lib.GxB_Matrix_export_FullR if is_c_order else lib.GxB_Matrix_export_FullC
+    pack = lib.GxB_Matrix_pack_FullR if is_c_order else lib.GxB_Matrix_pack_FullC
+    Ax = ffi.new("void**")
+    Ax_size = ffi.new("GrB_Index*")
+    args = (T, ffi.new("GrB_Index*"), ffi.new("GrB_Index*"), Ax, Ax_size, ffi.NULL, ffi.NULL)
+    check_status(A, export(A, *args))
+    # Pack the values GraphBLAS laid out back in a buffer of exactly the size to test (with
+    # room for two more if `spare`), which export then hands back as it is
+    nbytes = nrows * ncols * dtype.itemsize
+    buf = empty(nbytes + 2 * spare * dtype.itemsize, np.uint8)
+    buf[:nbytes] = claim_buffer(ffi, Ax[0], Ax_size[0], np.dtype(np.uint8))[:nbytes]
+    A = matrix.matrix_new(T[0], nrows, ncols)
+    with give_buffer(buf) as (X, size, _):
+        check_status(A, pack(A[0], X, size, False, ffi.NULL))
+    check_status(A, export(A, *args))
+    n = Ax_size[0] // dtype.itemsize
+    array = claim_buffer_2d(ffi, Ax[0], n, nrows, ncols, dtype, is_c_order)
+    assert n == nrows * ncols + 2 * spare
+    assert array.shape == (nrows, ncols) + element_shape
+    assert array.dtype == scalar
+    np.testing.assert_array_equal(array, values)
+    # An exact fit owns the buffer, so it can be given back without a copy; otherwise its
+    # base does.  Either way NumPy must free it with the allocator that allocated it.
+    assert array.flags.owndata != spare
+    assert can_unclaim_buffer(array if array.flags.owndata else array.base)
+    # Given back, as itself or as a copy, it has the layout GraphBLAS exported
+    layout = values if is_c_order else values.swapaxes(0, 1)
+    for copy in [None, True]:
+        with give_buffer(array, copy=copy) as (X, nbytes, _):
+            assert ffi.buffer(X[0], nbytes)[:] == np.ascontiguousarray(layout).tobytes()
+
+
 def test_can_unclaim_buffer():
     array = np.arange(10)
     assert can_unclaim_buffer(array)
@@ -333,6 +459,20 @@ def test_give_buffer():
         assert x[0] == array[4]
     with pytest.raises(ValueError, match="without copying: it does not own its data"):
         load(np.arange(10)[::2], copy=False)
+
+    # A copy has the elements in the order the array has them in memory, or C order if
+    # they have gaps
+    data = np.arange(24, dtype=np.int64)
+    for array, expected in [
+        (data.reshape(2, 3, 4), data),
+        (data.reshape(4, 3, 2).T, data),
+        (data.reshape(3, 2, 4).swapaxes(0, 1), data),
+        (data.reshape(6, 1, 4)[::2].T, data.reshape(6, 1, 4)[::2].T.ravel()),
+        (np.broadcast_to(data[:4], (3, 4)), np.tile(data[:4], 3)),
+        (np.asarray(data[5]), data[5:6]),
+    ]:
+        with give_buffer(array, copy=True) as (X, nbytes, _):
+            assert ffi.buffer(X[0], nbytes)[:] == expected.tobytes()
 
     # GraphBLAS didn't take ownership, so the array keeps it
     array = np.arange(5, dtype=np.int64)

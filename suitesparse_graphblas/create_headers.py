@@ -388,9 +388,8 @@ class VisitStruct(c_generator.CGenerator):
 
 
 def get_ast(filename):
-    fake_include = os.path.dirname(pycparser.__file__) + "utils/fake_libc_include"
-    ast = parse_file(filename, cpp_args=f"-I{fake_include}")
-    return ast
+    # filename has already been through the preprocessor
+    return parse_file(filename)
 
 
 def get_groups(ast):
@@ -891,13 +890,21 @@ def main():
     # Run it through the preprocessor
     print(f"Step 2: run preprocessor to create {processed_h}")
     include = os.path.join(os.path.dirname(pycparser.__file__), "utils", "fake_libc_include")
-    command = (
-        f"gcc -nostdinc -E -I{include} {graphblas_h} "
-        f"| sed 's/ complex / _Complex /g' > {processed_h}"
+    if not os.path.isdir(include):
+        # pycparser's wheels on PyPI leave these headers out; conda-forge's package has them.
+        raise FileNotFoundError(
+            f"pycparser's fake libc headers not found: {include}\n"
+            "Install pycparser from conda-forge, which includes them."
+        )
+    # Not a shell pipeline: a failure in the preprocessor must stop us here, or the steps
+    # below would write empty headers.
+    res = subprocess.run(
+        ["gcc", "-nostdinc", "-E", f"-I{include}", graphblas_h],
+        stdout=subprocess.PIPE,
+        check=True,
     )
-    res = subprocess.run(command, shell=True)
-    if res.returncode != 0:
-        raise RuntimeError("Subprocess command failed", res)
+    with open(processed_h, "wb") as f:
+        f.write(res.stdout.replace(b" complex ", b" _Complex "))
 
     # Create final header file
     print(f"Step 3: parse header file to create {final_h}")

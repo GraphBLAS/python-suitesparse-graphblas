@@ -55,6 +55,9 @@ jobs:
   build_wheels:
     name: Wheels - ${{ matrix.cibw_archs }} ${{ matrix.arch_note}} - ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    # A hung test would otherwise hold the runner for GitHub's default of 6 hours.  The
+    # slowest job, a full (release) build on macos-15-intel, has taken up to 35 minutes.
+    timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
@@ -85,8 +88,15 @@ jobs:
           # Linux aarch64 — native ARM runner (no QEMU emulation needed)
           - os: ubuntu-24.04-arm
             cibw_archs: "auto"
-            # numpy wheels not available for aarch64 musllinux
+            # skip musllinux (built in the next job)
             cibw_skip: "*musl*"
+
+          # Linux aarch64 musllinux, on its own runner for the same reason as x86_64's
+          - os: ubuntu-24.04-arm
+            cibw_archs: "auto"
+            arch_note: "musl"
+            # skip manylinux (built in the previous job)
+            cibw_skip: "*many*"
 
           # macOS x86_64 — macos-15-intel is the last Intel macOS runner.
           # libomp from Homebrew determines the minimum supported macOS version.
@@ -148,7 +158,7 @@ jobs:
           brew fetch --retry libomp && brew reinstall libomp
           echo "MACOSX_DEPLOYMENT_TARGET=$(otool -l "$(brew --prefix libomp)/lib/libomp.dylib" | grep minos | awk '{print $2}')" >> "$GITHUB_ENV"
 
-      - uses: pypa/cibuildwheel@8c2dcd2e96041a619f5ff03c9638d7941e2553a4 # v4.3.3
+      - uses: pypa/cibuildwheel@f9b966cfadf4109556cadc5bb39ddb72d0ce664e # v4.3.5
         with:
           output-dir: wheelhouse
         env:
@@ -178,9 +188,17 @@ jobs:
           # finished with GraphBLAS after 30 CPU-minutes; -O2 takes about a minute.  emcc
           # appends EMCC_CFLAGS to every command, so its -O2 is the one that counts (also for
           # compiling GraphBLAS, which is then smaller and no slower).
+          # --one-caller-inline-max-function-size=1000 keeps wasm-opt from inlining a large
+          # function into its only caller.  Without it, wasm-opt inlined the FactoryKernels
+          # into the switches that call them, making functions of up to 3.4 MB (GB_AxB_saxpy3,
+          # GB_add_phase2, GB_AxB_dot3 and others).  Chrome's optimizing compiler then used
+          # 4 to 5 GB of memory on them, and kernels ran unoptimized meanwhile.  With it, the
+          # largest GraphBLAS function is 0.2 MB, a page using GraphBLAS peaks near 1 GB,
+          # kernels are as fast or faster, and the wheel is about 0.7 MB larger.  It is a
+          # link setting, so it goes in LDFLAGS (in EMCC_CFLAGS, emcc warns at each compile).
           CIBW_BEFORE_ALL_PYODIDE: ""
           CIBW_BEFORE_BUILD_PYODIDE: bash suitesparse.sh ${{ env.GB_VERSION_REF }}
-          CIBW_ENVIRONMENT_PYODIDE: SUITESPARSE_EMSCRIPTEN=1 GRAPHBLAS_PREFIX=/tmp/graphblas-wasm GraphBLAS_ROOT=/tmp/graphblas-wasm EMCC_CFLAGS=-O2
+          CIBW_ENVIRONMENT_PYODIDE: SUITESPARSE_EMSCRIPTEN=1 GRAPHBLAS_PREFIX=/tmp/graphblas-wasm GraphBLAS_ROOT=/tmp/graphblas-wasm EMCC_CFLAGS=-O2 LDFLAGS="-sBINARYEN_EXTRA_PASSES=--one-caller-inline-max-function-size=1000"
 
           CIBW_ENVIRONMENT_PASS_LINUX: SUITESPARSE_FASTEST_BUILD
 

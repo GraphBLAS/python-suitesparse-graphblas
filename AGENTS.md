@@ -106,7 +106,9 @@ This script regenerates **`suitesparse_graphblas.h`**, **`suitesparse_graphblas_
 and **`source.c`** from an upstream `GraphBLAS.h`. It:
 
 - Copies `GraphBLAS.h` from the install, runs the C preprocessor (using pycparser's
-  `fake_libc_include`), and parses the result with pycparser.
+  `fake_libc_include`), and parses the result with pycparser. Use conda-forge's pycparser:
+  the wheels on PyPI leave `fake_libc_include` out. Pass `--graphblas <path to GraphBLAS.h>`
+  unless GraphBLAS is installed in `sys.prefix`.
 - Emits a cleaned-up header that cffi can `cdef()`, plus a complex-free variant for
   platforms (notably MSVC) where `_Complex` types don't work.
 - Manually tracks `DEFINES`, `CHAR_DEFINES`, `IGNORE_DEFINES`, and `DEPRECATED` sets.
@@ -204,9 +206,20 @@ When claiming a buffer from `GxB_*_unload`, use the arena in the returned `handl
 (`handling - GrB_DEFAULT`), and never claim one with `handling >= GxB_IS_READONLY`: whoever
 loaded it read-only still owns it.
 
-The file is marked `freethreading_compatible=True`. The package does nothing special for
-free-threading itself — correctness depends on SuiteSparse:GraphBLAS being thread-safe,
-which it is required to be.
+The file is marked `freethreading_compatible=True`. Correctness depends on
+SuiteSparse:GraphBLAS being thread-safe, which it is required to be. The shared mutable state
+in `utils.pyx` is per arena: its allocator functions (`arenas`), NumPy handler struct
+(`arena_handlers`) and handler capsule (`_handlers`). `_handler` fills them once, under
+`_handlers_lock`, so threads racing an arena's first use share one handler; after that they
+are only read.
+
+The free-threaded CI jobs (3.14t and 3.15t in `test.yml`) also run the suite with
+pytest-run-parallel, each test in 4 threads at once (`pytest --parallel-threads=4
+--iterations=10`), so tests must be thread-safe: keep state per test or per thread, and guard
+one-time setup (such as `GxB_arena_init`) with a lock. Mark a test that can't be, because it
+changes process-wide state as `doctest` does, with `@pytest.mark.thread_unsafe(reason=...)`;
+`conftest.py` registers the marker when the plugin isn't installed. Doctests always run in
+one thread.
 
 ## Style and tooling
 

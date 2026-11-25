@@ -31,7 +31,7 @@ repos:
       - id: name-tests-test
         args: ["--pytest-test-first"]
   - repo: https://github.com/abravalheri/validate-pyproject
-    rev: '0.26'
+    rev: 'v0.27'
     hooks:
       - id: validate-pyproject
         name: Validate pyproject.toml
@@ -54,15 +54,15 @@ repos:
     hooks:
       - id: black
   - repo: https://github.com/PyCQA/flake8
-    rev: 7.4.1
+    rev: 7.5.0
     hooks:
       - id: flake8
         args: ["--config=.flake8"]
         additional_dependencies: &flake8_dependencies
         # These versions need updated manually
-        - flake8==7.4.1
+        - flake8==7.5.0
         - flake8-comprehensions==3.17.0
-        - flake8-bugbear==26.9.30
+        - flake8-bugbear==26.11.9
         # - flake8-simplify==0.22.0
   - repo: https://github.com/asottile/yesqa
     rev: v1.5.0
@@ -93,11 +93,11 @@ repos:
     hooks:
       - id: actionlint
   - repo: https://github.com/zizmorcore/zizmor-pre-commit
-    rev: v1.31.1
+    rev: v1.32.0
     hooks:
       - id: zizmor
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.38.2
+    rev: 0.39.0
     hooks:
       - id: check-dependabot
       - id: check-github-workflows

@@ -2,9 +2,12 @@ import doctest
 import importlib
 import pkgutil
 
+import pytest
+
 from suitesparse_graphblas import api, utils
 
 
+@pytest.mark.thread_unsafe(reason="doctest patches sys.stdout and linecache process-wide")
 def test_run_doctests():
     # Every module of the functional API, found rather than listed so none is missed: the
     # wheel builds' test command does not collect doctests, so they run only through here
