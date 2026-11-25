@@ -549,7 +549,10 @@ def monoid_get_string(m, field):
     True
 
     """
-    val = ffi.new("char[256]")
+    # GraphBLAS copies the whole string, so make room for all of it
+    size = ffi.new("size_t*")
+    check_status(m, lib.GrB_Monoid_get_SIZE(m[0], size, field))
+    val = ffi.new("char[]", size[0])
     check_status(m, lib.GrB_Monoid_get_String(m[0], val, field))
     return ffi.string(val).decode()
 
