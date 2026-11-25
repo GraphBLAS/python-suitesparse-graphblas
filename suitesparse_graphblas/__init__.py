@@ -103,7 +103,8 @@ def initialize(*, blocking=False, memory_manager="numpy"):
         info = lib.GrB_init(blocking)
     else:
         raise ValueError(f'memory_manager argument must be "numpy" or "c"; got: {memory_manager!r}')
-    if info != lib.GrB_SUCCESS:
+    # Fails only if already initialized (checked above), on bad arguments, or out of memory
+    if info != lib.GrB_SUCCESS:  # pragma: no cover (defensive)
         raise _error_code_lookup.get(info, RuntimeError)(
             f"Failed to initialize GraphBLAS (info={info})"
         )
@@ -161,7 +162,7 @@ if supports_complex():
             lib.GxB_FC64,
         )
     )
-else:
+else:  # pragma: no cover (every build uses suitesparse_graphblas.h, which has complex)
     complex_types = frozenset()
 
 
