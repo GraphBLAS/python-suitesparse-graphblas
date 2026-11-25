@@ -218,7 +218,7 @@ def binwrite(A, filename, comments=None, opener=Path.open):
         nvec[0] = nrows[0]
         fmt_string = "FULLR"
 
-    else:  # pragma nocover
+    else:  # pragma: no cover (defensive: a materialized matrix is one of the above)
         raise TypeError(f"Unknown Matrix format {format[0]}")
 
     suitesparse_version = (
@@ -377,7 +377,7 @@ def binwrite(A, filename, comments=None, opener=Path.open):
 
         elif by_row and is_full:
             check_status(A, lib.GxB_Matrix_pack_FullR(A[0], Ax, Ax_size[0], is_iso[0], NULL))
-        else:
+        else:  # pragma: no cover (unreachable: the unpacking above raised already)
             raise TypeError("This should never happen")
 
         # Packing resets these to their defaults, so restore them (in the order `binread` sets
