@@ -134,8 +134,9 @@ def test_descriptor_name_longer_than_256():
     descriptor.descriptor_set_string(D[0], lib.GrB_NAME, name)
     assert descriptor.descriptor_get_string(D[0], lib.GrB_NAME) == name
     assert descriptor.descriptor_get_size(D[0], lib.GrB_NAME) == len(name) + 1
-    # GrB_NAME is a descriptor's only string.  (GrB_Descriptor_get_String itself returns the
-    # name for any field, but GrB_Descriptor_get_SIZE rejects the others.)
+    # GrB_NAME is a descriptor's only string.  (GrB_Descriptor_get_String itself ignores the
+    # field and returns the name, or "" when none is set, but GrB_Descriptor_get_SIZE rejects
+    # every field but GrB_NAME.)
     with pytest.raises(exceptions.InvalidValue):
         descriptor.descriptor_get_string(D[0], lib.GrB_OUTP_FIELD)
 
