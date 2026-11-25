@@ -131,6 +131,9 @@ jobs:
       with:
         files: coverage.xml
         disable_search: true
+        # The "Coverage report" step wrote coverage.xml, so skip the uploader's own search for
+        # gcov, Xcode, Swift and coverage.py data (it only logs a warning for each).
+        plugins: noop
         name: ${{ matrix.os }} ${{ matrix.python-version }}
         # PRs from forks upload without a token.  Pushes to main need the repository
         # secret CODECOV_TOKEN.  An upload that fails doesn't fail the job.
