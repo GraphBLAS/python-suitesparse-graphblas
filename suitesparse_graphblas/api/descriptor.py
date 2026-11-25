@@ -111,7 +111,10 @@ def descriptor_get_string(desc, field):
     True
 
     """
-    val = ffi.new("char[256]")
+    # GraphBLAS copies the whole string, so make room for all of it
+    size = ffi.new("size_t*")
+    check_status(desc, lib.GrB_Descriptor_get_SIZE(desc, size, field))
+    val = ffi.new("char[]", size[0])
     check_status(desc, lib.GrB_Descriptor_get_String(desc, val, field))
     return ffi.string(val).decode()
 

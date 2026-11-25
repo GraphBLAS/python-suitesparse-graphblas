@@ -121,3 +121,28 @@ def test_semiring_set():
     builtin = ffi.new("GrB_Semiring*", lib.GrB_PLUS_TIMES_SEMIRING_INT64)
     with pytest.raises(exceptions.InvalidValue):
         semiring.semiring_set_string(builtin, lib.GrB_NAME, "renamed")
+
+
+# GraphBLAS doesn't limit the length of a name set with GrB_NAME
+
+
+def test_descriptor_name_longer_than_256():
+    D = ffi.new("GrB_Descriptor*")
+    assert lib.GrB_Descriptor_new(D) == lib.GrB_SUCCESS
+    D = ffi.gc(D, lib.GrB_Descriptor_free)
+    name = "d" * 1000
+    descriptor.descriptor_set_string(D[0], lib.GrB_NAME, name)
+    assert descriptor.descriptor_get_string(D[0], lib.GrB_NAME) == name
+    assert descriptor.descriptor_get_size(D[0], lib.GrB_NAME) == len(name) + 1
+    # GrB_NAME is a descriptor's only string.  (GrB_Descriptor_get_String itself returns the
+    # name for any field, but GrB_Descriptor_get_SIZE rejects the others.)
+    with pytest.raises(exceptions.InvalidValue):
+        descriptor.descriptor_get_string(D[0], lib.GrB_OUTP_FIELD)
+
+
+def test_semiring_name_longer_than_256():
+    s = semiring.semiring_new(lib.GrB_MAX_MONOID_FP64, lib.GrB_PLUS_FP64)
+    name = "s" * 1000
+    semiring.semiring_set_string(s, lib.GrB_NAME, name)
+    assert semiring.semiring_get_string(s, lib.GrB_NAME) == name
+    assert semiring.semiring_get_size(s, lib.GrB_NAME) == len(name) + 1
