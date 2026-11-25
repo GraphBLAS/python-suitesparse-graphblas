@@ -129,8 +129,12 @@ def global_get_string(field):
     True
 
     """
-    val = ffi.new("char[256]")
-    info = lib.GrB_Global_get_String(lib.GrB_GLOBAL, val, field)
+    # GraphBLAS copies the whole string, so make room for all of it
+    size = ffi.new("size_t*")
+    info = lib.GrB_Global_get_SIZE(lib.GrB_GLOBAL, size, field)
+    if info == lib.GrB_SUCCESS:
+        val = ffi.new("char[]", size[0])
+        info = lib.GrB_Global_get_String(lib.GrB_GLOBAL, val, field)
     if info != lib.GrB_SUCCESS:
         raise _error_code_lookup.get(info, RuntimeError)(
             f"GrB_Global_get_String failed with info={info}"
