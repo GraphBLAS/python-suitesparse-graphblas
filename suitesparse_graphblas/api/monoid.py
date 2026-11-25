@@ -580,6 +580,18 @@ def monoid_operator(m):
     return op[0]
 
 
+def _value_buffer(m):
+    """Return a buffer that holds one value of the monoid's type."""
+    op = ffi.new("GrB_BinaryOp*", monoid_operator(m))
+    T = ffi.new("GrB_Type*")
+    check_status(op, lib.GxB_BinaryOp_ztype(T, op[0]))
+    size = ffi.new("size_t*")
+    check_status(T, lib.GxB_Type_size(size, T[0]))
+    # A user-defined type can be of any size; keep at least the 256 bytes these
+    # functions have always returned
+    return ffi.new("char[]", max(size[0], 256))
+
+
 def monoid_identity(m):
     """Return a buffer containing the identity value of a monoid.
 
@@ -587,7 +599,7 @@ def monoid_identity(m):
     >>> val = monoid_identity(m)
 
     """
-    val = ffi.new("char[256]")
+    val = _value_buffer(m)
     check_status(m, lib.GxB_Monoid_identity(val, m[0]))
     return val
 
@@ -605,6 +617,6 @@ def monoid_terminal(m):
 
     """
     has_terminal = ffi.new("bool*")
-    val = ffi.new("char[256]")
+    val = _value_buffer(m)
     check_status(m, lib.GxB_Monoid_terminal(has_terminal, val, m[0]))
     return has_terminal[0], val
