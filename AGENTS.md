@@ -210,6 +210,14 @@ The file is marked `freethreading_compatible=True`. The package does nothing spe
 free-threading itself — correctness depends on SuiteSparse:GraphBLAS being thread-safe,
 which it is required to be.
 
+The free-threaded CI jobs (3.14t and 3.15t in `test.yml`) also run the suite with
+pytest-run-parallel, each test in 4 threads at once (`pytest --parallel-threads=4
+--iterations=10`), so tests must be thread-safe: keep state per test or per thread, and guard
+one-time setup (such as `GxB_arena_init`) with a lock. Mark a test that can't be, because it
+changes process-wide state as `doctest` does, with `@pytest.mark.thread_unsafe(reason=...)`;
+`conftest.py` registers the marker when the plugin isn't installed. Doctests always run in
+one thread.
+
 ## Style and tooling
 
 - Black, isort, flake8 (config in `.flake8`, line length 100, double quotes), pyupgrade
