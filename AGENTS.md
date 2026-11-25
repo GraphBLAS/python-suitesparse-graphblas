@@ -207,9 +207,11 @@ When claiming a buffer from `GxB_*_unload`, use the arena in the returned `handl
 loaded it read-only still owns it.
 
 The file is marked `freethreading_compatible=True`. Correctness depends on
-SuiteSparse:GraphBLAS being thread-safe, which it is required to be; the one piece of shared
-state in `utils.pyx` is the per-arena NumPy memory handler, made once under `_handlers_lock`
-so that threads racing its first use share one handler.
+SuiteSparse:GraphBLAS being thread-safe, which it is required to be. The shared mutable state
+in `utils.pyx` is per arena: its allocator functions (`arenas`), NumPy handler struct
+(`arena_handlers`) and handler capsule (`_handlers`). `_handler` fills them once, under
+`_handlers_lock`, so threads racing an arena's first use share one handler; after that they
+are only read.
 
 The free-threaded CI jobs (3.14t and 3.15t in `test.yml`) also run the suite with
 pytest-run-parallel, each test in 4 threads at once (`pytest --parallel-threads=4

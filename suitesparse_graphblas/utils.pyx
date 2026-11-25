@@ -1,10 +1,11 @@
 # cython: freethreading_compatible=True
 #
 # GraphBLAS C libraries are required to be thread-safe, so free-threading needs
-# little here: a lock around making each arena's NumPy memory handler on first
-# use (`_handler`), so threads racing that first use share one handler. Of
-# course, users writing multithreaded code can find many creative ways to fail,
-# but python-suitesparse-graphblas shouldn't crash.
+# little here: the per-arena state below (`arenas`, `arena_handlers`,
+# `_handlers`) is filled once, under `_handlers_lock` (`_handler`), so threads
+# racing an arena's first use share one handler, and is only read after that.
+# Of course, users writing multithreaded code can find many creative ways to
+# fail, but python-suitesparse-graphblas shouldn't crash.
 """Move memory between GraphBLAS and NumPy without copying.
 
 Memory must be freed by the allocator that allocated it.  GraphBLAS frees the memory it
