@@ -206,9 +206,10 @@ When claiming a buffer from `GxB_*_unload`, use the arena in the returned `handl
 (`handling - GrB_DEFAULT`), and never claim one with `handling >= GxB_IS_READONLY`: whoever
 loaded it read-only still owns it.
 
-The file is marked `freethreading_compatible=True`. The package does nothing special for
-free-threading itself — correctness depends on SuiteSparse:GraphBLAS being thread-safe,
-which it is required to be.
+The file is marked `freethreading_compatible=True`. Correctness depends on
+SuiteSparse:GraphBLAS being thread-safe, which it is required to be; the one piece of shared
+state in `utils.pyx` is the per-arena NumPy memory handler, made once under `_handlers_lock`
+so that threads racing its first use share one handler.
 
 The free-threaded CI jobs (3.14t and 3.15t in `test.yml`) also run the suite with
 pytest-run-parallel, each test in 4 threads at once (`pytest --parallel-threads=4
