@@ -102,30 +102,14 @@ jobs:
     - name: Build
       run: |
         pip install -e . --no-deps
-    - name: Configure coverage
-      run: |
-        # Cython's coverage plugin (see [tool.coverage.run] in pyproject.toml)
-        # needs coverage's C tracer.  Where conda-forge has no compiled build of
-        # coverage for a Python (3.15t, for now), it installs a pure-Python build
-        # that lacks the tracer.  There, loading the plugin raises ImportError and
-        # every `coverage run` dies before it runs anything, so run the tests
-        # directly instead.
-        if python -c "import Cython.Coverage" 2>/dev/null; then
-          coverage erase
-          echo "COV=coverage run -a --branch" >> "$GITHUB_ENV"
-        else
-          echo "Cython coverage plugin unusable here; running without coverage"
-          python -VV
-          echo "COV=python" >> "$GITHUB_ENV"
-        fi
     - name: Test
       env:
-        CYTHON_COVERAGE: true
         PYVER: ${{ matrix.python-version }}
       run: |
         pytest -s -k test_print_jit_config
-        $COV -m pytest
-        $COV suitesparse_graphblas/tests/test_initialize.py
+        # Coverage of the Python code; see [tool.coverage.run] in pyproject.toml.
+        coverage run -a -m pytest
+        coverage run -a suitesparse_graphblas/tests/test_initialize.py
         if [[ $PYVER == *t ]]; then
           # Without a GIL, threads run Python code in parallel, so also run each test in 4
           # threads at once, 10 times each, to find races (in psg, GraphBLAS, or a test).
@@ -136,5 +120,19 @@ jobs:
     - name: create_headers.py check
       if: (! contains(matrix.os, 'windows'))
       run: |
-        $COV suitesparse_graphblas/create_headers.py
+        coverage run -a suitesparse_graphblas/create_headers.py
         git diff --exit-code  # error if anything changed
+    - name: Coverage report
+      run: |
+        coverage report --show-missing
+        coverage xml
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+      with:
+        files: coverage.xml
+        disable_search: true
+        name: ${{ matrix.os }} ${{ matrix.python-version }}
+        # PRs from forks upload without a token.  Pushes to main need the repository
+        # secret CODECOV_TOKEN.  An upload that fails doesn't fail the job.
+        token: ${{ secrets.CODECOV_TOKEN }}
+        fail_ci_if_error: false

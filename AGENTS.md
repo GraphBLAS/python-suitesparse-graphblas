@@ -92,8 +92,9 @@ only be called once per process, so `test_initialize.py` is run as a separate pr
 docker run --rm -w /tmp psg-test python3 -m suitesparse_graphblas.tests.test_initialize
 ```
 
-Coverage runs in CI use `CYTHON_COVERAGE=true` so the Cython `utils.pyx` extension is
-recompiled with line tracing.
+CI measures coverage of the Python code only, prints it in the "Coverage report" step, and
+uploads it to Codecov. It doesn't trace `utils.pyx` (see `[tool.coverage.run]` in
+`pyproject.toml`).
 
 ## Architecture: how the binding is generated and assembled
 

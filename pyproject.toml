@@ -120,10 +120,13 @@ line_length = 100
 skip_glob = ["*.pxd", "*.pyx"]
 
 [tool.coverage.run]
+# Python code only.  Cython's plugin for `utils.pyx` needs a build with line tracing, and on
+# Python 3.14+ coverage's default core (sys.monitoring) can't run it.
 branch = true
 source = ["suitesparse_graphblas"]
 omit = []
-plugins = ["Cython.Coverage"]
+# Paths relative to the checkout, so reports from every CI job line up.
+relative_files = true
 
 [tool.coverage.report]
 ignore_errors = false

@@ -1,0 +1,9 @@
+# Codecov's statuses report coverage on PRs but never fail them.
+coverage:
+  status:
+    project:
+      default:
+        informational: true
+    patch:
+      default:
+        informational: true
