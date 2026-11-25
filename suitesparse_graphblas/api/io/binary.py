@@ -380,6 +380,12 @@ def binwrite(A, filename, comments=None, opener=Path.open):
         else:
             raise TypeError("This should never happen")
 
+        # Packing resets these to their defaults, so restore them (in the order `binread` sets
+        # them)
+        matrix.matrix_set_sparsity_control(A, sparsity_control[0])
+        matrix.matrix_set_hyper_switch(A, hyper_switch[0])
+        matrix.matrix_set_bitmap_switch(A, bitmap_switch[0])
+
 
 def binread(filename, opener=Path.open):
     """Read a Matrix from ``filename``, written by ``binwrite``.

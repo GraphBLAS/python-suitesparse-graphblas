@@ -356,3 +356,24 @@ def test_binwrite_binread_opener(tmp_path, opener):
     assert "three entries" in lines
     with Path(path).open("rb") as f:
         assert f.read(len(header)).startswith(header) == (opener is Path.open)
+
+
+@pytest.mark.parametrize("fails", [False, True], ids=["written", "failed"])
+@pytest.mark.parametrize("sparsity", _sparsities, ids=_sparsities.get)
+def test_binwrite_keeps_matrix_settings(tmp_path, sparsity, fails):
+    # Packing the arrays back into the matrix resets its sparsity control and switches to the
+    # defaults, and `binwrite` must leave the matrix as it was, whether or not writing worked
+    A = _make_matrix(lib.GrB_INT64, "full")
+    matrix.matrix_set_sparsity_control(A, sparsity)
+    matrix.matrix_set_hyper_switch(A, 0.25)
+    matrix.matrix_set_bitmap_switch(A, 0.75)
+    matrix.matrix_wait(A, lib.GrB_MATERIALIZE)
+    expected = _settings(A)
+    path = tmp_path / ("missing_directory" if fails else "") / "matrix.binfile"
+    if fails:
+        with pytest.raises(OSError):
+            binary.binwrite(A, path)
+    else:
+        binary.binwrite(A, path)
+    assert _settings(A) == expected
+    _assert_matrices_equal(A, _make_matrix(lib.GrB_INT64, "full"))
