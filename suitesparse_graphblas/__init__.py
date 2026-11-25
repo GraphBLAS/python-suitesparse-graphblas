@@ -268,8 +268,8 @@ class burble:
 
     Example as a context manager:
 
-    >>> with burble():
-    >>>     n = matrix.matrix_nvals(A)
+    >>> with burble:
+    ...     n = matrix.matrix_nvals(A)
       [ GrB_Matrix_nvals
          1.91e-06 sec ]
 
@@ -285,7 +285,7 @@ class burble:
         info = lib.GxB_Global_Option_get_INT32(lib.GxB_BURBLE, val_ptr)
         if info != lib.GrB_SUCCESS:
             raise _error_code_lookup[info](
-                "Failed to get burble status (has GraphBLAS been initialized?"
+                "Failed to get burble status (has GraphBLAS been initialized?)"
             )
         return bool(val_ptr[0])
 
@@ -294,7 +294,7 @@ class burble:
         info = lib.GxB_Global_Option_set_INT32(lib.GxB_BURBLE, ffi.cast("int32_t", 1))
         if info != lib.GrB_SUCCESS:
             raise _error_code_lookup[info](
-                "Failed to enable burble (has GraphBLAS been initialized?"
+                "Failed to enable burble (has GraphBLAS been initialized?)"
             )
 
     def disable(self):
@@ -302,7 +302,7 @@ class burble:
         info = lib.GxB_Global_Option_set_INT32(lib.GxB_BURBLE, ffi.cast("int32_t", 0))
         if info != lib.GrB_SUCCESS:
             raise _error_code_lookup[info](
-                "Failed to disable burble (has GraphBLAS been initialized?"
+                "Failed to disable burble (has GraphBLAS been initialized?)"
             )
 
     def __enter__(self):
