@@ -1,6 +1,7 @@
 import bz2
 import gzip
 import platform
+import struct
 from pathlib import Path
 
 import numpy as np
@@ -402,3 +403,27 @@ def test_binread_truncated(tmp_path, sparsity):
         path.write_bytes(data[:size])
         with pytest.raises(EOFError, match="truncated"):
             binary.binread(path)
+
+
+# Where binwrite puts the matrix's format and sparsity status (int32 each), after the text
+# header and the GraphBLAS version
+_format_offset = binary.GRB_HEADER_LEN + ffi.sizeof("uint64_t")
+_sparsity_offset = _format_offset + ffi.sizeof("GxB_Format_Value")
+
+
+@pytest.mark.parametrize(
+    "offset, value, message",
+    [
+        (_format_offset, 99, "Unknown format 99"),
+        (_sparsity_offset, 3, "Unknown sparsity status 3"),
+    ],
+    ids=["format", "sparsity"],
+)
+def test_binread_unknown_field(tmp_path, offset, value, message):
+    path = tmp_path / "matrix.binfile"
+    binary.binwrite(_make_matrix(lib.GrB_INT64, "sparse"), path)
+    data = bytearray(path.read_bytes())
+    struct.pack_into("=i", data, offset, value)
+    path.write_bytes(data)
+    with pytest.raises(TypeError, match=message):
+        binary.binread(path)
