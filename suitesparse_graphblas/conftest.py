@@ -11,6 +11,16 @@ except ImportError:  # pragma: no cover
         _set_numpy_warn_if_no_mem_policy = None
 
 
+def pytest_configure(config):
+    # The marker tells pytest-run-parallel (`--parallel-threads`) to run a test in one thread.
+    # The plugin registers it; without the plugin, an unknown marker fails `--strict-markers`
+    # and `-W error`.
+    if not config.pluginmanager.hasplugin("run-parallel"):
+        config.addinivalue_line(
+            "markers", "thread_unsafe: run the test in one thread under pytest-run-parallel"
+        )
+
+
 @pytest.fixture(scope="session", autouse=True)
 def intialize_suitesparse_graphblas():
     initialize()
