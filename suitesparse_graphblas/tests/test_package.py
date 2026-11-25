@@ -1,3 +1,4 @@
+import os
 import sys
 
 import pytest
@@ -123,6 +124,20 @@ def test_type_sets():
     assert len(grb_types) == 11 + len(complex_types)
 
 
+# conda-forge's cffi links conda's libffi, and through it a variadic call on macOS arm64 loses
+# its variadic arguments, with or without vararg: a double arrives as 0.0 and an int32 setting
+# doesn't change (cffi 2.0.0, libffi 3.5.2).  PyPI's cffi links the system libffi and works.
+_conda_on_osx_arm64 = (
+    sys.platform == "darwin"
+    and suitesparse_graphblas._is_osx_arm64
+    and os.path.isdir(os.path.join(sys.prefix, "conda-meta"))
+)
+
+
+@pytest.mark.xfail(
+    _conda_on_osx_arm64,
+    reason="variadic calls lose their arguments with conda-forge's cffi on macOS arm64",
+)
 def test_vararg():
     # vararg makes a value safe to pass to a variadic GraphBLAS function on every
     # platform: double, int32, and pointer (for the getters)
