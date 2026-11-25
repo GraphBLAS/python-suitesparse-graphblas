@@ -287,7 +287,7 @@ class burble:
             raise _error_code_lookup[info](
                 "Failed to get burble status (has GraphBLAS been initialized?"
             )
-        return val_ptr[0]
+        return bool(val_ptr[0])
 
     def enable(self):
         """Enable diagnostic output"""
