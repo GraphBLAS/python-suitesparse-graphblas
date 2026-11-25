@@ -174,7 +174,7 @@ def test_matrix_binfile_read_write(tmp_path):
                     assert matrix.matrix_ncols(A) == matrix.matrix_ncols(B)
                     assert matrix.matrix_hyper_switch(A) == matrix.matrix_hyper_switch(B)
                     assert matrix.matrix_bitmap_switch(A) == matrix.matrix_bitmap_switch(B)
-                    # assert matrix.matrix_sparsity_control(A) == matrix.matrix_sparsity_control(B)
+                    assert matrix.matrix_sparsity_control(A) == matrix.matrix_sparsity_control(B)
                     assert matrix.matrix_sparsity_status(B) == sparsity
                     assert matrix.matrix_format(B) == format
 
