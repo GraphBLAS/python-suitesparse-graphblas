@@ -396,7 +396,13 @@ def binread(filename, opener=Path.open):
         filename = Path(filename)
 
     with opener(filename, "rb") as f:
-        fread = f.read
+
+        def fread(nbytes):
+            # A short read would leave `frombuff` pointing past the end of the data
+            data = f.read(nbytes)
+            if len(data) != nbytes:
+                raise EOFError(f"{filename} is truncated")
+            return data
 
         fread(GRB_HEADER_LEN)
         impl = frombuff("uint64_t*", fread(sizeof("uint64_t")))

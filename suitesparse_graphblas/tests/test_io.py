@@ -388,3 +388,17 @@ def test_binwrite_header_error_keeps_matrix(tmp_path):
         binary.binwrite(A, path, comments="café")
     assert not path.exists()
     _assert_matrices_equal(A, _make_matrix(lib.GrB_INT64, "sparse"))
+
+
+@pytest.mark.parametrize("sparsity", _sparsities, ids=_sparsities.get)
+def test_binread_truncated(tmp_path, sparsity):
+    A = _make_matrix(lib.GrB_INT64, "sparse")
+    matrix.matrix_set_sparsity_control(A, sparsity)
+    path = tmp_path / "matrix.binfile"
+    binary.binwrite(A, path)
+    data = path.read_bytes()
+    _assert_matrices_equal(A, binary.binread(path))
+    for size in range(len(data)):
+        path.write_bytes(data[:size])
+        with pytest.raises(EOFError, match="truncated"):
+            binary.binread(path)
