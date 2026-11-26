@@ -1,4 +1,5 @@
 import operator
+import warnings
 from contextlib import contextmanager, nullcontext
 
 import numpy as np
@@ -80,10 +81,21 @@ def get_serialize_desc(compression=lib.GxB_COMPRESSION_DEFAULT, level=None, nthr
 
     This returns None (for NULL descriptor) or a GrB_Descriptor.
 
-    The number of threads isn't a descriptor setting in GraphBLAS 10, which raises
-    InvalidValue if `nthreads` is given.  The `nthreads` argument of the functions that
-    serialize and deserialize sets it in a GxB_Context instead.
+    .. deprecated:: 10.5.3.0
+        The `nthreads` argument.  The number of threads isn't a descriptor setting in
+        GraphBLAS 10, which raises InvalidValue if `nthreads` is given.  Use the `nthreads`
+        argument of serialize_matrix, serialize_vector, deserialize_matrix or
+        deserialize_vector instead, which sets it in a GxB_Context.
     """
+    if nthreads is not None:
+        warnings.warn(
+            "The `nthreads` argument of get_serialize_desc is deprecated: GraphBLAS 10 "
+            "rejects the number of threads in a descriptor.  Use the `nthreads` argument "
+            "of serialize_matrix, serialize_vector, deserialize_matrix or "
+            "deserialize_vector instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
     if nthreads is None and (compression is None or compression == lib.GxB_COMPRESSION_DEFAULT):
         return None
     desc_ptr = ffi.new("GrB_Descriptor*")

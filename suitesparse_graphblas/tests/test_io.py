@@ -467,9 +467,18 @@ def test_get_serialize_desc():
     assert _compression(get(LZ4HC, 9)) == LZ4HC + 9
     assert _compression(get(lib.GxB_COMPRESSION_LZ4, 9)) == lib.GxB_COMPRESSION_LZ4
     assert _compression(get(lib.GxB_COMPRESSION_NONE, 9)) == lib.GxB_COMPRESSION_NONE
-    # The number of threads is a Context setting in GraphBLAS 10, not a descriptor setting
-    with pytest.raises(InvalidValue):
-        get(nthreads=1)
+
+
+@pytest.mark.parametrize(
+    "compression", [lib.GxB_COMPRESSION_DEFAULT, None], ids=["default", "None"]
+)
+def test_get_serialize_desc_nthreads_deprecated(compression):
+    # The number of threads is a Context setting in GraphBLAS 10, not a descriptor setting.
+    # The warning names the replacement and the caller, and GraphBLAS still rejects it.
+    with pytest.warns(DeprecationWarning, match="serialize_matrix") as record:
+        with pytest.raises(InvalidValue):
+            serialize.get_serialize_desc(compression, nthreads=1)
+    assert [w.filename for w in record] == [__file__]
 
 
 _serialize_options = {
