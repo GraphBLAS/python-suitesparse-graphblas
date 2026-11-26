@@ -110,10 +110,8 @@ def get_serialize_desc(compression=lib.GxB_COMPRESSION_DEFAULT, level=None, nthr
             lib.GxB_COMPRESSION_ZSTD,
         }:
             compression += level
-        check_status(
-            desc,
-            lib.GxB_Desc_set_INT32(desc, lib.GxB_COMPRESSION, ffi.cast("int32_t", compression)),
-        )
+        # OverflowError if it doesn't fit in int32_t, rather than wrapping around
+        check_status(desc, lib.GxB_Desc_set_INT32(desc, lib.GxB_COMPRESSION, compression))
     return desc
 
 

@@ -1,4 +1,5 @@
 import bz2
+import collections
 import functools
 import gzip
 import struct
@@ -691,6 +692,50 @@ def test_serialize_compression_reaches_graphblas():
         vector.set_int64(v, i, i)
     none = serialize.serialize_vector(v, lib.GxB_COMPRESSION_NONE).nbytes
     assert none > serialize.serialize_vector(v, lib.GxB_COMPRESSION_ZSTD).nbytes
+
+
+class _CountingLib:
+    """`lib`, counting the lookups of each name in `counts`."""
+
+    def __init__(self):
+        self.counts = collections.Counter()
+
+    def __getattr__(self, name):
+        self.counts[name] += 1
+        return getattr(lib, name)
+
+
+@pytest.mark.thread_unsafe(reason="replaces `lib` in the serialize module")
+@pytest.mark.parametrize("kind", ["matrix", "vector"])
+def test_serialize_compression_out_of_range(monkeypatch, kind):
+    # The method plus the level goes to GraphBLAS as an int32_t.  It used to wrap around, so
+    # ZSTD with level 2**32 + 1 serialized with level 1, and a float level was truncated.
+    # Now they raise, before anything is serialized.
+    if kind == "matrix":
+        A, ser, T = _numbered_matrix(10), serialize.serialize_matrix, "Matrix"
+    else:
+        A, ser, T = vector.vector_new(lib.GrB_INT64, 10), serialize.serialize_vector, "Vector"
+        vector.set_int64(A, 7, 2)
+        # Else the first serialization finishes that, and gives different bytes from the next
+        vector.vector_wait(A, lib.GrB_MATERIALIZE)
+    ZSTD, LZ4HC = lib.GxB_COMPRESSION_ZSTD, lib.GxB_COMPRESSION_LZ4HC
+    counting = _CountingLib()
+    monkeypatch.setattr(serialize, "lib", counting)
+    for compression, level in [
+        (ZSTD, 2**32 + 1),
+        (LZ4HC, 2**32 + 1),
+        (ZSTD, 1 - 2**32),
+        (ZSTD + 2**32, None),
+    ]:
+        with pytest.raises(OverflowError):
+            ser(A, compression, level)
+    with pytest.raises(TypeError):
+        ser(A, ZSTD, 1.5)
+    monkeypatch.undo()
+    assert counting.counts["GxB_Desc_set_INT32"] == 5  # it got that far each time
+    assert counting.counts[f"GxB_{T}_serialize_arena"] == 0
+    # Any kind of integer in range will do, as before
+    assert ser(A, ZSTD, np.int64(19)).tobytes() == ser(A, ZSTD, 19).tobytes()
 
 
 @pytest.mark.parametrize("free", [None, False], ids=["None", "False"])
