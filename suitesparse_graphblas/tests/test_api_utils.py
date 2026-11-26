@@ -1,9 +1,10 @@
 import os
 
+import numpy as np
 import pytest
 
 from suitesparse_graphblas import exceptions, ffi, lib
-from suitesparse_graphblas.api import context
+from suitesparse_graphblas.api import context, vector
 from suitesparse_graphblas.api.utils import _capture_c_output
 
 
@@ -64,4 +65,20 @@ def test_capture_c_output_closes_fds_when_redirecting_fails(monkeypatch):
         _capture_c_output(lambda: None)
     monkeypatch.undo()
     assert _stdout_id() == stdout
+    assert _free_fds() == fds
+
+
+@pytest.mark.thread_unsafe(reason="redirects file descriptor 1")
+def test_capture_c_output_of_more_than_a_pipe_holds():
+    # The output used to go to a pipe that was read after the call returned, so printing more
+    # than the pipe holds (64 KiB on Linux and macOS) waited forever for a reader
+    n = 10_000
+    v = vector.vector_new(lib.GrB_INT64, n)
+    indices = np.arange(n, dtype=np.uint64)
+    vector.vector_build_int64(v, indices, indices.astype(np.int64), n, lib.GrB_PLUS_INT64)
+    fds = _free_fds()
+    out = _capture_c_output(vector.vector_print, v, "v", lib.GxB_COMPLETE)
+    assert len(out) > 2**17
+    entries = [line for line in out.splitlines() if line.startswith("    (")]
+    assert entries == [f"    ({i},0)   {i}" for i in range(n)]
     assert _free_fds() == fds
