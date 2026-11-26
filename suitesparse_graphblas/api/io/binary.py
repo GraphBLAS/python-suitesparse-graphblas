@@ -400,7 +400,8 @@ def binwrite(A, filename, comments=None, opener=Path.open):
 def binread(filename, opener=Path.open):
     """Read a Matrix from ``filename``, written by ``binwrite``.
 
-    ``opener`` opens the file for reading (e.g. ``gzip.open``).
+    ``opener`` opens the file for reading (e.g. ``gzip.open``).  The file must be from this
+    version of SuiteSparse:GraphBLAS, else this raises ValueError.
     """
     if isinstance(filename, str):
         filename = Path(filename)
@@ -416,8 +417,13 @@ def binread(filename, opener=Path.open):
 
         fread(GRB_HEADER_LEN)
         impl = frombuff("uint64_t*", fread(sizeof("uint64_t")))
-
-        assert impl[0] == lib.GxB_IMPLEMENTATION
+        if impl[0] != lib.GxB_IMPLEMENTATION:
+            raise ValueError(
+                f"{filename} is not from binwrite with SuiteSparse:GraphBLAS "
+                f"v{lib.GxB_IMPLEMENTATION_MAJOR}.{lib.GxB_IMPLEMENTATION_MINOR}."
+                f"{lib.GxB_IMPLEMENTATION_SUB}: its version is {impl[0]}, not "
+                f"{lib.GxB_IMPLEMENTATION}"
+            )
 
         format = frombuff("GxB_Format_Value*", fread(sizeof("GxB_Format_Value")))
         sparsity_status = frombuff("int32_t*", fread(sizeof("int32_t")))

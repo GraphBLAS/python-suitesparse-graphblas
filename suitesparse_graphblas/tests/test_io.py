@@ -428,6 +428,18 @@ def test_binread_unknown_field(tmp_path, offset, value, message):
         binary.binread(path)
 
 
+def test_binread_other_version(tmp_path):
+    # binread reads files from this version of GraphBLAS only, and checks even under
+    # `python -O`, which skips asserts
+    path = tmp_path / "matrix.binfile"
+    binary.binwrite(_make_matrix(lib.GrB_INT64, "sparse"), path)
+    data = bytearray(path.read_bytes())
+    struct.pack_into("=Q", data, binary.GRB_HEADER_LEN, lib.GxB_IMPLEMENTATION + 1)
+    path.write_bytes(data)
+    with pytest.raises(ValueError, match=f"its version is {lib.GxB_IMPLEMENTATION + 1}, not"):
+        binary.binread(path)
+
+
 def test_binwrite_long_comments(tmp_path):
     # binread skips a header of exactly GRB_HEADER_LEN bytes, so binwrite refuses
     # comments that would make it longer, before it opens the file
