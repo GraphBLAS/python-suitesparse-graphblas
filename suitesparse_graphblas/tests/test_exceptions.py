@@ -1,6 +1,6 @@
 import pytest
 
-from suitesparse_graphblas import check_status, exceptions, ffi, lib
+from suitesparse_graphblas import _error_code_lookup, check_status, exceptions, ffi, lib
 from suitesparse_graphblas.api import grb_type
 
 
@@ -30,23 +30,60 @@ _error_names = sorted(
 
 @pytest.mark.parametrize("name", _error_names)
 def test_check_status_raises_for_every_error_code(name):
-    # Every GrB_Info that GraphBLAS can return, so a code added by a new
-    # GraphBLAS can't escape as a KeyError
+    # Every GrB_Info that GraphBLAS can return has its own exception class.
+    # This fails when a new GraphBLAS adds a code, as a reminder to add one.
     info = getattr(lib, name)
+    assert info in _error_code_lookup
+    expected = _error_code_lookup[info]
+    assert expected is StopIteration or (
+        issubclass(expected, exceptions.GraphBLASException)
+        and expected is not exceptions.GraphBLASException
+    )
     A = ffi.new("GrB_Matrix*")
     check_status(A, lib.GrB_Matrix_new(A, lib.GrB_BOOL, 2, 2))
-    expected = StopIteration if info == lib.GxB_EXHAUSTED else exceptions.GraphBLASException
     with pytest.raises(expected):
         check_status(A, info)
+
+
+def test_check_status_unknown_code():
+    # A code that this build doesn't know raises the base class, not KeyError
+    A = ffi.new("GrB_Matrix*")
+    check_status(A, lib.GrB_Matrix_new(A, lib.GrB_BOOL, 2, 2))
+    unknown = -12345
+    assert unknown not in _error_code_lookup
+    with pytest.raises(exceptions.GraphBLASException) as excinfo:
+        check_status(A, unknown)
+    assert type(excinfo.value) is exceptions.GraphBLASException
 
 
 def test_check_status_already_set():
     # GraphBLAS returns GrB_ALREADY_SET when the name of an object is set twice
     T = grb_type.grb_type_new(8)
     grb_type.grb_type_set_string(T, lib.GrB_NAME, "first_name")
-    with pytest.raises(exceptions.GraphBLASException):
+    with pytest.raises(exceptions.AlreadySet):
         grb_type.grb_type_set_string(T, lib.GrB_NAME, "second_name")
     assert grb_type.grb_type_get_string(T, lib.GrB_NAME) == "first_name"
+
+
+def test_check_status_output_is_readonly():
+    # A vector loaded with GxB_IS_READONLY borrows the buffer, so GraphBLAS
+    # refuses to write to it with GxB_OUTPUT_IS_READONLY
+    v = ffi.new("GrB_Vector*")
+    check_status(v, lib.GrB_Vector_new(v, lib.GrB_INT64, 0))
+    buf = ffi.new("int64_t[4]", [1, 2, 3, 4])
+    X = ffi.new("void**", buf)
+    try:
+        check_status(
+            v,
+            lib.GxB_Vector_load(
+                v[0], X, lib.GrB_INT64, 4, ffi.sizeof(buf), lib.GxB_IS_READONLY, ffi.NULL
+            ),
+        )
+        with pytest.raises(exceptions.OutputIsReadonly):
+            check_status(v, lib.GrB_Vector_setElement_INT64(v[0], 9, 0))
+        assert list(buf) == [1, 2, 3, 4]
+    finally:
+        check_status(v, lib.GrB_Vector_free(v))
 
 
 def test_check_status_unknown_object():

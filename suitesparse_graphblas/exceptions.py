@@ -64,3 +64,15 @@ class NotImplementedException(GraphBLASException):
 
 class JitError(GraphBLASException):
     pass
+
+
+class AlreadySet(GraphBLASException):
+    pass
+
+
+class GpuError(GraphBLASException):
+    pass
+
+
+class OutputIsReadonly(GraphBLASException):
+    pass
