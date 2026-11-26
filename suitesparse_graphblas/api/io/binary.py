@@ -67,6 +67,19 @@ if supports_complex():
 _ss_codetypes = {v: k for k, v in _ss_typecodes.items()}
 
 
+def _secure_import_desc():
+    """A new descriptor for ``GxB_Matrix_pack_*`` to check the arrays it is given.
+
+    By default, packing trusts them, and arrays that aren't a valid matrix (from a corrupt
+    file, say) make an invalid one.  The check takes O(nvals) time.
+    """
+    desc = ffi.new("GrB_Descriptor*")
+    check_status(desc, lib.GrB_Descriptor_new(desc))
+    desc = ffi.gc(desc, lib.GrB_Descriptor_free)
+    check_status(desc, lib.GrB_Descriptor_set_INT32(desc[0], lib.GxB_SECURE_IMPORT, lib.GxB_IMPORT))
+    return desc
+
+
 def binwrite(A, filename, comments=None, opener=Path.open):
     """Write Matrix ``A`` to ``filename`` in SuiteSparse:GraphBLAS's binary format.
 
@@ -401,7 +414,9 @@ def binread(filename, opener=Path.open):
     """Read a Matrix from ``filename``, written by ``binwrite``.
 
     ``opener`` opens the file for reading (e.g. ``gzip.open``).  The file must be from this
-    version of SuiteSparse:GraphBLAS, else this raises ValueError.
+    version of SuiteSparse:GraphBLAS, else this raises ValueError.  GraphBLAS checks the
+    matrix it holds (in O(nvals) time), so a corrupt file raises an error, such as
+    ``InvalidObject``, rather than making an invalid matrix.
     """
     if isinstance(filename, str):
         filename = Path(filename)
@@ -492,15 +507,18 @@ def binread(filename, opener=Path.open):
         # An iso matrix stores a single value, and GraphBLAS must be told its true size
         read(typesize[0] if is_iso[0] else nx * typesize[0], "void*")  # Ax
 
+        desc = _secure_import_desc()
         with ExitStack() as stack:
-            # The buffers become GraphBLAS's only if the pack succeeds
+            # The buffers become GraphBLAS's once the pack takes them.  It checks their sizes
+            # first, and their content (sorted indices in range, ...) after: if that fails, `A`
+            # holds them, and frees them when it is freed
             given = [
                 stack.enter_context(give_buffer(array, ctype, copy=False, arena=arena))
                 for array, ctype in buffers
             ]
             ptrs = [ptr for ptr, _, _ in given]
             sizes = [nbytes for _, nbytes, _ in given]
-            check_status(A, pack(A[0], *ptrs, *sizes, is_iso[0], *args, NULL))
+            check_status(A, pack(A[0], *ptrs, *sizes, is_iso[0], *args, desc[0]))
 
         matrix.matrix_set_sparsity_control(A, sparsity_control[0])
         matrix.matrix_set_hyper_switch(A, hyper_switch[0])
