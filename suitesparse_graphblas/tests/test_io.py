@@ -26,7 +26,7 @@ from suitesparse_graphblas import (
 )
 from suitesparse_graphblas.api import context
 from suitesparse_graphblas.api.global_options import global_get_int32
-from suitesparse_graphblas.exceptions import InvalidObject, InvalidValue
+from suitesparse_graphblas.exceptions import InvalidObject, InvalidValue, OutOfMemory
 from suitesparse_graphblas.io import binary, serialize
 from suitesparse_graphblas.utils import claim_buffer
 
@@ -835,6 +835,19 @@ def test_deserialize_vector_invalid(case, nthreads):
     with pytest.raises(InvalidObject, match="does not hold a valid Vector"):
         serialize.deserialize_vector(blob, nthreads=nthreads)
     assert not _context_engaged(probe)
+
+
+def test_check_deserialized_other_error():
+    # A check that fails other than with GrB_INVALID_OBJECT (which a deserialized object
+    # doesn't do) raises as check_status does, and still frees the object
+    A = matrix.matrix_new(lib.GrB_INT64, 2, 2, free=None)
+
+    def fprint(*args):
+        return lib.GrB_OUT_OF_MEMORY
+
+    with pytest.raises(OutOfMemory):
+        serialize._check_deserialized(A, fprint, lib.GrB_Matrix_free, None)
+    assert A[0] == NULL
 
 
 @pytest.mark.parametrize("format", _formats, ids=_formats.get)
