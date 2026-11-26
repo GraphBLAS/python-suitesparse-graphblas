@@ -46,13 +46,19 @@ cmake_params+=(-DSUITESPARSE_USE_STRICT=ON)
 cmake_params+=(-DSUITESPARSE_USE_CUDA=OFF)
 cmake_params+=(-DSUITESPARSE_USE_FORTRAN=OFF)
 
-if [ -n "${BREW_LIBOMP}" ]; then
-    # macOS OpenMP flags.
-    # FindOpenMP doesn't find brew's libomp, so set the necessary configs manually.
-    cmake_params+=(-DOpenMP_C_FLAGS="-Xclang -fopenmp -I$(brew --prefix libomp)/include")
+# macOS: Apple's clang has no OpenMP runtime.  LIBOMP_PREFIX is a prefix with include/omp.h
+# and lib/libomp.dylib (the wheels use conda-forge's llvm-openmp); BREW_LIBOMP=1 uses Homebrew's.
+if [ -n "${BREW_LIBOMP}" ] && [ -z "${LIBOMP_PREFIX}" ]; then
+    LIBOMP_PREFIX="$(brew --prefix libomp)"
+fi
+if [ -n "${LIBOMP_PREFIX}" ]; then
+    # FindOpenMP doesn't look there, so set the necessary configs manually.
+    cmake_params+=(-DOpenMP_C_FLAGS="-Xclang -fopenmp -I${LIBOMP_PREFIX}/include")
     cmake_params+=(-DOpenMP_C_LIB_NAMES="libomp")
     cmake_params+=(-DOpenMP_libomp_LIBRARY="omp")
-    LDFLAGS="-L$(brew --prefix libomp)/lib"
+    # The rpath is for conda-forge's libomp, whose install name is @rpath/libomp.dylib: without
+    # it, delocate can't find the library to copy into the wheel.
+    LDFLAGS="-L${LIBOMP_PREFIX}/lib -Wl,-rpath,${LIBOMP_PREFIX}/lib"
     export LDFLAGS
 
     if [ -n "${SUITESPARSE_MACOS_ARCH}" ]; then

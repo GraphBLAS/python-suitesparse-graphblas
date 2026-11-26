@@ -26,7 +26,7 @@ def test_openmp():
     # builds a working, but serial, library, so a serial build is invisible
     # from the outside: conda-forge's graphblas 10.5.0 shipped that way on
     # osx-arm64. Wheels build GraphBLAS from source in suitesparse.sh, where
-    # macOS has to point CMake at Homebrew's libomp by hand, so the same slip
+    # macOS has to point CMake at libomp by hand, so the same slip
     # is possible here.
     val_ptr = ffi.new("int32_t*")
     info = lib.GrB_Global_get_INT32(lib.GrB_GLOBAL, val_ptr, lib.GxB_LIBRARY_OPENMP)
