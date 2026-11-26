@@ -793,7 +793,7 @@ def _arena_like_0():
     """Arena 1, which allocates as arena 0 does.  It's made once: arenas can't be changed.
 
     Other tests that run in this process keep arena 5 uninitialized (test_can_unclaim_buffer)
-    and use arena 6 (`recording_arena` in test_memory.py).
+    and use arena 6 (the `recording_arena` fixture in conftest.py).
     """
     k = 1
     malloc, free = ffi.new("void**"), ffi.new("void**")
