@@ -379,8 +379,6 @@ def test_print(kind):
     assert defn in out
 
     def fprint_silent_then_short():
-        # A capture that gets no output at all fails on Emscripten, where reading the empty
-        # pipe raises BlockingIOError
         _func(kind, "fprint")(op, ffi.NULL, "silent_op", lib.GxB_SILENT)
         _func(kind, "fprint")(op, ffi.NULL, b"short_op", lib.GxB_SHORT)
 
