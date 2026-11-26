@@ -422,20 +422,25 @@ def test_binread_unknown_field(tmp_path, offset, value, message):
         binary.binread(path)
 
 
-@pytest.mark.xfail(
-    strict=True,
-    raises=AssertionError,
-    reason="binwrite lets comments make the header longer than the 512 bytes binread skips",
-)
 def test_binwrite_long_comments(tmp_path):
+    # binread skips a header of exactly GRB_HEADER_LEN bytes, so binwrite refuses
+    # comments that would make it longer, before it opens the file
     A = _make_matrix(lib.GrB_INT64, "sparse")
     path = tmp_path / "matrix.binfile"
-    try:
+    binary.binwrite(A, path, comments="")
+    used = len(path.read_bytes()[: binary.GRB_HEADER_LEN].rstrip(b" "))
+    room = binary.GRB_HEADER_LEN - used
+    # The longest comment that fits round-trips
+    binary.binwrite(A, path, comments="x" * room)
+    _assert_matrices_equal(A, binary.binread(path))
+    # One more character is refused, and nothing is written
+    path.unlink()
+    with pytest.raises(ValueError, match="comments are too long"):
+        binary.binwrite(A, path, comments="x" * (room + 1))
+    assert not path.exists()
+    with pytest.raises(ValueError, match="comments are too long"):
         binary.binwrite(A, path, comments="x" * binary.GRB_HEADER_LEN)
-    except ValueError:  # refusing such comments would do as well as shortening them
-        assert not path.exists()
-    else:
-        _assert_matrices_equal(A, binary.binread(path))
+    assert not path.exists()
     _assert_matrices_equal(A, _make_matrix(lib.GrB_INT64, "sparse"))
 
 

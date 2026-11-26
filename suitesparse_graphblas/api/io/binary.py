@@ -73,6 +73,9 @@ def binwrite(A, filename, comments=None, opener=Path.open):
     ``opener`` opens the file for writing (e.g. ``gzip.open`` to compress it).  To avoid a
     copy, ``A`` is unpacked while it is written and packed again afterwards (even if writing
     fails), so other threads must not use ``A`` meanwhile.
+
+    ``comments`` must be ASCII, and short enough that the text header fits in
+    ``GRB_HEADER_LEN`` (512) bytes; otherwise this raises ValueError and writes nothing.
     """
     if isinstance(filename, str):
         filename = Path(filename)
@@ -245,6 +248,11 @@ def binwrite(A, filename, comments=None, opener=Path.open):
         )
         header_content = header_template.format(**vars)
         header = f"{header_content: <{GRB_HEADER_LEN}}".encode("ascii")
+        if len(header) > GRB_HEADER_LEN:
+            raise ValueError(
+                f"comments are too long: the header would be {len(header)} bytes, "
+                f"and binread reads only the first {GRB_HEADER_LEN}"
+            )
 
         with opener(filename, "wb") as f:
             fwrite = f.write
