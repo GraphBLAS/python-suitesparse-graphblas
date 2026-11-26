@@ -1,9 +1,27 @@
+import importlib
+import os
 import sys
 
 import pytest
 
 import suitesparse_graphblas
-from suitesparse_graphblas import ffi, lib
+from suitesparse_graphblas import (
+    bool_types,
+    check_status,
+    complex_types,
+    ffi,
+    grb_types,
+    integer_types,
+    lib,
+    libget,
+    matrix,
+    real_types,
+    signed_integer_types,
+    supports_complex,
+    unsigned_integer_types,
+    vararg,
+)
+from suitesparse_graphblas.api import grb_type
 
 
 def test_matrix_existence():
@@ -71,3 +89,94 @@ def test_version_tracks_libgraphblas():
         pytest.skip(f"development build between releases: {version}")
     parts = tuple(int(x) for x in version.split(".")[:3])
     assert parts == suitesparse_graphblas.libgraphblas_version
+
+
+def test_libget():
+    assert libget("GrB_INP0") == lib.GrB_INP0
+    assert libget("GrB_FP64") == lib.GrB_FP64
+    # A GrB_ name that GraphBLAS has only as GxB_ falls back to it
+    assert not hasattr(lib, "GrB_HYPER_SWITCH")
+    assert libget("GrB_HYPER_SWITCH") == lib.GxB_HYPER_SWITCH
+    assert not hasattr(lib, "GrB_FC64")
+    if supports_complex():
+        assert libget("GrB_FC64") == lib.GxB_FC64
+    # If neither exists, the error names what was asked for
+    with pytest.raises(AttributeError, match="GrB_NO_SUCH_NAME"):
+        libget("GrB_NO_SUCH_NAME")
+
+
+def _type_names(types):
+    return {grb_type.grb_type_get_string(ffi.new("GrB_Type*", T), lib.GrB_NAME) for T in types}
+
+
+def test_type_sets():
+    assert _type_names(bool_types) == {"GrB_BOOL"}
+    assert _type_names(signed_integer_types) == {"GrB_INT8", "GrB_INT16", "GrB_INT32", "GrB_INT64"}
+    assert _type_names(unsigned_integer_types) == {
+        "GrB_UINT8",
+        "GrB_UINT16",
+        "GrB_UINT32",
+        "GrB_UINT64",
+    }
+    assert integer_types == signed_integer_types | unsigned_integer_types
+    assert _type_names(real_types) == {"GrB_FP32", "GrB_FP64"}
+    expected_complex = {"GxB_FC32", "GxB_FC64"} if supports_complex() else set()
+    assert _type_names(complex_types) == expected_complex
+    assert grb_types == bool_types | integer_types | real_types | complex_types
+    assert len(grb_types) == 11 + len(complex_types)
+
+
+_complex_functions = {
+    "matrix": ["set", "get", "matrix_build", "matrix_extract_tuples"],
+    "vector": ["set", "get", "vector_build", "vector_extract_tuples"],
+    "scalar": ["set", "get"],
+    "monoid": ["monoid_new", "monoid_terminal_new"],
+    "iterator": ["iterator_get"],
+}
+
+
+@pytest.mark.parametrize("module", _complex_functions)
+def test_complex_functions(module):
+    # The functional API has its fc32 and fc64 functions only when the build has complex types
+    mod = importlib.import_module(f"suitesparse_graphblas.api.{module}")
+    names = {name for name in vars(mod) if name.endswith(("_fc32", "_fc64"))}
+    expected = {f"{prefix}_{t}" for prefix in _complex_functions[module] for t in ["fc32", "fc64"]}
+    assert names == (expected if supports_complex() else set())
+
+
+# conda-forge's cffi links conda's libffi, and through it a variadic call on macOS arm64 loses
+# its variadic arguments, with or without vararg: a double arrives as 0.0 and an int32 setting
+# doesn't change (cffi 2.0.0, libffi 3.5.2).  PyPI's cffi links the system libffi and works.
+_conda_on_osx_arm64 = (
+    sys.platform == "darwin"
+    and suitesparse_graphblas._is_osx_arm64
+    and os.path.isdir(os.path.join(sys.prefix, "conda-meta"))
+)
+
+
+@pytest.mark.xfail(
+    _conda_on_osx_arm64,
+    reason="variadic calls lose their arguments with conda-forge's cffi on macOS arm64",
+)
+def test_vararg():
+    # vararg makes a value safe to pass to a variadic GraphBLAS function on every
+    # platform: double, int32, and pointer (for the getters)
+    A = matrix.matrix_new(lib.GrB_FP64, 3, 3)
+    check_status(
+        A,
+        lib.GxB_Matrix_Option_set(A[0], lib.GxB_HYPER_SWITCH, vararg(ffi.cast("double", 0.375))),
+    )
+    assert matrix.matrix_hyper_switch(A) == 0.375
+    check_status(
+        A,
+        lib.GxB_Matrix_Option_set(
+            A[0], lib.GxB_SPARSITY_CONTROL, vararg(ffi.cast("int32_t", lib.GxB_BITMAP))
+        ),
+    )
+    assert matrix.matrix_sparsity_control(A) == lib.GxB_BITMAP
+    hyper_switch = ffi.new("double*")
+    check_status(A, lib.GxB_Matrix_Option_get(A[0], lib.GxB_HYPER_SWITCH, vararg(hyper_switch)))
+    assert hyper_switch[0] == 0.375
+    sparsity = ffi.new("int32_t*")
+    check_status(A, lib.GxB_Matrix_Option_get(A[0], lib.GxB_SPARSITY_CONTROL, vararg(sparsity)))
+    assert sparsity[0] == lib.GxB_BITMAP

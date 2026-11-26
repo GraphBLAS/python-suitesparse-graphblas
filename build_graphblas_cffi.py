@@ -49,7 +49,12 @@ ffibuilder.set_source(
     library_dirs=library_dirs,
 )
 
-ffibuilder.cdef((ss_g / "suitesparse_graphblas.h").read_text())
+# SUITESPARSE_GRAPHBLAS_NO_COMPLEX=1 leaves out the complex types and functions, so that CI
+# can test the package without them.
+header = "suitesparse_graphblas.h"
+if os.environ.get("SUITESPARSE_GRAPHBLAS_NO_COMPLEX"):
+    header = "suitesparse_graphblas_no_complex.h"
+ffibuilder.cdef((ss_g / header).read_text())
 
 
 def get_extension(apply_msvc_patch: bool = None, extra_compile_args=()):

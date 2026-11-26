@@ -9,7 +9,7 @@ def container_free(c):
 
     """
     info = lib.GxB_Container_free(c)
-    if info != lib.GrB_SUCCESS:
+    if info != lib.GrB_SUCCESS:  # pragma: no cover (GxB_Container_free always succeeds)
         raise _error_code_lookup.get(info, RuntimeError)(
             f"GxB_Container_free failed with info={info}"
         )

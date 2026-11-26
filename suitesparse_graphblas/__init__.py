@@ -103,7 +103,8 @@ def initialize(*, blocking=False, memory_manager="numpy"):
         info = lib.GrB_init(blocking)
     else:
         raise ValueError(f'memory_manager argument must be "numpy" or "c"; got: {memory_manager!r}')
-    if info != lib.GrB_SUCCESS:
+    # Fails only if already initialized (checked above), on bad arguments, or out of memory
+    if info != lib.GrB_SUCCESS:  # pragma: no cover (defensive)
         raise _error_code_lookup.get(info, RuntimeError)(
             f"Failed to initialize GraphBLAS (info={info})"
         )
@@ -187,9 +188,12 @@ _error_code_lookup = {
     lib.GrB_INDEX_OUT_OF_BOUNDS: ex.IndexOutOfBound,
     lib.GrB_PANIC: ex.Panic,
     lib.GrB_NOT_IMPLEMENTED: ex.NotImplementedException,
+    lib.GrB_ALREADY_SET: ex.AlreadySet,
     # GxB Errors
     lib.GxB_EXHAUSTED: StopIteration,
     lib.GxB_JIT_ERROR: ex.JitError,
+    lib.GxB_GPU_ERROR: ex.GpuError,
+    lib.GxB_OUTPUT_IS_READONLY: ex.OutputIsReadonly,
 }
 GrB_SUCCESS = lib.GrB_SUCCESS
 GrB_NO_VALUE = lib.GrB_NO_VALUE
@@ -238,7 +242,9 @@ def check_status(obj, response_code):
     string = ffi.new("char**")
     error_func(string, obj)
     text = ffi.string(string[0]).decode()
-    raise _error_code_lookup[response_code](text)
+    # Codes without a class of their own (GrB_ALREADY_SET, GxB_OUTPUT_IS_READONLY,
+    # GxB_GPU_ERROR, or any new one) raise the base class
+    raise _error_code_lookup.get(response_code, ex.GraphBLASException)(text)
 
 
 class burble:
@@ -266,8 +272,8 @@ class burble:
 
     Example as a context manager:
 
-    >>> with burble():
-    >>>     n = matrix.matrix_nvals(A)
+    >>> with burble:
+    ...     n = matrix.matrix_nvals(A)
       [ GrB_Matrix_nvals
          1.91e-06 sec ]
 
@@ -282,25 +288,25 @@ class burble:
         val_ptr = ffi.new("int32_t*")
         info = lib.GxB_Global_Option_get_INT32(lib.GxB_BURBLE, val_ptr)
         if info != lib.GrB_SUCCESS:
-            raise _error_code_lookup[info](
-                "Failed to get burble status (has GraphBLAS been initialized?"
+            raise _error_code_lookup.get(info, ex.GraphBLASException)(
+                "Failed to get burble status (has GraphBLAS been initialized?)"
             )
-        return val_ptr[0]
+        return bool(val_ptr[0])
 
     def enable(self):
         """Enable diagnostic output"""
         info = lib.GxB_Global_Option_set_INT32(lib.GxB_BURBLE, ffi.cast("int32_t", 1))
         if info != lib.GrB_SUCCESS:
-            raise _error_code_lookup[info](
-                "Failed to enable burble (has GraphBLAS been initialized?"
+            raise _error_code_lookup.get(info, ex.GraphBLASException)(
+                "Failed to enable burble (has GraphBLAS been initialized?)"
             )
 
     def disable(self):
         """Disable diagnostic output"""
         info = lib.GxB_Global_Option_set_INT32(lib.GxB_BURBLE, ffi.cast("int32_t", 0))
         if info != lib.GrB_SUCCESS:
-            raise _error_code_lookup[info](
-                "Failed to disable burble (has GraphBLAS been initialized?"
+            raise _error_code_lookup.get(info, ex.GraphBLASException)(
+                "Failed to disable burble (has GraphBLAS been initialized?)"
             )
 
     def __enter__(self):

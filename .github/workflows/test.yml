@@ -33,6 +33,12 @@ jobs:
         # source: ["source"]
         # A trailing "t" means the free-threaded (no-GIL) build of that version.
         python-version: ["3.11", "3.12", "3.13", "3.14", "3.14t", "3.15", "3.15t"]
+        include:
+          # Also build psg without complex types (GraphBLAS always has them) and test that.
+          # GraphBLAS is from conda-forge; "-no-complex" sets the switch in "Build".
+          - os: ubuntu-latest
+            source: conda-forge-no-complex
+            python-version: "3.15"
     steps:
     - name: Checkout
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -100,8 +106,13 @@ jobs:
         # make install
         # popd
     - name: Build
+      env:
+        SUITESPARSE_GRAPHBLAS_NO_COMPLEX: ${{ contains(matrix.source, 'no-complex') && '1' || '' }}
       run: |
         pip install -e . --no-deps
+        if [[ -n $SUITESPARSE_GRAPHBLAS_NO_COMPLEX ]]; then
+          python -c 'import suitesparse_graphblas as ssgb; assert not ssgb.supports_complex()'
+        fi
     - name: Test
       env:
         PYVER: ${{ matrix.python-version }}
@@ -134,7 +145,7 @@ jobs:
         # The "Coverage report" step wrote coverage.xml, so skip the uploader's own search for
         # gcov, Xcode, Swift and coverage.py data (it only logs a warning for each).
         plugins: noop
-        name: ${{ matrix.os }} ${{ matrix.python-version }}
+        name: ${{ matrix.os }} ${{ matrix.python-version }}${{ contains(matrix.source, 'no-complex') && ' no-complex' || '' }}
         # PRs from forks upload without a token.  Pushes to main need the repository
         # secret CODECOV_TOKEN.  An upload that fails doesn't fail the job.
         token: ${{ secrets.CODECOV_TOKEN }}

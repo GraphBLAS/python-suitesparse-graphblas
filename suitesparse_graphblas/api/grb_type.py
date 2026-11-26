@@ -155,7 +155,10 @@ def grb_type_get_string(T, field):
     'GrB_INT64'
 
     """
-    val = ffi.new("char[256]")
+    # GraphBLAS copies the whole string, so make room for all of it
+    size = ffi.new("size_t*")
+    check_status(T, lib.GrB_Type_get_SIZE(T[0], size, field))
+    val = ffi.new("char[]", size[0])
     check_status(T, lib.GrB_Type_get_String(T[0], val, field))
     return ffi.string(val).decode()
 

@@ -3,7 +3,7 @@ from pathlib import Path
 
 import numpy as np
 
-from suitesparse_graphblas import __version__, check_status, ffi, lib
+from suitesparse_graphblas import __version__, check_status, ffi, lib, supports_complex
 from suitesparse_graphblas.api import matrix
 from suitesparse_graphblas.utils import empty, give_buffer
 
@@ -42,8 +42,6 @@ _ss_typecodes = {
     lib.GrB_UINT64: 8,
     lib.GrB_FP32: 9,
     lib.GrB_FP64: 10,
-    lib.GxB_FC32: 11,
-    lib.GxB_FC64: 12,
 }
 
 _ss_typenames = {
@@ -58,9 +56,13 @@ _ss_typenames = {
     lib.GrB_UINT64: "GrB_UINT64",
     lib.GrB_FP32: "GrB_FP32",
     lib.GrB_FP64: "GrB_FP64",
-    lib.GxB_FC32: "GxB_FC32",
-    lib.GxB_FC64: "GxB_FC64",
 }
+
+if supports_complex():
+    _ss_typecodes[lib.GxB_FC32] = 11
+    _ss_typecodes[lib.GxB_FC64] = 12
+    _ss_typenames[lib.GxB_FC32] = "GxB_FC32"
+    _ss_typenames[lib.GxB_FC64] = "GxB_FC64"
 
 _ss_codetypes = {v: k for k, v in _ss_typecodes.items()}
 
@@ -71,6 +73,9 @@ def binwrite(A, filename, comments=None, opener=Path.open):
     ``opener`` opens the file for writing (e.g. ``gzip.open`` to compress it).  To avoid a
     copy, ``A`` is unpacked while it is written and packed again afterwards (even if writing
     fails), so other threads must not use ``A`` meanwhile.
+
+    ``comments`` must be ASCII, and short enough that the text header fits in
+    ``GRB_HEADER_LEN`` (512) bytes; otherwise this raises ValueError and writes nothing.
     """
     if isinstance(filename, str):
         filename = Path(filename)
@@ -218,7 +223,7 @@ def binwrite(A, filename, comments=None, opener=Path.open):
         nvec[0] = nrows[0]
         fmt_string = "FULLR"
 
-    else:  # pragma nocover
+    else:  # pragma: no cover (defensive: a materialized matrix is one of the above)
         raise TypeError(f"Unknown Matrix format {format[0]}")
 
     suitesparse_version = (
@@ -227,23 +232,28 @@ def binwrite(A, filename, comments=None, opener=Path.open):
         f"{lib.GxB_IMPLEMENTATION_SUB}"
     )
 
-    vars = dict(  # noqa: C408
-        suitesparse_version=suitesparse_version,
-        user_agent="pygraphblas-" + __version__,
-        nrows=nrows[0],
-        ncols=ncols[0],
-        nvals=nvals[0],
-        nvec=nvec[0],
-        format=fmt_string,
-        size=typesize[0],
-        type=_ss_typenames[matrix_type[0]],
-        iso=int(is_iso[0]),
-        comments=comments,
-    )
-    header_content = header_template.format(**vars)
-    header = f"{header_content: <{GRB_HEADER_LEN}}".encode("ascii")
-
     try:
+        vars = dict(  # noqa: C408
+            suitesparse_version=suitesparse_version,
+            user_agent="pygraphblas-" + __version__,
+            nrows=nrows[0],
+            ncols=ncols[0],
+            nvals=nvals[0],
+            nvec=nvec[0],
+            format=fmt_string,
+            size=typesize[0],
+            type=_ss_typenames[matrix_type[0]],
+            iso=int(is_iso[0]),
+            comments=comments,
+        )
+        header_content = header_template.format(**vars)
+        header = f"{header_content: <{GRB_HEADER_LEN}}".encode("ascii")
+        if len(header) > GRB_HEADER_LEN:
+            raise ValueError(
+                f"comments are too long: the header would be {len(header)} bytes, "
+                f"and binread reads only the first {GRB_HEADER_LEN}"
+            )
+
         with opener(filename, "wb") as f:
             fwrite = f.write
             fwrite(header)
@@ -377,8 +387,14 @@ def binwrite(A, filename, comments=None, opener=Path.open):
 
         elif by_row and is_full:
             check_status(A, lib.GxB_Matrix_pack_FullR(A[0], Ax, Ax_size[0], is_iso[0], NULL))
-        else:
+        else:  # pragma: no cover (unreachable: the unpacking above raised already)
             raise TypeError("This should never happen")
+
+        # Packing resets these to their defaults, so restore them (in the order `binread` sets
+        # them)
+        matrix.matrix_set_sparsity_control(A, sparsity_control[0])
+        matrix.matrix_set_hyper_switch(A, hyper_switch[0])
+        matrix.matrix_set_bitmap_switch(A, bitmap_switch[0])
 
 
 def binread(filename, opener=Path.open):
@@ -390,7 +406,13 @@ def binread(filename, opener=Path.open):
         filename = Path(filename)
 
     with opener(filename, "rb") as f:
-        fread = f.read
+
+        def fread(nbytes):
+            # A short read would leave `frombuff` pointing past the end of the data
+            data = f.read(nbytes)
+            if len(data) != nbytes:
+                raise EOFError(f"{filename} is truncated")
+            return data
 
         fread(GRB_HEADER_LEN)
         impl = frombuff("uint64_t*", fread(sizeof("uint64_t")))
