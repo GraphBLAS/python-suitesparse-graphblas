@@ -736,6 +736,8 @@ def test_serialize_nthreads_invalid(kind):
     with pytest.raises(TypeError):
         ser(other, nthreads=2)  # the wrong kind of object
     assert not _context_engaged(probe)
+    with pytest.raises(TypeError):
+        ser(other)  # nor does the default path swallow the error
     with pytest.raises(InvalidObject):
         deser(bytes(64), nthreads=2)
     assert not _context_engaged(probe)
