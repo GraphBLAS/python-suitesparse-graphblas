@@ -268,8 +268,9 @@ def test_set_int32_rejects_non_int32(name):
             with pytest.raises(OverflowError):
                 set_(wrapped)
             assert get() == old
-        # So is a float or a str, rather than truncated (4.7 would set 4) or taken as a
-        # character code ("3" would set 51)
+        # So is a Python float (or np.float64), rather than truncated (4.7 would set 4), and a
+        # str, rather than taken as a character code ("3" would set 51).  (cffi converts other
+        # objects with `__int__`, such as np.float32, Decimal and Fraction, as it did before.)
         for wrong in (value + 0.7, "3"):
             with pytest.raises(TypeError):
                 set_(wrong)

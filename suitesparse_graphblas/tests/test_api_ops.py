@@ -312,8 +312,8 @@ def test_set_int32_not_allowed(kind):
 @pytest.mark.parametrize("kind", list(MODULES))
 def test_set_int32_rejects_non_int32(kind):
     # A value that doesn't fit in an int32 is an error, rather than wrapping around to one that
-    # does (and that GraphBLAS then rejects, here).  So is a float or a str, rather than
-    # truncated or taken as a character code.
+    # does (and that GraphBLAS then rejects, here).  So is a Python float (or np.float64) or a
+    # str, rather than truncated or taken as a character code.
     get_int32 = _func(kind, "get_int32")
     set_int32 = _func(kind, "set_int32")
     obj = _user_defined(kind)
