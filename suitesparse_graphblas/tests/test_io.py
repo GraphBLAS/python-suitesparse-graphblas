@@ -13,7 +13,6 @@ from suitesparse_graphblas import (
     bool_types,
     check_status,
     complex_types,
-    exceptions,
     ffi,
     grb_types,
     lib,
@@ -439,13 +438,24 @@ _arrays_offset = (
 )
 
 
+def _symmetric_matrix(format, sparsity):
+    """A 4x4 INT64 matrix whose pattern is its own transpose, so that its arrays are the same
+    whether it is held by row or by column: entries (0, 0), (0, 2), (2, 0), and (3, 3)."""
+    A = matrix.matrix_new(lib.GrB_INT64, 4, 4)
+    for k, (i, j) in enumerate([(0, 0), (0, 2), (2, 0), (3, 3)]):
+        matrix.set_int64(A, 10 * k, i, j)
+    matrix.matrix_set_format(A, format)
+    matrix.matrix_set_sparsity_control(A, sparsity)
+    return A
+
+
 def _binfile_arrays(data, sparsity):
-    """The index arrays of `_make_matrix(lib.GrB_INT64, "sparse")` (3x4, by row) in `data`, a
-    bytearray of the file binwrite wrote for it, as writable views of `data`."""
+    """The index arrays of `_symmetric_matrix` in `data`, a bytearray of the file binwrite wrote
+    for it, as writable views of `data`."""
     sizes = {
-        lib.GxB_SPARSE: [("Ap", np.uint64, 4), ("Ai", np.uint64, 3)],
-        lib.GxB_HYPERSPARSE: [("Ap", np.uint64, 3), ("Ah", np.uint64, 2), ("Ai", np.uint64, 3)],
-        lib.GxB_BITMAP: [("Ab", np.int8, 12)],
+        lib.GxB_SPARSE: [("Ap", np.uint64, 5), ("Ai", np.uint64, 4)],
+        lib.GxB_HYPERSPARSE: [("Ap", np.uint64, 4), ("Ah", np.uint64, 3), ("Ai", np.uint64, 4)],
+        lib.GxB_BITMAP: [("Ab", np.int8, 16)],
     }[sparsity]
     arrays = {}
     offset = _arrays_offset
@@ -456,37 +466,62 @@ def _binfile_arrays(data, sparsity):
 
 
 # Ways a file can hold an invalid matrix, each as (sparsity, name of an array, the array as
-# binwrite wrote it, what to change it to, what binread raises: GraphBLAS calls indices out of
-# order or repeated "out of bounds", and anything else an invalid object)
-_bitmap = [0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1]
-_out_of_bounds = exceptions.IndexOutOfBound
+# binwrite wrote it, what to change it to)
+_bitmap = [1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1]
 _invalid_arrays = {
-    "column out of range": (lib.GxB_SPARSE, "Ai", [1, 0, 3], [1, 0, 4], InvalidObject),
-    "columns out of order": (lib.GxB_SPARSE, "Ai", [1, 0, 3], [1, 3, 0], _out_of_bounds),
-    "duplicate column": (lib.GxB_SPARSE, "Ai", [1, 0, 3], [1, 0, 0], _out_of_bounds),
-    "row pointers decrease": (lib.GxB_SPARSE, "Ap", [0, 1, 1, 3], [0, 2, 1, 3], InvalidObject),
-    "row out of range": (lib.GxB_HYPERSPARSE, "Ah", [0, 2], [0, 3], InvalidObject),
-    "rows out of order": (lib.GxB_HYPERSPARSE, "Ah", [0, 2], [2, 0], InvalidObject),
-    "bitmap not 0 or 1": (lib.GxB_BITMAP, "Ab", _bitmap, [2] * 12, InvalidObject),
-    "bitmap not nvals": (lib.GxB_BITMAP, "Ab", _bitmap, [1] * 12, InvalidObject),
+    "index out of range": (lib.GxB_SPARSE, "Ai", [0, 2, 0, 3], [0, 2, 0, 4]),
+    "indices out of order": (lib.GxB_SPARSE, "Ai", [0, 2, 0, 3], [2, 0, 0, 3]),
+    "duplicate index": (lib.GxB_SPARSE, "Ai", [0, 2, 0, 3], [0, 0, 0, 3]),
+    "pointers decrease": (lib.GxB_SPARSE, "Ap", [0, 2, 2, 3, 4], [0, 2, 1, 3, 4]),
+    "hypersparse index out of range": (lib.GxB_HYPERSPARSE, "Ah", [0, 2, 3], [0, 2, 4]),
+    "hypersparse indices out of order": (lib.GxB_HYPERSPARSE, "Ah", [0, 2, 3], [2, 0, 3]),
+    "bitmap not 0 or 1": (lib.GxB_BITMAP, "Ab", _bitmap, [2] + _bitmap[1:]),
+    "bitmap not nvals": (lib.GxB_BITMAP, "Ab", _bitmap, [1] * 16),
 }
+_formats = {lib.GxB_BY_ROW: "by row", lib.GxB_BY_COL: "by column"}
 
 
-@pytest.mark.parametrize("case", _invalid_arrays)
-def test_binread_invalid_matrix(tmp_path, case):
-    # GraphBLAS checks what binread gives it, so a corrupt file can't make an invalid matrix
-    sparsity, name, written, invalid, exception = _invalid_arrays[case]
-    A = _make_matrix(lib.GrB_INT64, "sparse")
-    matrix.matrix_set_sparsity_control(A, sparsity)
-    path = tmp_path / "matrix.binfile"
-    binary.binwrite(A, path)
+def _invalid_binfile(path, format, case):
+    """Write a file at `path` that binread reads as an invalid matrix, made as `case` says."""
+    sparsity, name, written, invalid = _invalid_arrays[case]
+    binary.binwrite(_symmetric_matrix(format, sparsity), path)
     data = bytearray(path.read_bytes())
     array = _binfile_arrays(data, sparsity)[name]
     assert array.tolist() == written
     array[:] = invalid
     path.write_bytes(data)
-    with pytest.raises(exception):
+
+
+@pytest.mark.parametrize("case", _invalid_arrays)
+@pytest.mark.parametrize("format", _formats, ids=_formats.get)
+def test_binread_invalid_matrix(tmp_path, format, case):
+    # binread checks the matrix it reads, so a corrupt file can't make an invalid one
+    path = tmp_path / "matrix.binfile"
+    sparsity = _invalid_arrays[case][0]
+    binary.binwrite(_symmetric_matrix(format, sparsity), path)
+    _assert_matrices_equal(binary.binread(path), _symmetric_matrix(format, sparsity))
+    _invalid_binfile(path, format, case)
+    with pytest.raises(InvalidObject, match="does not hold a valid matrix"):
         binary.binread(path)
+
+
+def test_binread_invalid_matrix_frees_only_its_own(tmp_path):
+    # A matrix binread rejects is freed once, when the exception that holds it goes, and with
+    # nothing else.  (When GraphBLAS checked the matrix as it packed it, a failed check freed
+    # the matrix itself, and binread's handle to it was left to free whatever matrix came to
+    # use its memory next.)
+    import gc
+
+    path = tmp_path / "matrix.binfile"
+    _invalid_binfile(path, lib.GxB_BY_ROW, "index out of range")
+    with pytest.raises(InvalidObject) as excinfo:
+        binary.binread(path)
+    matrices = [_make_matrix(lib.GrB_INT64, "sparse") for _ in range(10)]
+    del excinfo
+    gc.collect()
+    for A in matrices:
+        assert matrix.matrix_nvals(A) == 3
+        assert matrix.get_int64(A, 2, 3) == _values(lib.GrB_INT64)[1]
 
 
 def test_binread_other_version(tmp_path):
