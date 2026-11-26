@@ -97,7 +97,8 @@ def test_libget():
     assert not hasattr(lib, "GrB_HYPER_SWITCH")
     assert libget("GrB_HYPER_SWITCH") == lib.GxB_HYPER_SWITCH
     assert not hasattr(lib, "GrB_FC64")
-    assert libget("GrB_FC64") == lib.GxB_FC64
+    if supports_complex():
+        assert libget("GrB_FC64") == lib.GxB_FC64
     # If neither exists, the error names what was asked for
     with pytest.raises(AttributeError, match="GrB_NO_SUCH_NAME"):
         libget("GrB_NO_SUCH_NAME")
