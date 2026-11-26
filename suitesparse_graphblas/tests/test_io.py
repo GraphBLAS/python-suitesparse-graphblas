@@ -1,7 +1,10 @@
 import bz2
+import functools
 import gzip
 import platform
 import struct
+import sys
+from contextlib import contextmanager
 from pathlib import Path
 
 import numpy as np
@@ -30,8 +33,11 @@ except ImportError:  # Pyodide before 314 has it as a separate package
 if platform.system() == "Windows":
     pytest.skip("skipping windows-only tests", allow_module_level=True)
 
+from suitesparse_graphblas.api import context  # isort:skip
+from suitesparse_graphblas.api.global_options import global_get_int32  # isort:skip
 from suitesparse_graphblas.exceptions import InvalidObject, InvalidValue  # isort:skip
 from suitesparse_graphblas.io import binary, serialize  # isort:skip
+from suitesparse_graphblas.utils import claim_buffer  # isort:skip
 
 NULL = ffi.NULL
 
@@ -465,6 +471,18 @@ def test_get_serialize_desc():
     assert _compression(get(lib.GxB_COMPRESSION_NONE, 9)) == lib.GxB_COMPRESSION_NONE
 
 
+@pytest.mark.parametrize(
+    "compression", [lib.GxB_COMPRESSION_DEFAULT, None], ids=["default", "None"]
+)
+def test_get_serialize_desc_nthreads_deprecated(compression):
+    # The number of threads is a Context setting in GraphBLAS 10, not a descriptor setting.
+    # The warning names the replacement and the caller, and GraphBLAS still rejects it.
+    with pytest.warns(DeprecationWarning, match="serialize_matrix") as record:
+        with pytest.raises(InvalidValue):
+            serialize.get_serialize_desc(compression, nthreads=1)
+    assert [w.filename for w in record] == [__file__]
+
+
 _serialize_options = {
     "none": (lib.GxB_COMPRESSION_NONE, None),
     "default": (lib.GxB_COMPRESSION_DEFAULT, None),
@@ -585,20 +603,286 @@ def test_deserialize_invalid():
             deserialize(bytes(64))
 
 
-@pytest.mark.xfail(
-    strict=True,
-    raises=InvalidValue,
-    reason="serialize sets nthreads on a descriptor, which GraphBLAS 10 rejects with "
-    "GrB_INVALID_VALUE: the number of threads is a GxB_Context setting now",
-)
+def _context_engaged(probe):
+    """Whether a GxB_Context is engaged on this thread.
+
+    GraphBLAS can't say which one, but disengaging a Context that isn't engaged, `probe`,
+    fails with GrB_INVALID_VALUE if another one is, and changes nothing.  Make `probe` before
+    the Contexts it looks for: one freed while engaged (a bug) stays the engaged Context, and
+    a probe made later could be given its address.
+    """
+    info = lib.GxB_Context_disengage(probe[0])
+    assert info in {lib.GrB_SUCCESS, lib.GrB_INVALID_VALUE}
+    return info == lib.GrB_INVALID_VALUE
+
+
+@contextmanager
+def _engaged(nthreads):
+    """Engage a new Context that uses `nthreads` threads on this thread."""
+    ctx = context.context_new()
+    context.context_set_nthreads(ctx, nthreads)
+    context.context_engage(ctx)
+    try:
+        yield
+    finally:
+        context.context_disengage(ctx)
+
+
+def _assert_vectors_equal(v, w):
+    assert vector.vector_type(w) == vector.vector_type(v)
+    assert vector.vector_size(w) == vector.vector_size(v)
+    for x, y in zip(
+        vector.vector_extract_tuples_int64(v), vector.vector_extract_tuples_int64(w), strict=True
+    ):
+        np.testing.assert_array_equal(x, y)
+
+
+def _big(kind):
+    """A Matrix or Vector whose blob shows how many threads serialized it.
+
+    Returns the object, the functions that serialize and deserialize it, and one that asserts
+    that two of them are equal.  GraphBLAS compresses an array as a single block if it uses
+    one thread, and as blocks of at least 64 KiB if it uses more (see GB_serialize_array.c).
+    It uses one thread for each GxB_CHUNK bytes (64 KiB by default), up to the number of
+    threads of the Context, and the 512 KiB of values here are enough for several.
+    """
+    if kind == "matrix":
+        A = _numbered_matrix(256)
+        return A, serialize.serialize_matrix, serialize.deserialize_matrix, _assert_matrices_equal
+    n = 256 * 256
+    v = vector.vector_new(lib.GrB_INT64, n)
+    indices = np.arange(n, dtype=np.uint64)
+    vector.vector_build_int64(v, indices, np.arange(n, dtype=np.int64), n, lib.GrB_PLUS_INT64)
+    return v, serialize.serialize_vector, serialize.deserialize_vector, _assert_vectors_equal
+
+
 @pytest.mark.parametrize("kind", ["matrix", "vector"])
 def test_serialize_nthreads(kind):
-    if kind == "matrix":
-        A = _make_matrix(lib.GrB_INT64, "sparse")
-        B = serialize.deserialize_matrix(serialize.serialize_matrix(A, nthreads=1), nthreads=1)
-        _assert_matrices_equal(A, B)
-    else:
-        v = vector.vector_new(lib.GrB_INT64, 3)
-        vector.set_int64(v, 7, 2)
-        w = serialize.deserialize_vector(serialize.serialize_vector(v, nthreads=1), nthreads=1)
-        assert vector.vector_nvals(w) == 1
+    # GraphBLAS 10 rejects the number of threads in a descriptor: it's a Context setting.
+    # Serializing with `nthreads` gives what serializing under a Context with that many
+    # threads gives, and one thread gives a different result from two.
+    probe = context.context_new()
+    A, ser, deser, assert_equal = _big(kind)
+    blobs = {}
+    for nthreads in (1, 2):
+        with _engaged(nthreads):
+            expected = ser(A).tobytes()
+        blobs[nthreads] = ser(A, nthreads=nthreads).tobytes()
+        assert blobs[nthreads] == expected
+    assert blobs[1] != blobs[2]
+    assert ser(A, nthreads=np.int64(2)).tobytes() == blobs[2]  # any kind of integer will do
+    # How many threads deserialize uses doesn't show in its result
+    for blob in blobs.values():
+        for nthreads in (1, 2):
+            assert_equal(A, deser(blob, nthreads=nthreads))
+    assert not _context_engaged(probe)
+
+
+@pytest.mark.parametrize("nthreads", [None, 0, -1, -(2**40)])  # -2**40: beyond int32_t
+@pytest.mark.parametrize("kind", ["matrix", "vector"])
+def test_serialize_nthreads_default(kind, nthreads):
+    # These use the Context engaged on this thread, if any, or else GxB_CONTEXT_WORLD
+    probe = context.context_new()
+    A, ser, deser, assert_equal = _big(kind)
+    blob = ser(A).tobytes()
+    assert ser(A, nthreads=nthreads).tobytes() == blob
+    assert_equal(A, deser(blob, nthreads=nthreads))
+    expected = {engaged: ser(A, nthreads=engaged).tobytes() for engaged in (1, 2)}
+    for engaged in (1, 2):
+        with _engaged(engaged):
+            assert ser(A, nthreads=nthreads).tobytes() == expected[engaged]
+            assert_equal(A, deser(blob, nthreads=nthreads))
+            assert _context_engaged(probe)
+    assert not _context_engaged(probe)
+
+
+@pytest.mark.skipif(sys.platform == "emscripten", reason="needs cffi callbacks")
+@pytest.mark.thread_unsafe(reason="changes the global header arena")
+@pytest.mark.parametrize("nthreads", [None, 0, -1])
+@pytest.mark.parametrize("kind", ["matrix", "vector"])
+def test_serialize_nthreads_default_makes_no_context(kind, nthreads, recording_arena):
+    # The default does no Context work at all.  A new Context's header comes from the global
+    # header arena, so making and freeing one frees a block there that the GraphBLAS call
+    # alone doesn't free.  The recording arena records the blocks freed in this thread.
+    A, ser, deser, assert_equal = _big(kind)
+    blob = ser(A)
+    data = np.frombuffer(blob, np.uint8)
+    T = "Matrix" if kind == "matrix" else "Vector"
+    free = matrix.matrix_free if kind == "matrix" else vector.vector_free
+
+    def serialize_raw():
+        data_ptr, size_ptr = ffi.new("void**"), ffi.new("GrB_Index*")
+        info = getattr(lib, f"GxB_{T}_serialize_arena")(data_ptr, size_ptr, A[0], 0, NULL)
+        check_status(A, info)
+        return claim_buffer(ffi, data_ptr[0], size_ptr[0], np.dtype(np.uint8), 0)
+
+    def deserialize_raw():
+        B = ffi.new(f"GrB_{T}*")
+        blob_ptr = ffi.from_buffer("void*", data)
+        check_status(B, getattr(lib, f"GxB_{T}_deserialize")(B, NULL, blob_ptr, data.nbytes, NULL))
+        return B
+
+    calls = {
+        "serialize_raw": serialize_raw,
+        "serialize": lambda: ser(A, nthreads=nthreads),
+        "serialize_2": lambda: ser(A, nthreads=2),  # this one does make a Context
+        "deserialize_raw": deserialize_raw,
+        "deserialize": lambda: deser(blob, free=None, nthreads=nthreads),
+    }
+    k, freed = recording_arena
+    old = global_get_int32(lib.GxB_ARENA_HEADER)
+    results, frees = {}, {}
+    assert lib.GrB_Global_set_INT32(lib.GrB_GLOBAL, k, lib.GxB_ARENA_HEADER) == lib.GrB_SUCCESS
+    try:
+        for name, call in calls.items():
+            freed.addresses = []
+            results[name] = call()
+            frees[name] = len(freed.addresses)
+    finally:
+        assert lib.GrB_Global_set_INT32(lib.GrB_GLOBAL, old, lib.GxB_ARENA_HEADER) == 0
+    assert frees["serialize"] == frees["serialize_raw"]
+    assert frees["serialize_2"] == frees["serialize_raw"] + 1
+    assert frees["deserialize"] == frees["deserialize_raw"]
+    assert results["serialize"].tobytes() == results["serialize_raw"].tobytes()
+    for name in ("deserialize_raw", "deserialize"):
+        assert_equal(A, results[name])
+        free(results[name])
+
+
+@pytest.mark.parametrize("kind", ["matrix", "vector"])
+def test_serialize_nthreads_with_engaged_context(kind):
+    # GraphBLAS can't say which Context is engaged on this thread, so a call that engaged
+    # its own for `nthreads` couldn't engage that one again afterwards.  It refuses instead,
+    # and the caller's Context stays engaged.
+    probe = context.context_new()
+    A, ser, deser, assert_equal = _big(kind)
+    blob = ser(A)
+    ctx = context.context_new()
+    context.context_engage(ctx)
+    try:
+        for call in (lambda: ser(A, nthreads=2), lambda: deser(blob, nthreads=2)):
+            with pytest.raises(InvalidValue, match="engaged on this thread"):
+                call()
+            assert _context_engaged(probe)
+        # ...and it's `ctx`: disengaging it fails if another Context is engaged
+        context.context_disengage(ctx)
+        assert not _context_engaged(probe)
+    finally:
+        lib.GxB_Context_disengage(NULL)  # whichever is engaged, if the test failed
+
+
+@pytest.mark.parametrize("kind", ["matrix", "vector"])
+def test_serialize_nthreads_invalid(kind):
+    probe = context.context_new()
+    A, ser, deser, assert_equal = _big(kind)
+    blob = ser(A)
+    for call in (lambda n: ser(A, nthreads=n), lambda n: deser(blob, nthreads=n)):
+        for nthreads in (2.0, 0.0, "2"):  # not even 0.0, which would mean the default
+            with pytest.raises(TypeError):
+                call(nthreads)
+        for nthreads in (True, False, np.True_, np.False_):  # nor a bool, which would mean 1 or 0
+            with pytest.raises(TypeError, match="bool"):
+                call(nthreads)
+        with pytest.raises(OverflowError):
+            call(2**31)  # more than int32_t holds
+        assert not _context_engaged(probe)
+    # Nor do failures.  This one is while the Context is engaged.
+    other = vector.vector_new(lib.GrB_INT64) if kind == "matrix" else _numbered_matrix(2)
+    with pytest.raises(TypeError):
+        ser(other, nthreads=2)  # the wrong kind of object
+    assert not _context_engaged(probe)
+    with pytest.raises(TypeError):
+        ser(other)  # nor does the default path swallow the error
+    with pytest.raises(InvalidObject):
+        deser(bytes(64), nthreads=2)
+    assert not _context_engaged(probe)
+
+
+def test_call_with_nthreads_interrupted():
+    # The call runs under the Context, which is disengaged whatever it raises
+    probe = context.context_new()
+
+    def interrupted():
+        assert _context_engaged(probe)
+        raise KeyboardInterrupt
+
+    with pytest.raises(KeyboardInterrupt):
+        serialize._call_with_nthreads(2, interrupted)
+    assert not _context_engaged(probe)
+
+
+class _InterruptedLib:
+    """`lib`, except that the `n`th lookup of GxB_Context_disengage raises KeyboardInterrupt."""
+
+    def __init__(self, n):
+        self.lookups = 0
+        self.n = n
+
+    def __getattr__(self, name):
+        if name == "GxB_Context_disengage":
+            self.lookups += 1
+            if self.lookups == self.n:
+                raise KeyboardInterrupt
+        return getattr(lib, name)
+
+
+@pytest.mark.thread_unsafe(reason="replaces `lib` in the serialize module")
+@pytest.mark.parametrize("n", [2, 3], ids=["inner", "outer"])
+def test_call_with_nthreads_interrupted_in_finally(monkeypatch, n):
+    # A KeyboardInterrupt can come at the first bytecode of a `finally` block (PyPy can stop
+    # it there), before the block disengages the Context.  Each of the two `finally` blocks
+    # disengages it, so the other one still does.  The lookups of GxB_Context_disengage are
+    # for the probe, then the inner `finally` block, then the outer one.
+    probe = context.context_new()
+    interrupted = _InterruptedLib(n)
+    monkeypatch.setattr(serialize, "lib", interrupted)
+    with pytest.raises(KeyboardInterrupt):
+        serialize._call_with_nthreads(2, lambda: None)
+    monkeypatch.undo()
+    assert not _context_engaged(probe)
+    assert interrupted.lookups == 3
+
+
+@functools.cache
+def _arena_like_0():
+    """Arena 1, which allocates as arena 0 does.  It's made once: arenas can't be changed.
+
+    Other tests that run in this process keep arena 5 uninitialized (test_can_unclaim_buffer)
+    and use arena 6 (the `recording_arena` fixture in conftest.py).
+    """
+    k = 1
+    malloc, free = ffi.new("void**"), ffi.new("void**")
+    info = lib.GrB_Global_get_VOID(lib.GrB_GLOBAL, malloc, lib.GxB_ARENA_MALLOC)
+    assert info == lib.GrB_SUCCESS
+    info = lib.GrB_Global_get_VOID(lib.GrB_GLOBAL, free, lib.GxB_ARENA_FREE)
+    assert info == lib.GrB_SUCCESS
+    malloc = ffi.cast("void *(*)(size_t)", malloc[0])
+    free = ffi.cast("void (*)(void *)", free[0])
+    assert lib.GxB_arena_init(k, malloc, NULL, NULL, free) == lib.GrB_SUCCESS
+    return k
+
+
+@pytest.mark.thread_unsafe(reason="changes the global header and data arenas")
+@pytest.mark.parametrize("kind", ["matrix", "vector"])
+def test_deserialize_nthreads_arenas(kind):
+    # The result is in the global arenas with or without `nthreads`.  A new Context has arena
+    # 0 for both, so the one that `nthreads` engages is given the global arenas.
+    A, ser, deser, assert_equal = _big(kind)
+    blob = ser(A)
+    get = lib.GrB_Matrix_get_INT32 if kind == "matrix" else lib.GrB_Vector_get_INT32
+    fields = (lib.GxB_ARENA_HEADER, lib.GxB_ARENA_DATA)
+    k = _arena_like_0()
+    old = [global_get_int32(field) for field in fields]
+    try:
+        for field in fields:
+            assert lib.GrB_Global_set_INT32(lib.GrB_GLOBAL, k, field) == lib.GrB_SUCCESS
+        for nthreads in (None, 2):
+            B = deser(blob, nthreads=nthreads)
+            arena = ffi.new("int32_t*")
+            for field in fields:
+                check_status(B, get(B[0], arena, field))
+                assert arena[0] == k
+            assert_equal(A, B)
+    finally:
+        for field, value in zip(fields, old, strict=True):
+            assert lib.GrB_Global_set_INT32(lib.GrB_GLOBAL, value, field) == lib.GrB_SUCCESS

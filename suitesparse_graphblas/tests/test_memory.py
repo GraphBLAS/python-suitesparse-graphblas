@@ -2,7 +2,6 @@ import os
 import subprocess
 import sys
 import textwrap
-import threading
 
 import numpy as np
 import pytest
@@ -234,43 +233,6 @@ def test_claim_buffer():
         claim_buffer_2d(ffi, ffi.NULL, 6, 2, 3, int64, True)
 
 
-# An arena that records the addresses it frees, made once (arenas can't be changed).  Tests may
-# run in several threads at once, so each thread records only its own frees.
-_recording_arena = {}
-_recording_arena_lock = threading.Lock()
-
-
-class _FreedInThisThread(threading.local):
-    # Every thread starts with an empty list, so a free in any thread is recorded: an
-    # AttributeError in the cffi callback would only be printed, and the free not seen.
-    def __init__(self):
-        self.addresses = []
-
-
-def recording_arena():
-    with _recording_arena_lock:
-        if not _recording_arena:
-            blocks = {}
-            freed = _FreedInThisThread()
-
-            @ffi.callback("void *(size_t)")
-            def malloc(size):
-                block = ffi.new("char[]", size or 1)
-                blocks[int(ffi.cast("uintptr_t", block))] = block
-                return block
-
-            @ffi.callback("void (void *)")
-            def free(ptr):
-                address = int(ffi.cast("uintptr_t", ptr))
-                blocks.pop(address, None)
-                freed.addresses.append(address)
-
-            k = lib.GxB_NARENAS - 2  # not 5: test_can_unclaim_buffer needs it uninitialized
-            assert lib.GxB_arena_init(k, malloc, ffi.NULL, ffi.NULL, free) == lib.GrB_SUCCESS
-            _recording_arena.update(k=k, freed=freed, callbacks=(malloc, free))
-    return _recording_arena["k"], _recording_arena["freed"]
-
-
 @pytest.mark.skipif(sys.platform == "emscripten", reason="needs cffi callbacks")
 # PyPy runs C extension code (utils.pyx here) holding the GIL, and a cffi callback takes the
 # GIL on entry without checking whether its own thread holds it, so the first call into this
@@ -279,9 +241,9 @@ def recording_arena():
     sys.implementation.name == "pypy",
     reason="on PyPy, a cffi callback called from a C extension module deadlocks",
 )
-def test_claim_buffer_frees_on_error():
+def test_claim_buffer_frees_on_error(recording_arena):
     # GraphBLAS has handed the buffer over, so if claiming it fails, nothing else frees it
-    k, freed = recording_arena()
+    k, freed = recording_arena
     int64 = np.dtype(np.int64)
     huge = sys.maxsize // 4  # too many int64s for NumPy
     for claim, match in [
