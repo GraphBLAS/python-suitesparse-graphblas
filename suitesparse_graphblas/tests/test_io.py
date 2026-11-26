@@ -676,7 +676,7 @@ def test_serialize_nthreads(kind):
     assert not _context_engaged(probe)
 
 
-@pytest.mark.parametrize("nthreads", [None, 0, -1])
+@pytest.mark.parametrize("nthreads", [None, 0, -1, -(2**40)])  # -2**40: beyond int32_t
 @pytest.mark.parametrize("kind", ["matrix", "vector"])
 def test_serialize_nthreads_default(kind, nthreads):
     # These use the Context engaged on this thread, if any, or else GxB_CONTEXT_WORLD
@@ -724,6 +724,9 @@ def test_serialize_nthreads_invalid(kind):
     for call in (lambda n: ser(A, nthreads=n), lambda n: deser(blob, nthreads=n)):
         for nthreads in (2.0, 0.0, "2"):  # not even 0.0, which would mean the default
             with pytest.raises(TypeError):
+                call(nthreads)
+        for nthreads in (True, False, np.True_):  # nor a bool, which would mean 1 or 0
+            with pytest.raises(TypeError, match="bool"):
                 call(nthreads)
         with pytest.raises(OverflowError):
             call(2**31)  # more than int32_t holds

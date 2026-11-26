@@ -20,6 +20,7 @@ def _call_with_nthreads(nthreads, func, *args):
 
     GraphBLAS 10 takes the number of threads from the Context engaged on the calling thread,
     not from a descriptor.  If `nthreads` is None, 0 or negative, `func` is just called.
+    `nthreads` must be an integer, and not a bool.
 
     Apart from the number of threads, the new Context is a copy of GxB_CONTEXT_WORLD:
     GxB_Context_new copies its chunk and GPUs, and the arenas are copied here, since they
@@ -32,6 +33,8 @@ def _call_with_nthreads(nthreads, func, *args):
     to garbage collection: later, and on PyPy perhaps in another thread.
     """
     if nthreads is not None:
+        if isinstance(nthreads, bool):  # `operator.index` refuses NumPy's bool, not Python's
+            raise TypeError("nthreads must be an integer, not a bool")
         nthreads = operator.index(nthreads)  # TypeError if it isn't an integer
     if nthreads is None or nthreads <= 0:
         return func(*args)
@@ -125,13 +128,13 @@ def serialize_matrix(A, compression=lib.GxB_COMPRESSION_DEFAULT, level=None, *, 
         For GxB_COMPRESSION_LZ4HC, should be between 1 and 9, where 9 is most compressed.
         For GxB_COMPRESSION_ZSTD, should be between 1 and 19, where 19 is most compressed.
     nthreads : int, optional
-        The maximum number of OpenMP threads to use.  None (the default), 0 or negative
-        means the number of threads of the GxB_Context engaged on this thread, if any, or
-        else of GxB_CONTEXT_WORLD.  A positive number makes the call run under a new
-        Context with that many threads, so it raises InvalidValue if a Context is engaged
-        on this thread (which stays engaged: set its number of threads instead).
-        Raises TypeError if `nthreads` isn't an integer, OverflowError if it doesn't fit
-        in int32_t.
+        The maximum number of OpenMP threads to use.  None (the default), 0 or any negative
+        integer, however large, means the number of threads of the GxB_Context engaged on
+        this thread, if any, or else of GxB_CONTEXT_WORLD.  A positive integer makes the
+        call run under a new Context with that many threads.  It raises OverflowError if
+        that is more than int32_t holds, and InvalidValue if a Context is engaged on this
+        thread (which stays engaged: set its number of threads instead).  Raises TypeError
+        if `nthreads` isn't an integer, or is a bool.
     """
     desc = get_serialize_desc(compression, level)
     data_ptr = ffi.new("void**")
@@ -159,13 +162,13 @@ def serialize_vector(v, compression=lib.GxB_COMPRESSION_DEFAULT, level=None, *, 
         For GxB_COMPRESSION_LZ4HC, should be between 1 and 9, where 9 is most compressed.
         For GxB_COMPRESSION_ZSTD, should be between 1 and 19, where 19 is most compressed.
     nthreads : int, optional
-        The maximum number of OpenMP threads to use.  None (the default), 0 or negative
-        means the number of threads of the GxB_Context engaged on this thread, if any, or
-        else of GxB_CONTEXT_WORLD.  A positive number makes the call run under a new
-        Context with that many threads, so it raises InvalidValue if a Context is engaged
-        on this thread (which stays engaged: set its number of threads instead).
-        Raises TypeError if `nthreads` isn't an integer, OverflowError if it doesn't fit
-        in int32_t.
+        The maximum number of OpenMP threads to use.  None (the default), 0 or any negative
+        integer, however large, means the number of threads of the GxB_Context engaged on
+        this thread, if any, or else of GxB_CONTEXT_WORLD.  A positive integer makes the
+        call run under a new Context with that many threads.  It raises OverflowError if
+        that is more than int32_t holds, and InvalidValue if a Context is engaged on this
+        thread (which stays engaged: set its number of threads instead).  Raises TypeError
+        if `nthreads` isn't an integer, or is a bool.
     """
     desc = get_serialize_desc(compression, level)
     data_ptr = ffi.new("void**")
@@ -182,21 +185,23 @@ def serialize_vector(v, compression=lib.GxB_COMPRESSION_DEFAULT, level=None, *, 
 def deserialize_matrix(data, *, free=True, nthreads=None):
     """Deserialize a Matrix from bytes.
 
-    The `free` argument is called when the object is garbage
-    collected, the default is `matrix.matrix_free()`.  If `free` is None then
-    there is no automatic garbage collection and it is up to the user
-    to free the matrix.
-
     Parameters
     ----------
+    data : bytes-like
+        A serialized Matrix, such as the result of `serialize_matrix`: bytes, a NumPy array, or
+        anything else with the buffer protocol.
+    free : callable or bool, optional
+        Called with the result when it is garbage collected.  True (the default) means
+        `matrix.matrix_free`.  If `free` is None or False, there is no automatic garbage
+        collection, and it is up to the caller to free the Matrix.
     nthreads : int, optional
-        The maximum number of OpenMP threads to use.  None (the default), 0 or negative
-        means the number of threads of the GxB_Context engaged on this thread, if any, or
-        else of GxB_CONTEXT_WORLD.  A positive number makes the call run under a new
-        Context with that many threads, so it raises InvalidValue if a Context is engaged
-        on this thread (which stays engaged: set its number of threads instead).
-        Raises TypeError if `nthreads` isn't an integer, OverflowError if it doesn't fit
-        in int32_t.
+        The maximum number of OpenMP threads to use.  None (the default), 0 or any negative
+        integer, however large, means the number of threads of the GxB_Context engaged on
+        this thread, if any, or else of GxB_CONTEXT_WORLD.  A positive integer makes the
+        call run under a new Context with that many threads.  It raises OverflowError if
+        that is more than int32_t holds, and InvalidValue if a Context is engaged on this
+        thread (which stays engaged: set its number of threads instead).  Raises TypeError
+        if `nthreads` isn't an integer, or is a bool.
     """
     data = np.frombuffer(data, np.uint8)
     A = ffi.new("GrB_Matrix*")
@@ -220,21 +225,23 @@ def deserialize_matrix(data, *, free=True, nthreads=None):
 def deserialize_vector(data, *, free=True, nthreads=None):
     """Deserialize a Vector from bytes.
 
-    The `free` argument is called when the object is garbage
-    collected, the default is `vector.vector_free()`.  If `free` is None then
-    there is no automatic garbage collection and it is up to the user
-    to free the vector.
-
     Parameters
     ----------
+    data : bytes-like
+        A serialized Vector, such as the result of `serialize_vector`: bytes, a NumPy array, or
+        anything else with the buffer protocol.
+    free : callable or bool, optional
+        Called with the result when it is garbage collected.  True (the default) means
+        `vector.vector_free`.  If `free` is None or False, there is no automatic garbage
+        collection, and it is up to the caller to free the Vector.
     nthreads : int, optional
-        The maximum number of OpenMP threads to use.  None (the default), 0 or negative
-        means the number of threads of the GxB_Context engaged on this thread, if any, or
-        else of GxB_CONTEXT_WORLD.  A positive number makes the call run under a new
-        Context with that many threads, so it raises InvalidValue if a Context is engaged
-        on this thread (which stays engaged: set its number of threads instead).
-        Raises TypeError if `nthreads` isn't an integer, OverflowError if it doesn't fit
-        in int32_t.
+        The maximum number of OpenMP threads to use.  None (the default), 0 or any negative
+        integer, however large, means the number of threads of the GxB_Context engaged on
+        this thread, if any, or else of GxB_CONTEXT_WORLD.  A positive integer makes the
+        call run under a new Context with that many threads.  It raises OverflowError if
+        that is more than int32_t holds, and InvalidValue if a Context is engaged on this
+        thread (which stays engaged: set its number of threads instead).  Raises TypeError
+        if `nthreads` isn't an integer, or is a bool.
     """
     data = np.frombuffer(data, np.uint8)
     v = ffi.new("GrB_Vector*")
