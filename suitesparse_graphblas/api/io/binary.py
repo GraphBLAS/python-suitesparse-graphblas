@@ -3,7 +3,7 @@ from pathlib import Path
 
 import numpy as np
 
-from suitesparse_graphblas import __version__, check_status, ffi, lib
+from suitesparse_graphblas import __version__, check_status, ffi, lib, supports_complex
 from suitesparse_graphblas.api import matrix
 from suitesparse_graphblas.utils import empty, give_buffer
 
@@ -42,8 +42,6 @@ _ss_typecodes = {
     lib.GrB_UINT64: 8,
     lib.GrB_FP32: 9,
     lib.GrB_FP64: 10,
-    lib.GxB_FC32: 11,
-    lib.GxB_FC64: 12,
 }
 
 _ss_typenames = {
@@ -58,9 +56,13 @@ _ss_typenames = {
     lib.GrB_UINT64: "GrB_UINT64",
     lib.GrB_FP32: "GrB_FP32",
     lib.GrB_FP64: "GrB_FP64",
-    lib.GxB_FC32: "GxB_FC32",
-    lib.GxB_FC64: "GxB_FC64",
 }
+
+if supports_complex():
+    _ss_typecodes[lib.GxB_FC32] = 11
+    _ss_typecodes[lib.GxB_FC64] = 12
+    _ss_typenames[lib.GxB_FC32] = "GxB_FC32"
+    _ss_typenames[lib.GxB_FC64] = "GxB_FC64"
 
 _ss_codetypes = {v: k for k, v in _ss_typecodes.items()}
 
