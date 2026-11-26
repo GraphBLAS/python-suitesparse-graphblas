@@ -5,7 +5,7 @@ import numpy as np
 
 from suitesparse_graphblas import check_status, ffi, lib
 from suitesparse_graphblas.api.global_options import global_get_int32
-from suitesparse_graphblas.exceptions import InvalidValue
+from suitesparse_graphblas.exceptions import InvalidObject, InvalidValue
 from suitesparse_graphblas.utils import claim_buffer
 
 
@@ -72,6 +72,24 @@ def _call_with_nthreads(nthreads, func, *args):
         # dangling Context.
         lib.GxB_Context_disengage(ctx[0])
         lib.GxB_Context_free(ctx)
+
+
+def _check_deserialized(obj, fprint, free, message):
+    """Free `obj` and raise InvalidObject(`message`) if `fprint` finds it invalid.
+
+    GraphBLAS checks only enough of a blob to deserialize it without reading past its end, so
+    a corrupt blob can make an invalid object, and its User Guide says to check the result
+    with a silent ``GxB_*_fprint``.
+    """
+    info = fprint(obj[0], b"", lib.GxB_SILENT, ffi.NULL)
+    if info == lib.GrB_SUCCESS:
+        return
+    try:
+        if info == lib.GrB_INVALID_OBJECT:
+            raise InvalidObject(message)
+        check_status(obj, info)
+    finally:
+        free(obj)
 
 
 def get_serialize_desc(compression=lib.GxB_COMPRESSION_DEFAULT, level=None, nthreads=None):
@@ -201,6 +219,9 @@ def deserialize_matrix(data, *, free=True, nthreads=None):
         that is more than int32_t holds, and InvalidValue if a Context is engaged on this
         thread (which stays engaged: set its number of threads instead).  Raises TypeError
         if `nthreads` isn't an integer, or is a bool.
+
+    Raises InvalidObject if `data` doesn't hold a valid Matrix (GraphBLAS checks only that it
+    can read it), after freeing what it deserialized.  The check takes O(nvals) time.
     """
     data = np.frombuffer(data, np.uint8)
     A = ffi.new("GrB_Matrix*")
@@ -214,6 +235,12 @@ def deserialize_matrix(data, *, free=True, nthreads=None):
         ffi.NULL,
     )
     check_status(A, info)
+    _check_deserialized(
+        A,
+        lib.GxB_Matrix_fprint,
+        lib.GrB_Matrix_free,
+        "data does not hold a valid Matrix: GxB_Matrix_fprint rejects what it deserializes to",
+    )
     if free:
         if callable(free):
             return ffi.gc(A, free)

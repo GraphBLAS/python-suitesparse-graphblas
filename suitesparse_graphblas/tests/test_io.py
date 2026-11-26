@@ -784,6 +784,45 @@ def test_deserialize_invalid():
             deserialize(bytes(64))
 
 
+def _with_indices(blob, indices, new_indices):
+    """`blob`, uncompressed, with its array of `indices` (of 32 or 64 bits) made `new_indices`."""
+    data = bytearray(blob)
+    for dtype in (np.uint32, np.uint64):
+        old = np.array(indices, dtype).tobytes()
+        if data.count(old) == 1:
+            k = data.index(old)
+            data[k : k + len(old)] = np.array(new_indices, dtype).tobytes()
+            return bytes(data)
+    raise AssertionError(f"{indices} are not in the blob just once")
+
+
+# A 1000x1000 Matrix held by row, with entries in columns 101, 202 and 303, and ways its
+# serialized column indices can make an invalid Matrix
+_blob_entries = [(0, 101), (0, 202), (1, 303)]
+_invalid_blob_indices = {
+    "index out of range": [101, 202, 1000],
+    "indices out of order": [202, 101, 303],
+    "duplicate index": [101, 101, 303],
+}
+
+
+@pytest.mark.parametrize("nthreads", [None, 2])
+@pytest.mark.parametrize("case", _invalid_blob_indices)
+def test_deserialize_matrix_invalid(case, nthreads):
+    # GraphBLAS checks only enough of a blob to stay within it, so deserialize_matrix checks
+    # the Matrix it makes, and frees it if it's invalid
+    probe = context.context_new()
+    A = matrix.matrix_new(lib.GrB_INT64, 1000, 1000)
+    for k, (i, j) in enumerate(_blob_entries):
+        matrix.set_int64(A, k, i, j)
+    blob = serialize.serialize_matrix(A, lib.GxB_COMPRESSION_NONE).tobytes()
+    _assert_matrices_equal(A, serialize.deserialize_matrix(blob, nthreads=nthreads))
+    blob = _with_indices(blob, [j for _, j in _blob_entries], _invalid_blob_indices[case])
+    with pytest.raises(InvalidObject, match="does not hold a valid Matrix"):
+        serialize.deserialize_matrix(blob, nthreads=nthreads)
+    assert not _context_engaged(probe)
+
+
 def _context_engaged(probe):
     """Whether a GxB_Context is engaged on this thread.
 
