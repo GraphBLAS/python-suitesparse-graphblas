@@ -1,5 +1,5 @@
 import operator
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 
 import numpy as np
 
@@ -21,21 +21,32 @@ def _free_desc(desc):
     lib.GrB_Descriptor_free(desc_ptr)
 
 
-@contextmanager
+_NO_CONTEXT = nullcontext()  # it keeps no state, so it serves every call and thread
+
+
 def _nthreads_context(nthreads):
-    """Engage a new GxB_Context that uses at most `nthreads` threads, for the body.
+    """Return a context manager that engages a new GxB_Context with `nthreads` threads.
 
     GraphBLAS 10 takes the number of threads from the Context engaged on the calling thread,
-    not from a descriptor.  Apart from the number of threads, the new Context is a copy of
-    GxB_CONTEXT_WORLD: GxB_Context_new copies its chunk and GPUs, and the arenas are copied
-    here, since they would otherwise be arena 0.  Nothing is done if `nthreads` is None, 0 or
-    negative.
+    not from a descriptor.  If `nthreads` is None, 0 or negative, the context manager does
+    nothing.
     """
     if nthreads is not None:
         nthreads = operator.index(nthreads)  # TypeError if it isn't an integer
     if nthreads is None or nthreads <= 0:
-        yield
-        return
+        return _NO_CONTEXT
+    return _engaged_context(nthreads)
+
+
+@contextmanager
+def _engaged_context(nthreads):
+    """Engage a new GxB_Context that uses at most `nthreads` threads, for the body.
+
+    Apart from the number of threads, the new Context is a copy of GxB_CONTEXT_WORLD:
+    GxB_Context_new copies its chunk and GPUs, and the arenas are copied here, since they
+    would otherwise be arena 0.  WORLD is the Context the call would use without `nthreads`,
+    because a Context engaged on this thread makes this raise.
+    """
     ctx = context_new(free=None)
     try:
         # A Context engaged on this thread would be lost: GraphBLAS can't say which one it
