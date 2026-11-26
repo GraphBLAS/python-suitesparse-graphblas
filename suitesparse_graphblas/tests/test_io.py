@@ -3,6 +3,7 @@ import functools
 import gzip
 import platform
 import struct
+import sys
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -36,6 +37,7 @@ from suitesparse_graphblas.api import context  # isort:skip
 from suitesparse_graphblas.api.global_options import global_get_int32  # isort:skip
 from suitesparse_graphblas.exceptions import InvalidObject, InvalidValue  # isort:skip
 from suitesparse_graphblas.io import binary, serialize  # isort:skip
+from suitesparse_graphblas.utils import claim_buffer  # isort:skip
 
 NULL = ffi.NULL
 
@@ -692,6 +694,59 @@ def test_serialize_nthreads_default(kind, nthreads):
             assert_equal(A, deser(blob, nthreads=nthreads))
             assert _context_engaged(probe)
     assert not _context_engaged(probe)
+
+
+@pytest.mark.skipif(sys.platform == "emscripten", reason="needs cffi callbacks")
+@pytest.mark.thread_unsafe(reason="changes the global header arena")
+@pytest.mark.parametrize("nthreads", [None, 0, -1])
+@pytest.mark.parametrize("kind", ["matrix", "vector"])
+def test_serialize_nthreads_default_makes_no_context(kind, nthreads, recording_arena):
+    # The default does no Context work at all.  A new Context's header comes from the global
+    # header arena, so making and freeing one frees a block there that the GraphBLAS call
+    # alone doesn't free.  The recording arena records the blocks freed in this thread.
+    A, ser, deser, assert_equal = _big(kind)
+    blob = ser(A)
+    data = np.frombuffer(blob, np.uint8)
+    T = "Matrix" if kind == "matrix" else "Vector"
+    free = matrix.matrix_free if kind == "matrix" else vector.vector_free
+
+    def serialize_raw():
+        data_ptr, size_ptr = ffi.new("void**"), ffi.new("GrB_Index*")
+        info = getattr(lib, f"GxB_{T}_serialize_arena")(data_ptr, size_ptr, A[0], 0, NULL)
+        check_status(A, info)
+        return claim_buffer(ffi, data_ptr[0], size_ptr[0], np.dtype(np.uint8), 0)
+
+    def deserialize_raw():
+        B = ffi.new(f"GrB_{T}*")
+        blob_ptr = ffi.from_buffer("void*", data)
+        check_status(B, getattr(lib, f"GxB_{T}_deserialize")(B, NULL, blob_ptr, data.nbytes, NULL))
+        return B
+
+    calls = {
+        "serialize_raw": serialize_raw,
+        "serialize": lambda: ser(A, nthreads=nthreads),
+        "serialize_2": lambda: ser(A, nthreads=2),  # this one does make a Context
+        "deserialize_raw": deserialize_raw,
+        "deserialize": lambda: deser(blob, free=None, nthreads=nthreads),
+    }
+    k, freed = recording_arena
+    old = global_get_int32(lib.GxB_ARENA_HEADER)
+    results, frees = {}, {}
+    assert lib.GrB_Global_set_INT32(lib.GrB_GLOBAL, k, lib.GxB_ARENA_HEADER) == lib.GrB_SUCCESS
+    try:
+        for name, call in calls.items():
+            freed.addresses = []
+            results[name] = call()
+            frees[name] = len(freed.addresses)
+    finally:
+        assert lib.GrB_Global_set_INT32(lib.GrB_GLOBAL, old, lib.GxB_ARENA_HEADER) == 0
+    assert frees["serialize"] == frees["serialize_raw"]
+    assert frees["serialize_2"] == frees["serialize_raw"] + 1
+    assert frees["deserialize"] == frees["deserialize_raw"]
+    assert results["serialize"].tobytes() == results["serialize_raw"].tobytes()
+    for name in ("deserialize_raw", "deserialize"):
+        assert_equal(A, results[name])
+        free(results[name])
 
 
 @pytest.mark.parametrize("kind", ["matrix", "vector"])
