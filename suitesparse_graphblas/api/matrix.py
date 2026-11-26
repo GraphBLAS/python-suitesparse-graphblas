@@ -1873,7 +1873,7 @@ def get_fp64(A, i, j):
     return value[0]
 
 
-if supports_complex():  # pragma: no branch (the build always declares complex types)
+if supports_complex():
 
     def set_fc32(A, value, i, j):
         """Set an fc32 value to the matrix at row `i` column `j`.

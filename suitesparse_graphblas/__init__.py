@@ -162,7 +162,7 @@ if supports_complex():
             lib.GxB_FC64,
         )
     )
-else:  # pragma: no cover (every build uses suitesparse_graphblas.h, which has complex)
+else:
     complex_types = frozenset()
 
 
