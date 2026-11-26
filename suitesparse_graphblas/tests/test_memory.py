@@ -18,7 +18,6 @@ from suitesparse_graphblas.utils import (
 )
 
 # Move memory between GraphBLAS and NumPy every supported way, then free all of it.
-# `binary` is not tested on Windows; see test_io.py.
 SCRIPT = textwrap.dedent("""
     import gc
     import sys
@@ -116,8 +115,6 @@ SCRIPT = textwrap.dedent("""
         for t in threads:
             t.join()
 
-        if sys.platform == "win32":
-            return
         from suitesparse_graphblas.io import binary
 
         # `binread` hands its buffers to GraphBLAS; an iso matrix stores a single value, and
@@ -135,6 +132,8 @@ SCRIPT = textwrap.dedent("""
             check_status(B, lib.GrB_Matrix_wait(B[0], lib.GrB_MATERIALIZE))
             assert matrix.matrix_nvals(B) == 900
 
+        if sys.platform == "win32":  # no `dlopen(None)` to get libc's allocator from
+            return
         # Another arena, using libc's allocator
         k = lib.GxB_NARENAS - 1
         import cffi

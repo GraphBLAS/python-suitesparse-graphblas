@@ -1,7 +1,6 @@
 import bz2
 import functools
 import gzip
-import platform
 import struct
 import sys
 from contextlib import contextmanager
@@ -31,8 +30,6 @@ try:
 except ImportError:  # Pyodide before 314 has it as a separate package
     lzma = None
 
-if platform.system() == "Windows":
-    pytest.skip("skipping windows-only tests", allow_module_level=True)
 
 from suitesparse_graphblas.api import context  # isort:skip
 from suitesparse_graphblas.api.global_options import global_get_int32  # isort:skip
