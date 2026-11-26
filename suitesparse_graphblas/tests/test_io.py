@@ -530,10 +530,22 @@ def test_binread_other_version(tmp_path):
     path = tmp_path / "matrix.binfile"
     binary.binwrite(_make_matrix(lib.GrB_INT64, "sparse"), path)
     data = bytearray(path.read_bytes())
-    struct.pack_into("=Q", data, binary.GRB_HEADER_LEN, lib.GxB_IMPLEMENTATION + 1)
-    path.write_bytes(data)
-    with pytest.raises(ValueError, match=f"its version is {lib.GxB_IMPLEMENTATION + 1}, not"):
-        binary.binread(path)
+    # GraphBLAS numbers a version as GxB_VERSION(major, minor, sub): 10.5.4 is 10005004
+    major, minor, sub = (
+        lib.GxB_IMPLEMENTATION_MAJOR,
+        lib.GxB_IMPLEMENTATION_MINOR,
+        lib.GxB_IMPLEMENTATION_SUB,
+    )
+    for version, name in [
+        (lib.GxB_IMPLEMENTATION + 1, f"{major}.{minor}.{sub + 1}"),
+        (11_000_000, "11.0.0"),
+        (9_004_012, "9.4.12"),
+    ]:
+        struct.pack_into("=Q", data, binary.GRB_HEADER_LEN, version)
+        path.write_bytes(data)
+        message = f"SuiteSparse:GraphBLAS {major}.{minor}.{sub}: its version is {name}$"
+        with pytest.raises(ValueError, match=message):
+            binary.binread(path)
 
 
 def test_binwrite_without_comments(tmp_path):

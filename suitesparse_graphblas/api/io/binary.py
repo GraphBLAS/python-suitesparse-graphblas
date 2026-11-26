@@ -68,6 +68,11 @@ if supports_complex():
 _ss_codetypes = {v: k for k, v in _ss_typecodes.items()}
 
 
+def _version(code):
+    """The version that ``code`` (``GxB_VERSION(major, minor, sub)``) stands for, as a str."""
+    return f"{code // 1000000}.{code // 1000 % 1000}.{code % 1000}"
+
+
 def binwrite(A, filename, comments=None, opener=Path.open):
     """Write Matrix ``A`` to ``filename`` in SuiteSparse:GraphBLAS's binary format.
 
@@ -424,9 +429,7 @@ def binread(filename, opener=Path.open):
         if impl[0] != lib.GxB_IMPLEMENTATION:
             raise ValueError(
                 f"{filename} is not from binwrite with SuiteSparse:GraphBLAS "
-                f"v{lib.GxB_IMPLEMENTATION_MAJOR}.{lib.GxB_IMPLEMENTATION_MINOR}."
-                f"{lib.GxB_IMPLEMENTATION_SUB}: its version is {impl[0]}, not "
-                f"{lib.GxB_IMPLEMENTATION}"
+                f"{_version(lib.GxB_IMPLEMENTATION)}: its version is {_version(impl[0])}"
             )
 
         format = frombuff("GxB_Format_Value*", fread(sizeof("GxB_Format_Value")))
