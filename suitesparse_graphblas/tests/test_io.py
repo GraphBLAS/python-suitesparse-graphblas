@@ -780,7 +780,7 @@ def test_serialize_nthreads_invalid(kind):
         for nthreads in (2.0, 0.0, "2"):  # not even 0.0, which would mean the default
             with pytest.raises(TypeError):
                 call(nthreads)
-        for nthreads in (True, False, np.True_):  # nor a bool, which would mean 1 or 0
+        for nthreads in (True, False, np.True_, np.False_):  # nor a bool, which would mean 1 or 0
             with pytest.raises(TypeError, match="bool"):
                 call(nthreads)
         with pytest.raises(OverflowError):

@@ -33,7 +33,8 @@ def _call_with_nthreads(nthreads, func, *args):
     to garbage collection: later, and on PyPy perhaps in another thread.
     """
     if nthreads is not None:
-        if isinstance(nthreads, bool):  # `operator.index` refuses NumPy's bool, not Python's
+        # NumPy 2.2 still lets `operator.index` take its bool, with a DeprecationWarning
+        if isinstance(nthreads, (bool, np.bool_)):
             raise TypeError("nthreads must be an integer, not a bool")
         nthreads = operator.index(nthreads)  # TypeError if it isn't an integer
     if nthreads is None or nthreads <= 0:
