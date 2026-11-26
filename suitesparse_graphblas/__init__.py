@@ -104,8 +104,8 @@ def initialize(*, blocking=False, memory_manager="numpy"):
     else:
         raise ValueError(f'memory_manager argument must be "numpy" or "c"; got: {memory_manager!r}')
     # Fails only if already initialized (checked above), on bad arguments, or out of memory
-    if info != lib.GrB_SUCCESS:  # pragma: no cover (defensive)
-        raise _error_code_lookup.get(info, RuntimeError)(
+    if info != lib.GrB_SUCCESS:
+        raise _error_code_lookup.get(info, ex.GraphBLASException)(
             f"Failed to initialize GraphBLAS (info={info})"
         )
     # See: https://github.com/GraphBLAS/python-suitesparse-graphblas/issues/40

@@ -102,7 +102,7 @@ def context_set_int32(ctx, field, value):
     2
 
     """
-    check_status(ctx, lib.GxB_Context_set_INT32(ctx[0], field, ffi.cast("int32_t", value)))
+    check_status(ctx, lib.GxB_Context_set_INT32(ctx[0], field, value))
 
 
 def context_get_fp64(ctx, field):

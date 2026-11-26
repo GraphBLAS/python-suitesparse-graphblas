@@ -86,7 +86,7 @@ def descriptor_set_int32(desc, field, value):
         desc,
         lib.GrB_Descriptor_set_INT32(
             desc,
-            ffi.cast("int32_t", value),
+            value,
             field,
         ),
     )

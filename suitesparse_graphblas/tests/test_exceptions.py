@@ -1,5 +1,6 @@
 import pytest
 
+import suitesparse_graphblas
 from suitesparse_graphblas import (
     _error_code_lookup,
     _error_func_lookup,
@@ -61,6 +62,22 @@ def test_check_status_unknown_code():
     with pytest.raises(exceptions.GraphBLASException) as excinfo:
         check_status(A, unknown)
     assert type(excinfo.value) is exceptions.GraphBLASException
+
+
+@pytest.mark.thread_unsafe(reason="patches the package")
+@pytest.mark.parametrize(
+    "info, exception",
+    [(lib.GrB_OUT_OF_MEMORY, exceptions.OutOfMemory), (-12345, exceptions.GraphBLASException)],
+    ids=["out of memory", "unknown"],
+)
+def test_initialize_fails(monkeypatch, info, exception):
+    # If GraphBLAS fails to initialize, `initialize` raises the exception for the code, as
+    # check_status does: the base class for a code that this build doesn't know
+    monkeypatch.setattr(suitesparse_graphblas, "is_initialized", lambda: False)
+    monkeypatch.setattr(suitesparse_graphblas.utils, "call_gxb_init", lambda ffi, lib, mode: info)
+    with pytest.raises(exception, match=f"info={info}") as excinfo:
+        suitesparse_graphblas.initialize()
+    assert type(excinfo.value) is exception
 
 
 def test_check_status_already_set():

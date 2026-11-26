@@ -5,6 +5,7 @@ import numpy as np
 
 from suitesparse_graphblas import __version__, check_status, ffi, lib, supports_complex
 from suitesparse_graphblas.api import matrix
+from suitesparse_graphblas.exceptions import InvalidObject
 from suitesparse_graphblas.utils import empty, give_buffer
 
 GRB_HEADER_LEN = 512
@@ -67,6 +68,11 @@ if supports_complex():
 _ss_codetypes = {v: k for k, v in _ss_typecodes.items()}
 
 
+def _version(code):
+    """The version that ``code`` (``GxB_VERSION(major, minor, sub)``) stands for, as a str."""
+    return f"{code // 1000000}.{code // 1000 % 1000}.{code % 1000}"
+
+
 def binwrite(A, filename, comments=None, opener=Path.open):
     """Write Matrix ``A`` to ``filename`` in SuiteSparse:GraphBLAS's binary format.
 
@@ -74,7 +80,8 @@ def binwrite(A, filename, comments=None, opener=Path.open):
     copy, ``A`` is unpacked while it is written and packed again afterwards (even if writing
     fails), so other threads must not use ``A`` meanwhile.
 
-    ``comments`` must be ASCII, and short enough that the text header fits in
+    ``comments`` go at the end of the text header (None leaves an empty line there, as LAGraph
+    does).  They must be ASCII, and short enough that the text header fits in
     ``GRB_HEADER_LEN`` (512) bytes; otherwise this raises ValueError and writes nothing.
     """
     if isinstance(filename, str):
@@ -244,7 +251,7 @@ def binwrite(A, filename, comments=None, opener=Path.open):
             size=typesize[0],
             type=_ss_typenames[matrix_type[0]],
             iso=int(is_iso[0]),
-            comments=comments,
+            comments="" if comments is None else comments,
         )
         header_content = header_template.format(**vars)
         header = f"{header_content: <{GRB_HEADER_LEN}}".encode("ascii")
@@ -400,7 +407,11 @@ def binwrite(A, filename, comments=None, opener=Path.open):
 def binread(filename, opener=Path.open):
     """Read a Matrix from ``filename``, written by ``binwrite``.
 
-    ``opener`` opens the file for reading (e.g. ``gzip.open``).
+    ``opener`` opens the file for reading (e.g. ``gzip.open``).  The file must be from this
+    version of SuiteSparse:GraphBLAS, else this raises ValueError.  GraphBLAS checks the
+    structure of the matrix it holds (its indices, pointers and bitmap), in O(nvec + nvals)
+    time, or O(nrows * ncols) for a bitmap, and this raises InvalidObject if that is
+    invalid.  It doesn't check the values: a GrB_BOOL value of 2, say, is read as it is.
     """
     if isinstance(filename, str):
         filename = Path(filename)
@@ -416,8 +427,11 @@ def binread(filename, opener=Path.open):
 
         fread(GRB_HEADER_LEN)
         impl = frombuff("uint64_t*", fread(sizeof("uint64_t")))
-
-        assert impl[0] == lib.GxB_IMPLEMENTATION
+        if impl[0] != lib.GxB_IMPLEMENTATION:
+            raise ValueError(
+                f"{filename} is not from binwrite with SuiteSparse:GraphBLAS "
+                f"{_version(lib.GxB_IMPLEMENTATION)}: its version is {_version(impl[0])}"
+            )
 
         format = frombuff("GxB_Format_Value*", fread(sizeof("GxB_Format_Value")))
         sparsity_status = frombuff("int32_t*", fread(sizeof("int32_t")))
@@ -487,7 +501,8 @@ def binread(filename, opener=Path.open):
         read(typesize[0] if is_iso[0] else nx * typesize[0], "void*")  # Ax
 
         with ExitStack() as stack:
-            # The buffers become GraphBLAS's only if the pack succeeds
+            # The buffers become GraphBLAS's only if the pack succeeds, which checks their
+            # sizes; then `A` holds them, and frees them when it is freed, valid or not
             given = [
                 stack.enter_context(give_buffer(array, ctype, copy=False, arena=arena))
                 for array, ctype in buffers
@@ -495,6 +510,16 @@ def binread(filename, opener=Path.open):
             ptrs = [ptr for ptr, _, _ in given]
             sizes = [nbytes for _, nbytes, _ in given]
             check_status(A, pack(A[0], *ptrs, *sizes, is_iso[0], *args, NULL))
+
+        # The pack trusts the content of the buffers, so check that they make a valid matrix
+        # (sorted indices in range, ...).  A pack with GxB_SECURE_IMPORT would check it too, but
+        # when the check fails it frees the matrix, leaving `A` a handle to freed memory.
+        info = lib.GxB_Matrix_fprint(A[0], b"", lib.GxB_SILENT, NULL)
+        if info == lib.GrB_INVALID_OBJECT:
+            raise InvalidObject(
+                f"{filename} does not hold a valid matrix: GxB_Matrix_fprint rejects it"
+            )
+        check_status(A, info)
 
         matrix.matrix_set_sparsity_control(A, sparsity_control[0])
         matrix.matrix_set_hyper_switch(A, hyper_switch[0])

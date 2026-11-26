@@ -309,6 +309,24 @@ def test_set_int32_not_allowed(kind):
     assert get_int32(obj, lib.GrB_OUTP_TYPE_CODE) == code
 
 
+@pytest.mark.parametrize("kind", list(MODULES))
+def test_set_int32_rejects_non_int32(kind):
+    # A value that doesn't fit in an int32 is an error, rather than wrapping around to one that
+    # does (and that GraphBLAS then rejects, here).  So is a Python float (or np.float64) or a
+    # str, rather than truncated or taken as a character code.
+    get_int32 = _func(kind, "get_int32")
+    set_int32 = _func(kind, "set_int32")
+    obj = _user_defined(kind)
+    code = get_int32(obj, lib.GrB_OUTP_TYPE_CODE)
+    for value in (lib.GrB_BOOL_CODE + 2**32, 2**31, -(2**31) - 1):
+        with pytest.raises(OverflowError):
+            set_int32(obj, lib.GrB_OUTP_TYPE_CODE, value)
+    for value in (lib.GrB_BOOL_CODE + 0.7, "3"):
+        with pytest.raises(TypeError):
+            set_int32(obj, lib.GrB_OUTP_TYPE_CODE, value)
+    assert get_int32(obj, lib.GrB_OUTP_TYPE_CODE) == code
+
+
 @pytest.mark.parametrize(
     ("kind", "name"),
     [
@@ -361,8 +379,6 @@ def test_print(kind):
     assert defn in out
 
     def fprint_silent_then_short():
-        # A capture that gets no output at all fails on Emscripten, where reading the empty
-        # pipe raises BlockingIOError
         _func(kind, "fprint")(op, ffi.NULL, "silent_op", lib.GxB_SILENT)
         _func(kind, "fprint")(op, ffi.NULL, b"short_op", lib.GxB_SHORT)
 

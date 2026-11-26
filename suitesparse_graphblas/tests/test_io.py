@@ -1,7 +1,9 @@
 import bz2
+import collections
 import functools
+import gc
 import gzip
-import platform
+import re
 import struct
 import sys
 from contextlib import contextmanager
@@ -24,20 +26,16 @@ from suitesparse_graphblas import (
     unsigned_integer_types,
     vector,
 )
+from suitesparse_graphblas.api import context
+from suitesparse_graphblas.api.global_options import global_get_int32
+from suitesparse_graphblas.exceptions import InvalidObject, InvalidValue, OutOfMemory
+from suitesparse_graphblas.io import binary, serialize
+from suitesparse_graphblas.utils import claim_buffer
 
 try:
     import lzma
 except ImportError:  # Pyodide before 314 has it as a separate package
     lzma = None
-
-if platform.system() == "Windows":
-    pytest.skip("skipping windows-only tests", allow_module_level=True)
-
-from suitesparse_graphblas.api import context  # isort:skip
-from suitesparse_graphblas.api.global_options import global_get_int32  # isort:skip
-from suitesparse_graphblas.exceptions import InvalidObject, InvalidValue  # isort:skip
-from suitesparse_graphblas.io import binary, serialize  # isort:skip
-from suitesparse_graphblas.utils import claim_buffer  # isort:skip
 
 NULL = ffi.NULL
 
@@ -428,6 +426,143 @@ def test_binread_unknown_field(tmp_path, offset, value, message):
         binary.binread(path)
 
 
+# Where the arrays start: after the sparsity status and control (int32 each), the hyper and
+# bitmap switches, nrows, ncols, nvec, nvals, the type code (int32), the type size, and iso
+_arrays_offset = (
+    _sparsity_offset
+    + 2 * ffi.sizeof("int32_t")
+    + 2 * ffi.sizeof("double")
+    + 4 * ffi.sizeof("GrB_Index")
+    + ffi.sizeof("int32_t")
+    + ffi.sizeof("size_t")
+    + ffi.sizeof("bool")
+)
+
+
+def _symmetric_matrix(format, sparsity):
+    """A 4x4 INT64 matrix whose pattern is its own transpose, so that its arrays are the same
+    whether it is held by row or by column: entries (0, 0), (0, 2), (2, 0), and (3, 3)."""
+    A = matrix.matrix_new(lib.GrB_INT64, 4, 4)
+    for k, (i, j) in enumerate([(0, 0), (0, 2), (2, 0), (3, 3)]):
+        matrix.set_int64(A, 10 * k, i, j)
+    matrix.matrix_set_format(A, format)
+    matrix.matrix_set_sparsity_control(A, sparsity)
+    return A
+
+
+def _binfile_arrays(data, sparsity):
+    """The index arrays of `_symmetric_matrix` in `data`, a bytearray of the file binwrite wrote
+    for it, as writable views of `data`."""
+    sizes = {
+        lib.GxB_SPARSE: [("Ap", np.uint64, 5), ("Ai", np.uint64, 4)],
+        lib.GxB_HYPERSPARSE: [("Ap", np.uint64, 4), ("Ah", np.uint64, 3), ("Ai", np.uint64, 4)],
+        lib.GxB_BITMAP: [("Ab", np.int8, 16)],
+    }[sparsity]
+    arrays = {}
+    offset = _arrays_offset
+    for name, dtype, size in sizes:
+        arrays[name] = np.frombuffer(data, dtype, size, offset)
+        offset += arrays[name].nbytes
+    return arrays
+
+
+# Ways a file can hold an invalid matrix, each as (sparsity, name of an array, the array as
+# binwrite wrote it, what to change it to)
+_bitmap = [1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1]
+_invalid_arrays = {
+    "index out of range": (lib.GxB_SPARSE, "Ai", [0, 2, 0, 3], [0, 2, 0, 4]),
+    "indices out of order": (lib.GxB_SPARSE, "Ai", [0, 2, 0, 3], [2, 0, 0, 3]),
+    "duplicate index": (lib.GxB_SPARSE, "Ai", [0, 2, 0, 3], [0, 0, 0, 3]),
+    "pointers decrease": (lib.GxB_SPARSE, "Ap", [0, 2, 2, 3, 4], [0, 2, 1, 3, 4]),
+    "hypersparse index out of range": (lib.GxB_HYPERSPARSE, "Ah", [0, 2, 3], [0, 2, 4]),
+    "hypersparse indices out of order": (lib.GxB_HYPERSPARSE, "Ah", [0, 2, 3], [2, 0, 3]),
+    "bitmap not 0 or 1": (lib.GxB_BITMAP, "Ab", _bitmap, [2] + _bitmap[1:]),
+    "bitmap not nvals": (lib.GxB_BITMAP, "Ab", _bitmap, [1] * 16),
+}
+_formats = {lib.GxB_BY_ROW: "by row", lib.GxB_BY_COL: "by column"}
+
+
+def _invalid_binfile(path, format, case):
+    """Write a file at `path` that binread reads as an invalid matrix, made as `case` says."""
+    sparsity, name, written, invalid = _invalid_arrays[case]
+    binary.binwrite(_symmetric_matrix(format, sparsity), path)
+    data = bytearray(path.read_bytes())
+    array = _binfile_arrays(data, sparsity)[name]
+    assert array.tolist() == written
+    array[:] = invalid
+    path.write_bytes(data)
+
+
+@pytest.mark.parametrize("case", _invalid_arrays)
+@pytest.mark.parametrize("format", _formats, ids=_formats.get)
+def test_binread_invalid_matrix(tmp_path, format, case):
+    # binread checks the matrix it reads, so a corrupt file can't make an invalid one
+    path = tmp_path / "matrix.binfile"
+    sparsity = _invalid_arrays[case][0]
+    binary.binwrite(_symmetric_matrix(format, sparsity), path)
+    _assert_matrices_equal(binary.binread(path), _symmetric_matrix(format, sparsity))
+    _invalid_binfile(path, format, case)
+    with pytest.raises(InvalidObject, match="does not hold a valid matrix"):
+        binary.binread(path)
+
+
+def test_binread_invalid_matrix_frees_only_its_own(tmp_path):
+    # A matrix binread rejects is freed once, when the exception that holds it goes, and with
+    # nothing else.  (When GraphBLAS checked the matrix as it packed it, a failed check freed
+    # the matrix itself, and binread's handle to it was left to free whatever matrix came to
+    # use its memory next.)
+    path = tmp_path / "matrix.binfile"
+    _invalid_binfile(path, lib.GxB_BY_ROW, "index out of range")
+    with pytest.raises(InvalidObject) as excinfo:
+        binary.binread(path)
+    matrices = [_make_matrix(lib.GrB_INT64, "sparse") for _ in range(10)]
+    del excinfo
+    gc.collect()
+    for A in matrices:
+        assert matrix.matrix_nvals(A) == 3
+        assert matrix.get_int64(A, 2, 3) == _values(lib.GrB_INT64)[1]
+
+
+def test_binread_other_version(tmp_path):
+    # binread reads files from this version of GraphBLAS only, and checks even under
+    # `python -O`, which skips asserts
+    path = tmp_path / "matrix.binfile"
+    binary.binwrite(_make_matrix(lib.GrB_INT64, "sparse"), path)
+    data = bytearray(path.read_bytes())
+    # GraphBLAS numbers a version as GxB_VERSION(major, minor, sub): 10.5.4 is 10005004
+    major, minor, sub = (
+        lib.GxB_IMPLEMENTATION_MAJOR,
+        lib.GxB_IMPLEMENTATION_MINOR,
+        lib.GxB_IMPLEMENTATION_SUB,
+    )
+    for version, name in [
+        (lib.GxB_IMPLEMENTATION + 1, f"{major}.{minor}.{sub + 1}"),
+        (11_000_000, "11.0.0"),
+        (9_004_012, "9.4.12"),
+    ]:
+        struct.pack_into("=Q", data, binary.GRB_HEADER_LEN, version)
+        path.write_bytes(data)
+        message = f"SuiteSparse:GraphBLAS {major}.{minor}.{sub}: its version is {name}"
+        with pytest.raises(ValueError, match=re.escape(message) + "$"):
+            binary.binread(path)
+
+
+def test_binwrite_without_comments(tmp_path):
+    # Without comments, the comment line of the header is empty, as LAGraph writes it
+    A = _make_matrix(lib.GrB_INT64, "sparse")
+    path = tmp_path / "matrix.binfile"
+    binary.binwrite(A, path, comments="")
+    header = path.read_bytes()[: binary.GRB_HEADER_LEN]
+    assert header.decode("ascii").split("\n")[9:11] == ["iso:     0", ""]
+    binary.binwrite(A, path)
+    assert path.read_bytes()[: binary.GRB_HEADER_LEN] == header
+    _assert_matrices_equal(A, binary.binread(path))
+    # binwrite wrote "None" for no comments before, and binread still reads those files
+    binary.binwrite(A, path, comments="None")
+    assert b"\nNone\n" in path.read_bytes()[: binary.GRB_HEADER_LEN]
+    _assert_matrices_equal(A, binary.binread(path))
+
+
 def test_binwrite_long_comments(tmp_path):
     # binread skips a header of exactly GRB_HEADER_LEN bytes, so binwrite refuses
     # comments that would make it longer, before it opens the file
@@ -557,6 +692,51 @@ def test_serialize_compression_reaches_graphblas():
     assert none > serialize.serialize_vector(v, lib.GxB_COMPRESSION_ZSTD).nbytes
 
 
+class _CountingLib:
+    """`lib`, counting the lookups of each name in `counts`."""
+
+    def __init__(self):
+        self.counts = collections.Counter()
+
+    def __getattr__(self, name):
+        self.counts[name] += 1
+        return getattr(lib, name)
+
+
+@pytest.mark.thread_unsafe(reason="replaces `lib` in the serialize module")
+@pytest.mark.parametrize("kind", ["matrix", "vector"])
+def test_serialize_compression_out_of_range(monkeypatch, kind):
+    # The method plus the level goes to GraphBLAS as an int32_t.  It used to wrap around, so
+    # ZSTD with level 2**32 + 1 serialized with level 1, and a float level was truncated.
+    # Now they raise, before anything is serialized.  (Only a Python float, or np.float64:
+    # cffi converts other objects with `__int__`, so np.float32(1.5) still gives level 1.)
+    if kind == "matrix":
+        A, ser, T = _numbered_matrix(10), serialize.serialize_matrix, "Matrix"
+    else:
+        A, ser, T = vector.vector_new(lib.GrB_INT64, 10), serialize.serialize_vector, "Vector"
+        vector.set_int64(A, 7, 2)
+        # Else the first serialization finishes that, and gives different bytes from the next
+        vector.vector_wait(A, lib.GrB_MATERIALIZE)
+    ZSTD, LZ4HC = lib.GxB_COMPRESSION_ZSTD, lib.GxB_COMPRESSION_LZ4HC
+    counting = _CountingLib()
+    monkeypatch.setattr(serialize, "lib", counting)
+    for compression, level in [
+        (ZSTD, 2**32 + 1),
+        (LZ4HC, 2**32 + 1),
+        (ZSTD, 1 - 2**32),
+        (ZSTD + 2**32, None),
+    ]:
+        with pytest.raises(OverflowError):
+            ser(A, compression, level)
+    with pytest.raises(TypeError):
+        ser(A, ZSTD, 1.5)
+    monkeypatch.undo()
+    assert counting.counts["GxB_Desc_set_INT32"] == 5  # it got that far each time
+    assert counting.counts[f"GxB_{T}_serialize_arena"] == 0
+    # Any kind of integer in range will do, as before
+    assert ser(A, ZSTD, np.int64(19)).tobytes() == ser(A, ZSTD, 19).tobytes()
+
+
 @pytest.mark.parametrize("free", [None, False], ids=["None", "False"])
 def test_deserialize_without_free(free):
     # The caller frees the result
@@ -601,6 +781,100 @@ def test_deserialize_invalid():
     for deserialize in (serialize.deserialize_matrix, serialize.deserialize_vector):
         with pytest.raises(InvalidObject):
             deserialize(bytes(64))
+
+
+def _with_indices(blob, indices, new_indices):
+    """`blob`, uncompressed, with its array of `indices` (of 32 or 64 bits) made `new_indices`."""
+    data = bytearray(blob)
+    for dtype in (np.uint32, np.uint64):
+        old = np.array(indices, dtype).tobytes()
+        if data.count(old) == 1:
+            k = data.index(old)
+            data[k : k + len(old)] = np.array(new_indices, dtype).tobytes()
+            return bytes(data)
+    raise AssertionError(f"{indices} are not in the blob just once")
+
+
+# A 1000x1000 Matrix held by row, with entries in columns 101, 202 and 303, and ways its
+# serialized column indices can make an invalid Matrix
+_blob_entries = [(0, 101), (0, 202), (1, 303)]
+_invalid_blob_indices = {
+    "index out of range": [101, 202, 1000],
+    "indices out of order": [202, 101, 303],
+    "duplicate index": [101, 101, 303],
+}
+
+
+@pytest.mark.parametrize("nthreads", [None, 2])
+@pytest.mark.parametrize("case", _invalid_blob_indices)
+def test_deserialize_matrix_invalid(case, nthreads):
+    # GraphBLAS checks only enough of a blob to stay within it, so deserialize_matrix checks
+    # the Matrix it makes, and frees it if it's invalid
+    probe = context.context_new()
+    A = matrix.matrix_new(lib.GrB_INT64, 1000, 1000)
+    for k, (i, j) in enumerate(_blob_entries):
+        matrix.set_int64(A, k, i, j)
+    blob = serialize.serialize_matrix(A, lib.GxB_COMPRESSION_NONE).tobytes()
+    _assert_matrices_equal(A, serialize.deserialize_matrix(blob, nthreads=nthreads))
+    blob = _with_indices(blob, [j for _, j in _blob_entries], _invalid_blob_indices[case])
+    with pytest.raises(InvalidObject, match="does not hold a valid Matrix"):
+        serialize.deserialize_matrix(blob, nthreads=nthreads)
+    assert not _context_engaged(probe)
+
+
+@pytest.mark.parametrize("nthreads", [None, 2])
+@pytest.mark.parametrize("case", _invalid_blob_indices)
+def test_deserialize_vector_invalid(case, nthreads):
+    # As for deserialize_matrix: a Vector of size 1000 with entries 101, 202 and 303
+    probe = context.context_new()
+    v = vector.vector_new(lib.GrB_INT64, 1000)
+    for k, (_, i) in enumerate(_blob_entries):
+        vector.set_int64(v, k, i)
+    blob = serialize.serialize_vector(v, lib.GxB_COMPRESSION_NONE).tobytes()
+    _assert_vectors_equal(v, serialize.deserialize_vector(blob, nthreads=nthreads))
+    blob = _with_indices(blob, [i for _, i in _blob_entries], _invalid_blob_indices[case])
+    with pytest.raises(InvalidObject, match="does not hold a valid Vector"):
+        serialize.deserialize_vector(blob, nthreads=nthreads)
+    assert not _context_engaged(probe)
+
+
+def test_check_deserialized_other_error():
+    # A check that fails other than with GrB_INVALID_OBJECT (which a deserialized object
+    # doesn't do) raises as check_status does, and still frees the object
+    A = matrix.matrix_new(lib.GrB_INT64, 2, 2, free=None)
+
+    def fprint(*args):
+        return lib.GrB_OUT_OF_MEMORY
+
+    with pytest.raises(OutOfMemory):
+        serialize._check_deserialized(A, fprint, lib.GrB_Matrix_free, None)
+    assert A[0] == NULL
+
+
+@pytest.mark.parametrize("format", _formats, ids=_formats.get)
+def test_deserialize_vector_of_a_matrix(format):
+    # A Vector is an n-by-1 Matrix held by column, and GxB_Vector_deserialize takes any
+    # Matrix blob, whose Matrix makes an invalid Vector unless it's one of those
+    for nrows, ncols in [(3, 4), (4, 3), (3, 1), (1, 3)]:
+        A = matrix.matrix_new(lib.GrB_INT64, nrows, ncols)
+        matrix.set_int64(A, 7, nrows - 1, ncols - 1)
+        matrix.matrix_set_format(A, format)
+        blob = serialize.serialize_matrix(A)
+        _assert_matrices_equal(A, serialize.deserialize_matrix(blob))
+        if ncols == 1 and format == lib.GxB_BY_COL:
+            v = serialize.deserialize_vector(blob)
+            assert vector.vector_size(v) == nrows
+            assert vector.vector_extract_tuples_int64(v)[0].tolist() == [nrows - 1]
+        else:
+            message = f"data holds a {nrows}x{ncols} Matrix, not a Vector"
+            with pytest.raises(InvalidObject, match=message):
+                serialize.deserialize_vector(blob)
+    # And a Vector blob is an n-by-1 Matrix blob
+    v = vector.vector_new(lib.GrB_INT64, 5)
+    vector.set_int64(v, 7, 3)
+    A = serialize.deserialize_matrix(serialize.serialize_vector(v))
+    assert matrix.matrix_shape(A) == (5, 1)
+    assert [x.tolist() for x in matrix.matrix_extract_tuples_int64(A)] == [[3], [0], [7]]
 
 
 def _context_engaged(probe):

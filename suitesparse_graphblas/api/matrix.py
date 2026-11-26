@@ -127,8 +127,7 @@ def matrix_set_format(A, format):
     True
 
     """
-    format_val = ffi.cast("int32_t", format)
-    check_status(A, lib.GxB_Matrix_Option_set_INT32(A[0], lib.GxB_FORMAT, format_val))
+    check_status(A, lib.GxB_Matrix_Option_set_INT32(A[0], lib.GxB_FORMAT, format))
 
 
 def matrix_sparsity_status(A):
@@ -149,10 +148,7 @@ def matrix_sparsity_control(A):
 
 def matrix_set_sparsity_control(A, sparsity):
     """Set the sparsity control of the matrix."""
-    sparsity_control = ffi.cast("int32_t", sparsity)
-    check_status(
-        A, lib.GxB_Matrix_Option_set_INT32(A[0], lib.GxB_SPARSITY_CONTROL, sparsity_control)
-    )
+    check_status(A, lib.GxB_Matrix_Option_set_INT32(A[0], lib.GxB_SPARSITY_CONTROL, sparsity))
 
 
 def matrix_hyper_switch(A):
@@ -208,7 +204,7 @@ def matrix_option_set_int32(A, field, value):
         lib.GxB_Matrix_Option_set_INT32(
             A[0],
             field,
-            ffi.cast("int32_t", value),
+            value,
         ),
     )
 
