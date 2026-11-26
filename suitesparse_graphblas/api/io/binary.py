@@ -409,8 +409,9 @@ def binread(filename, opener=Path.open):
 
     ``opener`` opens the file for reading (e.g. ``gzip.open``).  The file must be from this
     version of SuiteSparse:GraphBLAS, else this raises ValueError.  GraphBLAS checks the
-    matrix it holds (in O(nvals) time), so a corrupt file raises InvalidObject rather than
-    making an invalid matrix.
+    structure of the matrix it holds (its indices, pointers and bitmap), in O(nvec + nvals)
+    time, or O(nrows * ncols) for a bitmap, and this raises InvalidObject if that is
+    invalid.  It doesn't check the values: a GrB_BOOL value of 2, say, is read as it is.
     """
     if isinstance(filename, str):
         filename = Path(filename)

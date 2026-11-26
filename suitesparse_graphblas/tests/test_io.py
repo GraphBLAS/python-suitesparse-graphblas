@@ -1,7 +1,9 @@
 import bz2
 import collections
 import functools
+import gc
 import gzip
+import re
 import struct
 import sys
 from contextlib import contextmanager
@@ -509,8 +511,6 @@ def test_binread_invalid_matrix_frees_only_its_own(tmp_path):
     # nothing else.  (When GraphBLAS checked the matrix as it packed it, a failed check freed
     # the matrix itself, and binread's handle to it was left to free whatever matrix came to
     # use its memory next.)
-    import gc
-
     path = tmp_path / "matrix.binfile"
     _invalid_binfile(path, lib.GxB_BY_ROW, "index out of range")
     with pytest.raises(InvalidObject) as excinfo:
@@ -542,8 +542,8 @@ def test_binread_other_version(tmp_path):
     ]:
         struct.pack_into("=Q", data, binary.GRB_HEADER_LEN, version)
         path.write_bytes(data)
-        message = f"SuiteSparse:GraphBLAS {major}.{minor}.{sub}: its version is {name}$"
-        with pytest.raises(ValueError, match=message):
+        message = f"SuiteSparse:GraphBLAS {major}.{minor}.{sub}: its version is {name}"
+        with pytest.raises(ValueError, match=re.escape(message) + "$"):
             binary.binread(path)
 
 
@@ -708,7 +708,8 @@ class _CountingLib:
 def test_serialize_compression_out_of_range(monkeypatch, kind):
     # The method plus the level goes to GraphBLAS as an int32_t.  It used to wrap around, so
     # ZSTD with level 2**32 + 1 serialized with level 1, and a float level was truncated.
-    # Now they raise, before anything is serialized.
+    # Now they raise, before anything is serialized.  (Only a Python float, or np.float64:
+    # cffi converts other objects with `__int__`, so np.float32(1.5) still gives level 1.)
     if kind == "matrix":
         A, ser, T = _numbered_matrix(10), serialize.serialize_matrix, "Matrix"
     else:

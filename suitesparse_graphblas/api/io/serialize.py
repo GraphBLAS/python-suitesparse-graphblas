@@ -232,8 +232,10 @@ def deserialize_matrix(data, *, free=True, nthreads=None):
         thread (which stays engaged: set its number of threads instead).  Raises TypeError
         if `nthreads` isn't an integer, or is a bool.
 
-    Raises InvalidObject if `data` doesn't hold a valid Matrix (GraphBLAS checks only that it
-    can read it), after freeing what it deserialized.  The check takes O(nvals) time.
+    Raises InvalidObject, after freeing what it deserialized, if the structure of the Matrix
+    in `data` (its indices, pointers and bitmap) is invalid: GraphBLAS checks only that it can
+    read the blob.  The check takes O(nvec + nvals) time, or O(nrows * ncols) for a bitmap.
+    It doesn't check the values.
     """
     data = np.frombuffer(data, np.uint8)
     A = ffi.new("GrB_Matrix*")
@@ -282,9 +284,10 @@ def deserialize_vector(data, *, free=True, nthreads=None):
         thread (which stays engaged: set its number of threads instead).  Raises TypeError
         if `nthreads` isn't an integer, or is a bool.
 
-    Raises InvalidObject if `data` doesn't hold a valid Vector (GraphBLAS checks only that it
-    can read it), after freeing what it deserialized.  A Matrix blob holds a valid Vector
-    only if the Matrix is n-by-1 and held by column.  The check takes O(nvals) time.
+    Raises InvalidObject, after freeing what it deserialized, if the structure of the Vector
+    in `data` (its indices and bitmap) is invalid: GraphBLAS checks only that it can read the
+    blob.  A Matrix blob holds a valid Vector only if the Matrix is n-by-1 and held by column.
+    The check takes O(nvals) time, or O(size) for a bitmap.  It doesn't check the values.
     """
     data = np.frombuffer(data, np.uint8)
     v = ffi.new("GrB_Vector*")
