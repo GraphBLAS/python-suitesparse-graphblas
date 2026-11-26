@@ -24,18 +24,16 @@ from suitesparse_graphblas import (
     unsigned_integer_types,
     vector,
 )
+from suitesparse_graphblas.api import context
+from suitesparse_graphblas.api.global_options import global_get_int32
+from suitesparse_graphblas.exceptions import InvalidObject, InvalidValue
+from suitesparse_graphblas.io import binary, serialize
+from suitesparse_graphblas.utils import claim_buffer
 
 try:
     import lzma
 except ImportError:  # Pyodide before 314 has it as a separate package
     lzma = None
-
-
-from suitesparse_graphblas.api import context  # isort:skip
-from suitesparse_graphblas.api.global_options import global_get_int32  # isort:skip
-from suitesparse_graphblas.exceptions import InvalidObject, InvalidValue  # isort:skip
-from suitesparse_graphblas.io import binary, serialize  # isort:skip
-from suitesparse_graphblas.utils import claim_buffer  # isort:skip
 
 NULL = ffi.NULL
 
