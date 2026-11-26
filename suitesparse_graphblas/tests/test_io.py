@@ -823,6 +823,48 @@ def test_deserialize_matrix_invalid(case, nthreads):
     assert not _context_engaged(probe)
 
 
+@pytest.mark.parametrize("nthreads", [None, 2])
+@pytest.mark.parametrize("case", _invalid_blob_indices)
+def test_deserialize_vector_invalid(case, nthreads):
+    # As for deserialize_matrix: a Vector of size 1000 with entries 101, 202 and 303
+    probe = context.context_new()
+    v = vector.vector_new(lib.GrB_INT64, 1000)
+    for k, (_, i) in enumerate(_blob_entries):
+        vector.set_int64(v, k, i)
+    blob = serialize.serialize_vector(v, lib.GxB_COMPRESSION_NONE).tobytes()
+    _assert_vectors_equal(v, serialize.deserialize_vector(blob, nthreads=nthreads))
+    blob = _with_indices(blob, [i for _, i in _blob_entries], _invalid_blob_indices[case])
+    with pytest.raises(InvalidObject, match="does not hold a valid Vector"):
+        serialize.deserialize_vector(blob, nthreads=nthreads)
+    assert not _context_engaged(probe)
+
+
+@pytest.mark.parametrize("format", _formats, ids=_formats.get)
+def test_deserialize_vector_of_a_matrix(format):
+    # A Vector is an n-by-1 Matrix held by column, and GxB_Vector_deserialize takes any
+    # Matrix blob, whose Matrix makes an invalid Vector unless it's one of those
+    for nrows, ncols in [(3, 4), (4, 3), (3, 1), (1, 3)]:
+        A = matrix.matrix_new(lib.GrB_INT64, nrows, ncols)
+        matrix.set_int64(A, 7, nrows - 1, ncols - 1)
+        matrix.matrix_set_format(A, format)
+        blob = serialize.serialize_matrix(A)
+        _assert_matrices_equal(A, serialize.deserialize_matrix(blob))
+        if ncols == 1 and format == lib.GxB_BY_COL:
+            v = serialize.deserialize_vector(blob)
+            assert vector.vector_size(v) == nrows
+            assert vector.vector_extract_tuples_int64(v)[0].tolist() == [nrows - 1]
+        else:
+            message = f"data holds a {nrows}x{ncols} Matrix, not a Vector"
+            with pytest.raises(InvalidObject, match=message):
+                serialize.deserialize_vector(blob)
+    # And a Vector blob is an n-by-1 Matrix blob
+    v = vector.vector_new(lib.GrB_INT64, 5)
+    vector.set_int64(v, 7, 3)
+    A = serialize.deserialize_matrix(serialize.serialize_vector(v))
+    assert matrix.matrix_shape(A) == (5, 1)
+    assert [x.tolist() for x in matrix.matrix_extract_tuples_int64(A)] == [[3], [0], [7]]
+
+
 def _context_engaged(probe):
     """Whether a GxB_Context is engaged on this thread.
 

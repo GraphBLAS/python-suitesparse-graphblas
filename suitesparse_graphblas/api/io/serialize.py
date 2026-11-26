@@ -74,8 +74,8 @@ def _call_with_nthreads(nthreads, func, *args):
         lib.GxB_Context_free(ctx)
 
 
-def _check_deserialized(obj, fprint, free, message):
-    """Free `obj` and raise InvalidObject(`message`) if `fprint` finds it invalid.
+def _check_deserialized(obj, fprint, free, describe):
+    """Free `obj` and raise InvalidObject(`describe()`) if `fprint` finds it invalid.
 
     GraphBLAS checks only enough of a blob to deserialize it without reading past its end, so
     a corrupt blob can make an invalid object, and its User Guide says to check the result
@@ -86,10 +86,22 @@ def _check_deserialized(obj, fprint, free, message):
         return
     try:
         if info == lib.GrB_INVALID_OBJECT:
-            raise InvalidObject(message)
+            raise InvalidObject(describe())
         check_status(obj, info)
     finally:
         free(obj)
+
+
+def _describe_invalid_vector(v):
+    # GxB_Vector_deserialize takes a Matrix blob too, and its Matrix makes an invalid Vector
+    # unless it is n-by-1 and held by column, as a Vector is
+    A = ffi.cast("GrB_Matrix", v[0])
+    if lib.GxB_Matrix_fprint(A, b"", lib.GxB_SILENT, ffi.NULL) == lib.GrB_SUCCESS:
+        nrows, ncols = ffi.new("GrB_Index*"), ffi.new("GrB_Index*")
+        check_status(v, lib.GrB_Matrix_nrows(nrows, A))
+        check_status(v, lib.GrB_Matrix_ncols(ncols, A))
+        return f"data holds a {nrows[0]}x{ncols[0]} Matrix, not a Vector"
+    return "data does not hold a valid Vector: GxB_Vector_fprint rejects what it deserializes to"
 
 
 def get_serialize_desc(compression=lib.GxB_COMPRESSION_DEFAULT, level=None, nthreads=None):
@@ -239,7 +251,8 @@ def deserialize_matrix(data, *, free=True, nthreads=None):
         A,
         lib.GxB_Matrix_fprint,
         lib.GrB_Matrix_free,
-        "data does not hold a valid Matrix: GxB_Matrix_fprint rejects what it deserializes to",
+        lambda: "data does not hold a valid Matrix: GxB_Matrix_fprint rejects what it "
+        "deserializes to",
     )
     if free:
         if callable(free):
@@ -268,6 +281,10 @@ def deserialize_vector(data, *, free=True, nthreads=None):
         that is more than int32_t holds, and InvalidValue if a Context is engaged on this
         thread (which stays engaged: set its number of threads instead).  Raises TypeError
         if `nthreads` isn't an integer, or is a bool.
+
+    Raises InvalidObject if `data` doesn't hold a valid Vector (GraphBLAS checks only that it
+    can read it), after freeing what it deserialized.  A Matrix blob holds a valid Vector
+    only if the Matrix is n-by-1 and held by column.  The check takes O(nvals) time.
     """
     data = np.frombuffer(data, np.uint8)
     v = ffi.new("GrB_Vector*")
@@ -281,6 +298,9 @@ def deserialize_vector(data, *, free=True, nthreads=None):
         ffi.NULL,
     )
     check_status(v, info)
+    _check_deserialized(
+        v, lib.GxB_Vector_fprint, lib.GrB_Vector_free, lambda: _describe_invalid_vector(v)
+    )
     if free:
         if callable(free):
             return ffi.gc(v, free)
