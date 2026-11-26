@@ -738,6 +738,51 @@ def test_serialize_nthreads_invalid(kind):
     assert not _context_engaged(probe)
 
 
+def test_call_with_nthreads_interrupted():
+    # The call runs under the Context, which is disengaged whatever it raises
+    probe = context.context_new()
+
+    def interrupted():
+        assert _context_engaged(probe)
+        raise KeyboardInterrupt
+
+    with pytest.raises(KeyboardInterrupt):
+        serialize._call_with_nthreads(2, interrupted)
+    assert not _context_engaged(probe)
+
+
+class _InterruptedLib:
+    """`lib`, except that the `n`th lookup of GxB_Context_disengage raises KeyboardInterrupt."""
+
+    def __init__(self, n):
+        self.lookups = 0
+        self.n = n
+
+    def __getattr__(self, name):
+        if name == "GxB_Context_disengage":
+            self.lookups += 1
+            if self.lookups == self.n:
+                raise KeyboardInterrupt
+        return getattr(lib, name)
+
+
+@pytest.mark.thread_unsafe(reason="replaces `lib` in the serialize module")
+@pytest.mark.parametrize("n", [2, 3], ids=["inner", "outer"])
+def test_call_with_nthreads_interrupted_in_finally(monkeypatch, n):
+    # A KeyboardInterrupt can come at the first bytecode of a `finally` block (PyPy can stop
+    # it there), before the block disengages the Context.  Each of the two `finally` blocks
+    # disengages it, so the other one still does.  The lookups of GxB_Context_disengage are
+    # for the probe, then the inner `finally` block, then the outer one.
+    probe = context.context_new()
+    interrupted = _InterruptedLib(n)
+    monkeypatch.setattr(serialize, "lib", interrupted)
+    with pytest.raises(KeyboardInterrupt):
+        serialize._call_with_nthreads(2, lambda: None)
+    monkeypatch.undo()
+    assert not _context_engaged(probe)
+    assert interrupted.lookups == 3
+
+
 @functools.cache
 def _arena_like_0():
     """Arena 1, which allocates as arena 0 does.  It's made once: arenas can't be changed.

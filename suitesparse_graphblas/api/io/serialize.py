@@ -1,16 +1,9 @@
 import operator
 import warnings
-from contextlib import contextmanager, nullcontext
 
 import numpy as np
 
 from suitesparse_graphblas import check_status, ffi, lib
-from suitesparse_graphblas.api.context import (
-    context_disengage,
-    context_engage,
-    context_free,
-    context_new,
-)
 from suitesparse_graphblas.api.global_options import global_get_int32
 from suitesparse_graphblas.exceptions import InvalidValue
 from suitesparse_graphblas.utils import claim_buffer
@@ -22,33 +15,29 @@ def _free_desc(desc):
     lib.GrB_Descriptor_free(desc_ptr)
 
 
-_NO_CONTEXT = nullcontext()  # it keeps no state, so it serves every call and thread
-
-
-def _nthreads_context(nthreads):
-    """Return a context manager that engages a new GxB_Context with `nthreads` threads.
+def _call_with_nthreads(nthreads, func, *args):
+    """Return ``func(*args)``, called under a new GxB_Context with `nthreads` threads.
 
     GraphBLAS 10 takes the number of threads from the Context engaged on the calling thread,
-    not from a descriptor.  If `nthreads` is None, 0 or negative, the context manager does
-    nothing.
-    """
-    if nthreads is not None:
-        nthreads = operator.index(nthreads)  # TypeError if it isn't an integer
-    if nthreads is None or nthreads <= 0:
-        return _NO_CONTEXT
-    return _engaged_context(nthreads)
-
-
-@contextmanager
-def _engaged_context(nthreads):
-    """Engage a new GxB_Context that uses at most `nthreads` threads, for the body.
+    not from a descriptor.  If `nthreads` is None, 0 or negative, `func` is just called.
 
     Apart from the number of threads, the new Context is a copy of GxB_CONTEXT_WORLD:
     GxB_Context_new copies its chunk and GPUs, and the arenas are copied here, since they
     would otherwise be arena 0.  WORLD is the Context the call would use without `nthreads`,
     because a Context engaged on this thread makes this raise.
+
+    It all happens in this one frame, in try and finally blocks, rather than in a generator
+    context manager.  A KeyboardInterrupt can come as the context manager's ``__exit__``
+    begins, before the generator resumes, and that leaves disengaging and freeing the Context
+    to garbage collection: later, and on PyPy perhaps in another thread.
     """
-    ctx = context_new(free=None)
+    if nthreads is not None:
+        nthreads = operator.index(nthreads)  # TypeError if it isn't an integer
+    if nthreads is None or nthreads <= 0:
+        return func(*args)
+    ctx = ffi.new("GxB_Context*")
+    # A KeyboardInterrupt between here and `try` leaks the Context, which isn't engaged yet
+    check_status(ctx, lib.GxB_Context_new(ctx))
     try:
         # A Context engaged on this thread would be lost: GraphBLAS can't say which one it
         # is, so it can't be engaged again afterwards.  But it can say whether there is one:
@@ -67,13 +56,18 @@ def _engaged_context(nthreads):
         check_status(ctx, lib.GxB_Context_set_INT(ctx[0], header_arena, lib.GxB_ARENA_HEADER))
         data_arena = global_get_int32(lib.GxB_ARENA_DATA)
         check_status(ctx, lib.GxB_Context_set_INT(ctx[0], data_arena, lib.GxB_ARENA_DATA))
-        context_engage(ctx)
         try:
-            yield
+            check_status(ctx, lib.GxB_Context_engage(ctx[0]))
+            return func(*args)
         finally:
-            context_disengage(ctx)
+            lib.GxB_Context_disengage(ctx[0])
     finally:
-        context_free(ctx)
+        # Disengaging a Context that isn't engaged changes nothing, so disengage it again, in
+        # case a KeyboardInterrupt stopped the `finally` above before it could (PyPy may stop
+        # it at its first bytecode).  Freeing it while engaged would leave the thread with a
+        # dangling Context.
+        lib.GxB_Context_disengage(ctx[0])
+        lib.GxB_Context_free(ctx)
 
 
 def get_serialize_desc(compression=lib.GxB_COMPRESSION_DEFAULT, level=None, nthreads=None):
@@ -146,8 +140,9 @@ def serialize_matrix(A, compression=lib.GxB_COMPRESSION_DEFAULT, level=None, *, 
     # any), so that `claim_buffer` knows which allocator must free it
     arena = global_get_int32(lib.GxB_ARENA_DATA)
     desc = ffi.NULL if desc is None else desc
-    with _nthreads_context(nthreads):
-        info = lib.GxB_Matrix_serialize_arena(data_ptr, size_ptr, A[0], arena, desc)
+    info = _call_with_nthreads(
+        nthreads, lib.GxB_Matrix_serialize_arena, data_ptr, size_ptr, A[0], arena, desc
+    )
     check_status(A, info)
     return claim_buffer(ffi, data_ptr[0], size_ptr[0], np.dtype(np.uint8), arena)
 
@@ -177,8 +172,9 @@ def serialize_vector(v, compression=lib.GxB_COMPRESSION_DEFAULT, level=None, *, 
     size_ptr = ffi.new("GrB_Index*")
     arena = global_get_int32(lib.GxB_ARENA_DATA)  # see `serialize_matrix`
     desc = ffi.NULL if desc is None else desc
-    with _nthreads_context(nthreads):
-        info = lib.GxB_Vector_serialize_arena(data_ptr, size_ptr, v[0], arena, desc)
+    info = _call_with_nthreads(
+        nthreads, lib.GxB_Vector_serialize_arena, data_ptr, size_ptr, v[0], arena, desc
+    )
     check_status(v, info)
     return claim_buffer(ffi, data_ptr[0], size_ptr[0], np.dtype(np.uint8), arena)
 
@@ -204,14 +200,15 @@ def deserialize_matrix(data, *, free=True, nthreads=None):
     """
     data = np.frombuffer(data, np.uint8)
     A = ffi.new("GrB_Matrix*")
-    with _nthreads_context(nthreads):
-        info = lib.GxB_Matrix_deserialize(
-            A,
-            ffi.NULL,  # dtype; we don't check for now
-            ffi.from_buffer("void*", data),
-            data.nbytes,
-            ffi.NULL,
-        )
+    info = _call_with_nthreads(
+        nthreads,
+        lib.GxB_Matrix_deserialize,
+        A,
+        ffi.NULL,  # dtype; we don't check for now
+        ffi.from_buffer("void*", data),
+        data.nbytes,
+        ffi.NULL,
+    )
     check_status(A, info)
     if free:
         if callable(free):
@@ -241,14 +238,15 @@ def deserialize_vector(data, *, free=True, nthreads=None):
     """
     data = np.frombuffer(data, np.uint8)
     v = ffi.new("GrB_Vector*")
-    with _nthreads_context(nthreads):
-        info = lib.GxB_Vector_deserialize(
-            v,
-            ffi.NULL,  # dtype; we don't check for now
-            ffi.from_buffer("void*", data),
-            data.nbytes,
-            ffi.NULL,
-        )
+    info = _call_with_nthreads(
+        nthreads,
+        lib.GxB_Vector_deserialize,
+        v,
+        ffi.NULL,  # dtype; we don't check for now
+        ffi.from_buffer("void*", data),
+        data.nbytes,
+        ffi.NULL,
+    )
     check_status(v, info)
     if free:
         if callable(free):
