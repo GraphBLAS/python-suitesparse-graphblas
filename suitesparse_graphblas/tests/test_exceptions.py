@@ -1,6 +1,13 @@
 import pytest
 
-from suitesparse_graphblas import _error_code_lookup, check_status, exceptions, ffi, lib
+from suitesparse_graphblas import (
+    _error_code_lookup,
+    _error_func_lookup,
+    check_status,
+    exceptions,
+    ffi,
+    lib,
+)
 from suitesparse_graphblas.api import grb_type
 
 
@@ -84,6 +91,17 @@ def test_check_status_output_is_readonly():
         assert list(buf) == [1, 2, 3, 4]
     finally:
         check_status(v, lib.GrB_Vector_free(v))
+
+
+def test_error_func_lookup_has_every_object_type():
+    # check_status gets the error string with the object's *_error function.
+    # Every *_error function's object type must be in the table, or a new
+    # GraphBLAS object type would raise TypeError instead of its error.
+    error_funcs = [name for name in dir(lib) if name.endswith("_error")]
+    assert error_funcs
+    for name in error_funcs:
+        cname = ffi.typeof(getattr(lib, name)).args[1].cname
+        assert cname in _error_func_lookup, name
 
 
 def test_check_status_unknown_object():
