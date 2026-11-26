@@ -87,7 +87,8 @@ def binwrite(A, filename, comments=None, opener=Path.open):
     copy, ``A`` is unpacked while it is written and packed again afterwards (even if writing
     fails), so other threads must not use ``A`` meanwhile.
 
-    ``comments`` must be ASCII, and short enough that the text header fits in
+    ``comments`` go at the end of the text header (None leaves an empty line there, as LAGraph
+    does).  They must be ASCII, and short enough that the text header fits in
     ``GRB_HEADER_LEN`` (512) bytes; otherwise this raises ValueError and writes nothing.
     """
     if isinstance(filename, str):
@@ -257,7 +258,7 @@ def binwrite(A, filename, comments=None, opener=Path.open):
             size=typesize[0],
             type=_ss_typenames[matrix_type[0]],
             iso=int(is_iso[0]),
-            comments=comments,
+            comments="" if comments is None else comments,
         )
         header_content = header_template.format(**vars)
         header = f"{header_content: <{GRB_HEADER_LEN}}".encode("ascii")

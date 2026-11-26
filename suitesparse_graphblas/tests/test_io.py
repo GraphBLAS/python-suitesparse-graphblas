@@ -504,6 +504,22 @@ def test_binread_other_version(tmp_path):
         binary.binread(path)
 
 
+def test_binwrite_without_comments(tmp_path):
+    # Without comments, the comment line of the header is empty, as LAGraph writes it
+    A = _make_matrix(lib.GrB_INT64, "sparse")
+    path = tmp_path / "matrix.binfile"
+    binary.binwrite(A, path, comments="")
+    header = path.read_bytes()[: binary.GRB_HEADER_LEN]
+    assert header.decode("ascii").split("\n")[9:11] == ["iso:     0", ""]
+    binary.binwrite(A, path)
+    assert path.read_bytes()[: binary.GRB_HEADER_LEN] == header
+    _assert_matrices_equal(A, binary.binread(path))
+    # binwrite wrote "None" for no comments before, and binread still reads those files
+    binary.binwrite(A, path, comments="None")
+    assert b"\nNone\n" in path.read_bytes()[: binary.GRB_HEADER_LEN]
+    _assert_matrices_equal(A, binary.binread(path))
+
+
 def test_binwrite_long_comments(tmp_path):
     # binread skips a header of exactly GRB_HEADER_LEN bytes, so binwrite refuses
     # comments that would make it longer, before it opens the file
