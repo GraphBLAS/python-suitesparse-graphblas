@@ -1,3 +1,4 @@
+import importlib
 import os
 import sys
 
@@ -123,6 +124,24 @@ def test_type_sets():
     assert _type_names(complex_types) == expected_complex
     assert grb_types == bool_types | integer_types | real_types | complex_types
     assert len(grb_types) == 11 + len(complex_types)
+
+
+_complex_functions = {
+    "matrix": ["set", "get", "matrix_build", "matrix_extract_tuples"],
+    "vector": ["set", "get", "vector_build", "vector_extract_tuples"],
+    "scalar": ["set", "get"],
+    "monoid": ["monoid_new", "monoid_terminal_new"],
+    "iterator": ["iterator_get"],
+}
+
+
+@pytest.mark.parametrize("module", _complex_functions)
+def test_complex_functions(module):
+    # The functional API has its fc32 and fc64 functions only when the build has complex types
+    mod = importlib.import_module(f"suitesparse_graphblas.api.{module}")
+    names = {name for name in vars(mod) if name.endswith(("_fc32", "_fc64"))}
+    expected = {f"{prefix}_{t}" for prefix in _complex_functions[module] for t in ["fc32", "fc64"]}
+    assert names == (expected if supports_complex() else set())
 
 
 # conda-forge's cffi links conda's libffi, and through it a variadic call on macOS arm64 loses
