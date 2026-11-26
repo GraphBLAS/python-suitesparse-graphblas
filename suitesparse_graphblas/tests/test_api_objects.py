@@ -1,7 +1,16 @@
 import pytest
 
 from suitesparse_graphblas import exceptions, ffi, lib
-from suitesparse_graphblas.api import container, context, descriptor, grb_type, semiring
+from suitesparse_graphblas.api import (
+    container,
+    context,
+    descriptor,
+    global_options,
+    grb_type,
+    matrix,
+    semiring,
+    vector,
+)
 
 
 def test_grb_type_definition_longer_than_256():
@@ -147,3 +156,124 @@ def test_semiring_name_longer_than_256():
     semiring.semiring_set_string(s, lib.GrB_NAME, name)
     assert semiring.semiring_get_string(s, lib.GrB_NAME) == name
     assert semiring.semiring_get_size(s, lib.GrB_NAME) == len(name) + 1
+
+
+def _matrix_setting(set_, get, value):
+    A = matrix.matrix_new(lib.GrB_INT64, 2, 2)
+    return value, lambda v: set_(A, v), lambda: get(A)
+
+
+def _descriptor_setting(field, value):
+    D = ffi.new("GrB_Descriptor*")
+    assert lib.GrB_Descriptor_new(D) == lib.GrB_SUCCESS
+    D = ffi.gc(D, lib.GrB_Descriptor_free)
+    return (
+        value,
+        lambda v: descriptor.descriptor_set_int32(D[0], field, v),
+        lambda: descriptor.descriptor_get_int32(D[0], field),
+    )
+
+
+def _setting(new, set_, get, field, value):
+    obj = new()
+    return value, lambda v: set_(obj, field, v), lambda: get(obj, field)
+
+
+def _global_setting(set_, get, field):
+    return 1 - get(field), lambda v: set_(field, v), lambda: get(field)
+
+
+# Each function that sets an int32 option or property: `(value, set, get)` for that setting of
+# a new object, where `value` is in range and accepted (or rejected by GraphBLAS anyway, for the
+# read-only properties of a type or a semiring)
+_int32_settings = {
+    "context_set_int32": lambda: _setting(
+        context.context_new,
+        context.context_set_int32,
+        context.context_get_int32,
+        lib.GxB_CONTEXT_NTHREADS,
+        3,
+    ),
+    "context_set_nthreads": lambda: _setting(
+        context.context_new,
+        lambda ctx, _, v: context.context_set_nthreads(ctx, v),
+        lambda ctx, _: context.context_get_nthreads(ctx),
+        None,
+        3,
+    ),
+    "matrix_set_format": lambda: _matrix_setting(
+        matrix.matrix_set_format, matrix.matrix_format, lib.GxB_BY_COL
+    ),
+    "matrix_set_sparsity_control": lambda: _matrix_setting(
+        matrix.matrix_set_sparsity_control, matrix.matrix_sparsity_control, lib.GxB_SPARSE
+    ),
+    "matrix_option_set_int32": lambda: _setting(
+        lambda: matrix.matrix_new(lib.GrB_INT64, 2, 2),
+        matrix.matrix_option_set_int32,
+        matrix.matrix_option_get_int32,
+        lib.GxB_FORMAT,
+        lib.GxB_BY_COL,
+    ),
+    "vector_option_set_int32": lambda: _setting(
+        lambda: vector.vector_new(lib.GrB_INT64, 2),
+        vector.vector_option_set_int32,
+        vector.vector_option_get_int32,
+        lib.GxB_SPARSITY_CONTROL,
+        lib.GxB_SPARSE,
+    ),
+    "descriptor_set_int32": lambda: _descriptor_setting(lib.GrB_OUTP_FIELD, lib.GrB_REPLACE),
+    "grb_type_set_int32": lambda: _setting(
+        lambda: grb_type.grb_type_new(8),
+        grb_type.grb_type_set_int32,
+        grb_type.grb_type_get_int32,
+        lib.GrB_EL_TYPE_CODE,
+        lib.GrB_INT64_CODE,
+    ),
+    "semiring_set_int32": lambda: _setting(
+        lambda: semiring.semiring_new(lib.GrB_MAX_MONOID_FP64, lib.GrB_PLUS_FP64),
+        semiring.semiring_set_int32,
+        semiring.semiring_get_int32,
+        lib.GrB_INP0_TYPE_CODE,
+        lib.GrB_INT64_CODE,
+    ),
+    "global_option_set_int32": lambda: _global_setting(
+        global_options.global_option_set_int32,
+        global_options.global_option_get_int32,
+        lib.GxB_PRINT_1BASED,
+    ),
+    "global_set_int32": lambda: _global_setting(
+        global_options.global_set_int32, global_options.global_get_int32, lib.GxB_PRINT_1BASED
+    ),
+}
+
+_global_unsafe = pytest.mark.thread_unsafe(
+    reason="a value that wrapped around would set a global option"
+)
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        pytest.param(name, marks=_global_unsafe if name.startswith("global") else ())
+        for name in _int32_settings
+    ],
+)
+def test_set_int32_rejects_non_int32(name):
+    # A value that doesn't fit in an int32 is an error, rather than wrapping around to one that
+    # does (2**32 + 3 would set 3)
+    value, set_, get = _int32_settings[name]()
+    old = get()
+    try:
+        for wrapped in (value + 2**32, value - 2**32, 2**31, -(2**31) - 1):
+            with pytest.raises(OverflowError):
+                set_(wrapped)
+            assert get() == old
+        # So is a float or a str, rather than truncated (4.7 would set 4) or taken as a
+        # character code ("3" would set 51)
+        for wrong in (value + 0.7, "3"):
+            with pytest.raises(TypeError):
+                set_(wrong)
+            assert get() == old
+    finally:
+        if get() != old:  # put a global option back
+            set_(old)

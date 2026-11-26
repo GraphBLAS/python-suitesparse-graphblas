@@ -109,7 +109,7 @@ def vector_option_set_int32(v, field, value):
         lib.GxB_Vector_Option_set_INT32(
             v[0],
             field,
-            ffi.cast("int32_t", value),
+            value,
         ),
     )
 

@@ -525,7 +525,7 @@ def monoid_get_int32(m, field):
 
 def monoid_set_int32(m, field, value):
     """Set a monoid option from an int32."""
-    check_status(m, lib.GrB_Monoid_set_INT32(m[0], ffi.cast("int32_t", value), field))
+    check_status(m, lib.GrB_Monoid_set_INT32(m[0], value, field))
 
 
 def monoid_get_size(m, field):

@@ -131,7 +131,7 @@ def grb_type_set_int32(T, field, value):
     suitesparse_graphblas.exceptions.InvalidValue
 
     """
-    check_status(T, lib.GrB_Type_set_INT32(T[0], ffi.cast("int32_t", value), field))
+    check_status(T, lib.GrB_Type_set_INT32(T[0], value, field))
 
 
 def grb_type_get_size(T, field):

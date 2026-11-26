@@ -108,7 +108,7 @@ def indexbinaryop_get_int32(op, field):
 
 def indexbinaryop_set_int32(op, field, value):
     """Set an operator option from an int32."""
-    check_status(op, lib.GxB_IndexBinaryOp_set_INT32(op[0], ffi.cast("int32_t", value), field))
+    check_status(op, lib.GxB_IndexBinaryOp_set_INT32(op[0], value, field))
 
 
 def indexbinaryop_get_size(op, field):

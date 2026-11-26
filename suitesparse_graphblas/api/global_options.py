@@ -23,7 +23,7 @@ def global_option_set_int32(field, value):
     >>> global_option_set_int32(lib.GxB_BURBLE, 0)
 
     """
-    info = lib.GxB_Global_Option_set_INT32(field, ffi.cast("int32_t", value))
+    info = lib.GxB_Global_Option_set_INT32(field, value)
     if info != lib.GrB_SUCCESS:
         raise _error_code_lookup.get(info, RuntimeError)(
             f"GxB_Global_Option_set_INT32 failed with info={info}"
@@ -99,7 +99,7 @@ def global_set_int32(field, value):
     >>> global_set_int32(lib.GxB_NTHREADS, nthreads)
 
     """
-    info = lib.GrB_Global_set_INT32(lib.GrB_GLOBAL, ffi.cast("int32_t", value), field)
+    info = lib.GrB_Global_set_INT32(lib.GrB_GLOBAL, value, field)
     if info != lib.GrB_SUCCESS:
         raise _error_code_lookup.get(info, RuntimeError)(
             f"GrB_Global_set_INT32 failed with info={info}"

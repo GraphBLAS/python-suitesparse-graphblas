@@ -142,7 +142,7 @@ def unaryop_get_int32(op, field):
 
 def unaryop_set_int32(op, field, value):
     """Set an operator option from an int32."""
-    check_status(op, lib.GrB_UnaryOp_set_INT32(op[0], ffi.cast("int32_t", value), field))
+    check_status(op, lib.GrB_UnaryOp_set_INT32(op[0], value, field))
 
 
 def unaryop_get_size(op, field):

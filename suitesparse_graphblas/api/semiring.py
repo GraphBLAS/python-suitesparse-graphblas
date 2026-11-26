@@ -123,7 +123,7 @@ def semiring_get_int32(s, field):
 
 def semiring_set_int32(s, field, value):
     """Set a semiring option from an int32."""
-    check_status(s, lib.GrB_Semiring_set_INT32(s[0], ffi.cast("int32_t", value), field))
+    check_status(s, lib.GrB_Semiring_set_INT32(s[0], value, field))
 
 
 def semiring_get_size(s, field):
